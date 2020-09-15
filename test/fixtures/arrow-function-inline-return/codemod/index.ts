@@ -1,15 +1,15 @@
-import {Codemod} from '../../../types';
+import {Codemod} from '../../../../types';
 import babelPlugin from './babel-plugin';
 import babel from '@babel/core';
 
 const codemod: Codemod = {
   transform({source, filePath}) {
-    const {ast} = babel.transformSync(source, {
+    return babel.transformSync(source, {
       filename: filePath,
-      plugins: ['@babel/plugin-proposal-optional-chaining'],
+      plugins: ['@babel/plugin-syntax-optional-chaining', babelPlugin],
       ast: true
-    });
-    
-    return babel.transformFromAstSync(ast, source, )
+    }).code;
   }
 };
+
+export default codemod;
