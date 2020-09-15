@@ -1,5 +1,6 @@
 ignorePatterns: 
   - test/fixtures/*/source
+  - build
 
 parser: '@typescript-eslint/parser'
 plugins: 

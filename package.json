@@ -7,6 +7,7 @@
   "author": "Nick Heiner <nth23@cornell.edu>",
   "license": "MIT",
   "scripts": {
+    "build": "tsc && chmod a+x ./build/bin.js",
     "test": "yarn run lint",
     "lint": "eslint test *.ts --max-warnings 0 --cache",
     "lint:fix": "yarn run lint --fix"
@@ -24,6 +25,8 @@
     "typescript": "4.0.2"
   },
   "dependencies": {
+    "globby": "11.0.1",
+    "lodash": "4.17.20",
     "ts-node": "9.0.0"
   }
 }

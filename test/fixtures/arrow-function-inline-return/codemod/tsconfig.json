@@ -1,16 +1,12 @@
 {
-  "include": ["src/**/*.ts"],
-  "exclude": ["**/fixtures/**"],
+  "include": ["*.ts"],
 
   "compilerOptions": {
     "target": "ES2019",
     "module": "commonjs",
-    "allowJs": true,                       
-    "checkJs": true,                       
-
     "strict": true,
 
-    "outDir": "build",
+    "outDir": "should-be-ignored",
     
     "noUnusedLocals": true,
     "noUnusedParameters": true,

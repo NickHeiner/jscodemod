@@ -1,8 +1,10 @@
+type CodemodResult = string | undefined | null;
+
 export type Codemod = {
   transform(opts: {
     source: string;
     filePath: string;
-  }): string | null | Promise<string | null>;
+  }): CodemodResult | Promise<CodemodResult>;
 }
 
 // The `any` here is intentional.

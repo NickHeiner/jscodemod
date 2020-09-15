@@ -8,7 +8,7 @@ const codemod: Codemod = {
       filename: filePath,
       plugins: ['@babel/plugin-syntax-optional-chaining', babelPlugin],
       ast: true
-    }).code;
+    })?.code;
   }
 };
 
