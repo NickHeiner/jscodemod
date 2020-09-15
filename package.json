@@ -5,5 +5,12 @@
   "main": "index.js",
   "repository": "git@github.com:NickHeiner/jscodemod.git",
   "author": "Nick Heiner <nth23@cornell.edu>",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "7.9.0",
+    "eslint-config-nth": "2.0.1",
+    "eslint-plugin-jest": "24.0.1",
+    "jest": "26.4.2",
+    "typescript": "4.0.2"
+  }
 }
