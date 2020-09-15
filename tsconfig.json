@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "commonjs",
+    "allowJs": true,                       
+    "checkJs": true,                       
+    "noEmit": true,                        
+
+    "strict": true,
+    
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true, 
+    "noFallthroughCasesInSwitch": true,
+
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  }
+}
