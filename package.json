@@ -6,7 +6,16 @@
   "repository": "git@github.com:NickHeiner/jscodemod.git",
   "author": "Nick Heiner <nth23@cornell.edu>",
   "license": "MIT",
+  "scripts": {
+    "test": "yarn run lint",
+    "lint": "eslint test *.ts --max-warnings 0 --cache",
+    "lint:fix": "yarn run lint --fix"
+  },
   "devDependencies": {
+    "@babel/plugin-proposal-optional-chaining": "7.11.0",
+    "@typescript-eslint/eslint-plugin": "4.1.1",
+    "@typescript-eslint/parser": "4.1.1",
+    "babel": "6.23.0",
     "eslint": "7.9.0",
     "eslint-config-nth": "2.0.1",
     "eslint-plugin-jest": "24.0.1",

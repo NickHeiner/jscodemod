@@ -1,0 +1,9 @@
+ignorePatterns: 
+  - test/fixtures/*/source
+
+parser: '@typescript-eslint/parser'
+plugins: 
+  - '@typescript-eslint'
+extends: 
+  - nth
+  - plugin:@typescript-eslint/recommended
