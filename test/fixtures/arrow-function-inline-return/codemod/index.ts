@@ -1,4 +1,4 @@
-import {Codemod} from '../../../../types';
+import {Codemod} from '../../../../src/types';
 import babelPlugin from './babel-plugin';
 import babel from '@babel/core';
 

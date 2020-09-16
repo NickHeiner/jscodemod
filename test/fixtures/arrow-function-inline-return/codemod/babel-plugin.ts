@@ -1,6 +1,6 @@
 import * as BabelTypes from '@babel/types';
 import {Visitor} from '@babel/traverse';
-import {TODO} from '../../../../types';
+import {TODO} from '../../../../src/types';
 
 export default ({types: t}: {types: typeof BabelTypes}): {visitor: Visitor<TODO>} => 
   ({

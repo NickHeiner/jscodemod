@@ -7,7 +7,8 @@ import log from 'nth-log';
 import pathIsTS from './path-is-ts';
 import path from 'path';
 import findUp from 'find-up';
-import {Codemod} from '../types';
+import {Codemod} from './types';
+import Piscina from 'piscina';
 
 // In this case, load-json-file is overkill.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -88,6 +89,16 @@ function getCodemod(codemodPath: string): Codemod {
   return codemod.default || codemod;
 }
 
+async function transformCode(codemod: Codemod, inputFiles: string[]) {
+  const piscina = new Piscina({
+    filename: require.resolve('./worker')
+  });
+
+  log.trace(codemod);
+
+  inputFiles.forEach(inputFile => piscina.runTask(inputFile));
+}
+
 async function codemod(pathToCodemod: string, inputFilesPatterns: string[], options: Options): Promise<void> {
   const inputFiles = await globby(inputFilesPatterns);
   log.debug({inputFiles});
@@ -97,6 +108,8 @@ async function codemod(pathToCodemod: string, inputFilesPatterns: string[], opti
   
   const codemod = getCodemod(codemodPath);
   log.debug({codemod});
+
+  await transformCode(codemod, inputFiles);
 }
 
 export default codemod;
