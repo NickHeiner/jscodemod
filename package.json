@@ -12,7 +12,7 @@
   "scripts": {
     "jscodemod": "./build/bin.js",
     "build": "tsc && chmod a+x ./build/bin.js",
-    "demo": "yarn build && yarn jscodemod --codemod test/fixtures/arrow-function-inline-return/codemod/index.ts --tsconfig test/fixtures/arrow-function-inline-return/codemod/tsconfig.json",
+    "demo": "yarn build && yarn jscodemod --codemod test/fixtures/arrow-function-inline-return/codemod/index.ts --tsconfig test/fixtures/arrow-function-inline-return/codemod/tsconfig.json test/fixtures/arrow-function-inline-return/source",
     "test": "yarn lint",
     "lint": "eslint test *.ts --max-warnings 0 --cache",
     "lint:fix": "yarn lint --fix"
@@ -31,6 +31,7 @@
     "typescript": "4.0.2"
   },
   "dependencies": {
+    "find-up": "5.0.0",
     "globby": "11.0.1",
     "lodash": "4.17.20",
     "nth-log": "1.1.0",

@@ -18,6 +18,7 @@ const argv = yargs
     },
     tsconfig: {
       type: 'string',
+      // TODO: default to find-up from the cwd.
       describe: `${tsOnlyNote} path to the tsconfig.json`
     },
     tsOutDir: {
@@ -33,6 +34,9 @@ const argv = yargs
   .check(argv => {
     if (pathIsTS(argv.codemod) && !argv.tsconfig) {
       throw new Error('Argument "tsconfig" is required if the codemod is written in TypeScript.')
+    }
+    if (!argv._.length) {
+      throw new Error('You must pass at least one globby pattern of files to transform.');
     }
     return true;
   })
