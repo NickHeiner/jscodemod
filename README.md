@@ -60,3 +60,6 @@ core_1.default.transformSync()
 ```
 
 If this is supposed to work and I messed it up, please let me know. :)
+
+# Misc
+Piscina caveat https://github.com/piscinajs/piscina#multiple-thread-pools-and-embedding-piscina-as-a-dependency
