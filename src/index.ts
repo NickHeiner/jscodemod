@@ -7,7 +7,6 @@ import log from 'nth-log';
 import pathIsTS from './path-is-ts';
 import path from 'path';
 import findUp from 'find-up';
-import {Codemod} from './types';
 import Piscina from 'piscina';
 
 // In this case, load-json-file is overkill.
@@ -81,20 +80,12 @@ async function getCodemodPath(pathToCodemod: string, options: Options) {
   return pathToCodemod;
 }
 
-function getCodemod(codemodPath: string): Codemod {
-  // We need a dynamic require here.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const codemod = require(codemodPath);
-
-  return codemod.default || codemod;
-}
-
-async function transformCode(codemod: Codemod, inputFiles: string[]) {
+async function transformCode(codemodPath: string, inputFiles: string[]) {
   const piscina = new Piscina({
-    filename: require.resolve('./worker')
+    filename: require.resolve('./worker'),
+    argv: [codemodPath],
+    workerData: {codemodPath}
   });
-
-  log.trace(codemod);
 
   inputFiles.forEach(inputFile => piscina.runTask(inputFile));
 }
@@ -106,10 +97,7 @@ async function codemod(pathToCodemod: string, inputFilesPatterns: string[], opti
   const codemodPath = await getCodemodPath(pathToCodemod, options);
   log.debug({codemodPath});
   
-  const codemod = getCodemod(codemodPath);
-  log.debug({codemod});
-
-  await transformCode(codemod, inputFiles);
+  await transformCode(codemodPath, inputFiles);
 }
 
 export default codemod;

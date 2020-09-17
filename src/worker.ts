@@ -1,5 +1,28 @@
-import log from 'nth-log';
+import baseLog from 'nth-log';
+import {Codemod} from './types';
+import piscina from 'piscina';
+import fs from 'fs';
 
-export default function main(sourceCodeFile: string) {
-  log.debug({sourceCodeFile});
+const pFs = fs.promises;
+
+function getCodemod(codemodPath: string): Codemod {
+  // We need a dynamic require here.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const codemod = require(codemodPath);
+
+  return codemod.default || codemod;
+}
+
+const codemod = getCodemod(piscina.workerData.codemodPath);
+
+export default async function main(sourceCodeFile: string) {
+  const log = baseLog.child({sourceCodeFile});
+  log.debug({action: 'start'});
+
+  const fileContents = await pFs.readFile(sourceCodeFile, 'utf-8');
+  const transformedCode = await codemod.transform({source: fileContents, filePath: sourceCodeFile});
+  if (transformedCode) {
+    await pFs.writeFile(sourceCodeFile, transformedCode);
+  }
+  log.debug({action: transformedCode ? 'modified' : 'skipped'});
 }
