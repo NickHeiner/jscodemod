@@ -3,7 +3,6 @@
 import yargs from 'yargs';
 import codemod from './';
 import _ from 'lodash';
-import pathIsTS from './path-is-ts';
 import 'loud-rejection/register';
 
 const tsOnlyNote = '(Only applicable if your codemod is written in TypeScript)';
@@ -19,7 +18,6 @@ const argv = yargs
     },
     tsconfig: {
       type: 'string',
-      // TODO: default to find-up from the cwd.
       describe: `${tsOnlyNote} path to the tsconfig.json`
     },
     tsOutDir: {
@@ -30,12 +28,13 @@ const argv = yargs
       type: 'string',
       describe: `${tsOnlyNote} path to a "tsc" executable to compile your codemod. ` +
        'Defaults to looking for a "tsc" bin accessible from the current working directory.'
+    },
+    dry: {
+      type: 'boolean',
+      describe: 'Print a list of files to modify, then stop.'
     }
   })
   .check(argv => {
-    if (pathIsTS(argv.codemod) && !argv.tsconfig) {
-      throw new Error('Argument "tsconfig" is required if the codemod is written in TypeScript.');
-    }
     if (!argv._.length) {
       throw new Error('You must pass at least one globby pattern of files to transform.');
     }
@@ -44,4 +43,4 @@ const argv = yargs
   .help()
   .argv;
 
-codemod(argv.codemod, argv._, _.pick(argv, 'tsconfig', 'tsOutDir', 'tsc'));
+codemod(argv.codemod, argv._, _.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry'));

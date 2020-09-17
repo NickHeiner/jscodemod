@@ -42,17 +42,32 @@ async function getTSOutDir(specifiedTSOutDir?: string): Promise<string> {
   return tempy.directory({prefix: `${packageJson.name}-ts-out-dir`});
 }
 
-async function compileTS(
-  pathToCodemod: string, {tsconfig, tsOutDir: specifiedTSOutDir, tsc: specifiedTSC}: Options
-): Promise<string> {
-  if (!tsconfig) {
-    throw new Error('If your codemod is TypeScript, option "tsconfig" is required.');
+async function getTSConfigPath(pathToCodemod: string, specifiedTSConfig?: string) {
+  if (specifiedTSConfig) {
+    return specifiedTSConfig;
   }
 
+  const codemodDir = path.dirname(pathToCodemod);
+  const foundPath = await findUp('tsconfig.json', {cwd: codemodDir});
+
+  if (!foundPath) {
+    throw new Error(
+      `This tool was not able to find a "tsconfig.json" file by doing a find-up from "${codemodDir}". ` +
+      'Please manually specify a tsconfig file path.'
+    )
+  }
+
+  return foundPath;
+}
+
+async function compileTS(
+  pathToCodemod: string, {tsconfig: specifiedTSConfig, tsOutDir: specifiedTSOutDir, tsc: specifiedTSC}: Options
+): Promise<string> {
+  const tscConfigPath = await getTSConfigPath(pathToCodemod, specifiedTSConfig);
   const tsc = await getTSCPath(specifiedTSC);
   const tsOutDir = await getTSOutDir(specifiedTSOutDir);
 
-  const tscArgs = ['--project', tsconfig, '--outDir', tsOutDir];
+  const tscArgs = ['--project', tscConfigPath, '--outDir', tsOutDir];
   log.debug({tsc, tscArgs}, 'exec');
   await execa(tsc, tscArgs);
 
