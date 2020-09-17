@@ -177,8 +177,10 @@ async function codemod(
     const modifiedInputFiles = _.intersection(modifiedFiles, inputFiles);
     log.debug({modifiedInputFiles, count: modifiedInputFiles.length});
 
-    await execGit(gitRoot, ['restore', '--staged', ...modifiedFiles]);
-    await execGit(gitRoot, ['restore', ...modifiedFiles]);
+    if (modifiedInputFiles.length) {
+      await execGit(gitRoot, ['restore', '--staged', ...modifiedFiles]);
+      await execGit(gitRoot, ['restore', ...modifiedFiles]);
+    }
   }
   
   const codemodPath = await getCodemodPath(pathToCodemod, _.pick(options, 'tsconfig', 'tsOutDir', 'tsc'));
