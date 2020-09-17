@@ -30,6 +30,7 @@ const argv = yargs
        'Defaults to looking for a "tsc" bin accessible from the current working directory.'
     },
     dry: {
+      alias: 'd',
       type: 'boolean',
       describe: 'Print a list of files to modify, then stop.'
     },
@@ -37,6 +38,13 @@ const argv = yargs
       type: 'boolean',
       default: true,
       describe: 'If true, automatically filter out node_modules from the set of files to transform.'
+    },
+    resetDirtyInputFiles: {
+      alias: 'r',
+      type: 'boolean',
+      default: false,
+      describe: 'If true, use git to restore dirty files to a clean state before running the codemod. ' +
+        'This assumes that all input files have the same .git root. If you use submodules, this may not work.'
     }
   })
   .check(argv => {
@@ -48,4 +56,8 @@ const argv = yargs
   .help()
   .argv;
 
-codemod(argv.codemod, argv._, _.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'ignoreNodeModules'));
+codemod(
+  argv.codemod, 
+  argv._, 
+  _.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'ignoreNodeModules', 'resetDirtyInputFiles')
+);
