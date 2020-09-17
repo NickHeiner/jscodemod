@@ -1,4 +1,5 @@
 import globby from 'globby';
+import _ from 'lodash';
 import {promisify} from 'util';
 import resolveBin from 'resolve-bin';
 import tempy from 'tempy';
@@ -9,6 +10,7 @@ import path from 'path';
 import findUp from 'find-up';
 import Piscina from 'piscina';
 import ProgressBar from 'progress';
+import {cyan} from 'ansi-colors';
 
 // In this case, load-json-file is overkill.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -20,6 +22,8 @@ type Options = {
   tsconfig?: string;
   tsOutDir?: string;
   tsc?: string;
+  dry?: boolean;
+  ignoreNodeModules?: boolean;
 }
 
 // The rule is too broad.
@@ -52,9 +56,9 @@ async function getTSConfigPath(pathToCodemod: string, specifiedTSConfig?: string
 
   if (!foundPath) {
     throw new Error(
-      `This tool was not able to find a "tsconfig.json" file by doing a find-up from "${codemodDir}". ` +
+      `This tool was not able to find a ${cyan('tsconfig.json')} file by doing a find-up from ${cyan(codemodDir)}. ` +
       'Please manually specify a tsconfig file path.'
-    )
+    );
   }
 
   return foundPath;
@@ -110,11 +114,41 @@ async function transformCode(codemodPath: string, inputFiles: string[]) {
   }));
 }
 
-async function codemod(pathToCodemod: string, inputFilesPatterns: string[], options: Options): Promise<void> {
+async function codemod(
+  pathToCodemod: string, inputFilesPatterns: string[], {ignoreNodeModules = true, ...options}: Options
+): Promise<void | string[]> {
+  const finalPatterns = [...inputFilesPatterns];
+  if (ignoreNodeModules) {
+    inputFilesPatterns.forEach(filePattern => {
+      /**
+       * If the input file path is something like "../foo", then we need to pass the glob pattern "!../node_modules"
+       * to ignore it. This is fairly simple to do (scan all the input file paths, and construct one or more 
+       * exclusion globs as needed), but I'd rather save on the complexity until someone asks for this to work.
+       */
+      const resolvedPattern = path.resolve(filePattern);
+      if (!resolvedPattern.startsWith(process.cwd())) {
+        throw new Error(
+          'The automatic ignoreNodeModules option only works when all the input file patterns point to files that ' +
+          `are contained within the current working directory (${cyan(process.cwd())}). However, input pattern ` +
+          `${cyan(filePattern)} resolved to ${cyan(resolvedPattern)}, which is not contained within the current ` +
+          `working directory. To resolve this, set ${cyan('ignoreNodeModules')} to false, and manually pass your own ` +
+          `globby exclude pattern. For instance, if your input file pattern was ${cyan('../foo')}, you would need ` +
+          `${cyan('!../**/node_modules')}.`
+        )
+      }
+    })
+    finalPatterns.push('!**/node_modules');
+  }
   const inputFiles = await globby(inputFilesPatterns);
-  log.debug({inputFiles});
+  const logMethod = options.dry ? 'info' : 'debug';
+  log[logMethod]({inputFiles, count: inputFiles.length}, 'Input file pattern matched these files.');
+
+  if (options.dry) {
+    log.info('Exiting early because "dry" was set.');
+    return inputFiles;
+  }
   
-  const codemodPath = await getCodemodPath(pathToCodemod, options);
+  const codemodPath = await getCodemodPath(pathToCodemod, _.pick(options, 'tsconfig', 'tsOutDir', 'tsc'));
   log.debug({codemodPath});
   
   await transformCode(codemodPath, inputFiles);

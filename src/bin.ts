@@ -32,6 +32,11 @@ const argv = yargs
     dry: {
       type: 'boolean',
       describe: 'Print a list of files to modify, then stop.'
+    },
+    ignoreNodeModules: {
+      type: 'boolean',
+      default: true,
+      describe: 'If true, automatically filter out node_modules from the set of files to transform.'
     }
   })
   .check(argv => {
@@ -43,4 +48,4 @@ const argv = yargs
   .help()
   .argv;
 
-codemod(argv.codemod, argv._, _.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry'));
+codemod(argv.codemod, argv._, _.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'ignoreNodeModules'));
