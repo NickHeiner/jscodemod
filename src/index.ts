@@ -131,6 +131,40 @@ async function execGit(gitRoot: string, args: string[]): Promise<execa.ExecaRetu
   return execa('git', args, {cwd: gitRoot});
 }
 
+const getShellArgMax = _.once(async () => parseInt((await execa('getconf', ['ARG_MAX'])).stdout));
+
+async function execBigCommand(
+  constantArgs: string[], 
+  variableArgs: string[], 
+  execCommand: (args: string[]) => Promise<execa.ExecaReturnValue>
+) {
+  const combinedArgs = [...constantArgs, ...variableArgs];
+  const commandLengthBytes = new TextEncoder().encode(combinedArgs.join(' ')).length;
+  const shellArgMaxBytes = await getShellArgMax();
+
+  /**
+   * My understanding is that if the commandLengthBytes < shellArgMaxBytes, then we should be safe. However, 
+   * experimentally, this was not true. I still saw E2BIG errors. I don't know if it's because I'm misinterpreting 
+   * what results of TextEncoder and `ARG_MAX`. But, if I divide by 2, then it worked in my anecdotal testing.
+   */
+  if (commandLengthBytes > shellArgMaxBytes / 2) {
+    log.debug({
+      variableArgCount: variableArgs.length,
+      variableArgLengthBytes: commandLengthBytes,
+      shellArgMaxBytes
+    }, 'Splitting command to avoid an E2BIG error.')
+    const midpointIndex = variableArgs.length / 2;
+    const firstHalfVariableArgs = variableArgs.slice(0, midpointIndex);
+    const secondHalfVariableArgs = variableArgs.slice(midpointIndex);
+
+    // It's probably safer to run in serial here. The caller may not expect their command to be parallelized.
+    await execBigCommand(constantArgs, firstHalfVariableArgs, execCommand);
+    await execBigCommand(constantArgs, secondHalfVariableArgs, execCommand);
+  } else {
+    await execCommand(combinedArgs);
+  }
+}
+
 async function codemod(
   pathToCodemod: string, inputFilesPatterns: string[], {ignoreNodeModules = true, ...options}: Options
 ): Promise<void | string[]> {
@@ -170,6 +204,8 @@ async function codemod(
     log.debug({gitRoot});
 
     const modifiedFiles = (await execGit(gitRoot, ['status', '--porcelain'])).stdout.split('\n')
+      // This assumes that none of the file paths have spaces in them.
+      // It would be better to just split on the first ' ' we see.
       .map(line => line.trim().split(' '))
       .filter(([statusCode]) => statusCode === 'M')
       .map(([_statusCode, filePath]) => path.join(gitRoot, filePath));
@@ -178,8 +214,8 @@ async function codemod(
     log.debug({modifiedInputFiles, count: modifiedInputFiles.length});
 
     if (modifiedInputFiles.length) {
-      await execGit(gitRoot, ['restore', '--staged', ...modifiedFiles]);
-      await execGit(gitRoot, ['restore', ...modifiedFiles]);
+      await execBigCommand(['restore', '--staged'], modifiedInputFiles, (args: string[]) => execGit(gitRoot, args));
+      await execBigCommand(['restore'], modifiedInputFiles, (args: string[]) => execGit(gitRoot, args));
     }
   }
   

@@ -16,6 +16,7 @@ const argv = yargs
       required: true,
       describe: 'Path to the codemod to run'
     },
+    // TODO: allow arbitrary TS arg passthrough at your own risk.
     tsconfig: {
       type: 'string',
       describe: `${tsOnlyNote} path to the tsconfig.json`
