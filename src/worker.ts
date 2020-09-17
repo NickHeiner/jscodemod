@@ -13,7 +13,10 @@ function getCodemod(codemodPath: string): Codemod {
   return codemod.default || codemod;
 }
 
-// Can this be passed to all workers instead of done in each?
+/**
+ * I don't think we can share this instance across workers – I got an error that said the transform function 
+ * "could not be cloned" when I tried to pass the codemod itself on `workerData`.
+ */
 const codemod = getCodemod(piscina.workerData.codemodPath);
 
 export default async function main(sourceCodeFile: string) {
