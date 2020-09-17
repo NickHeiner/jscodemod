@@ -1,5 +1,2 @@
 // @ts-nocheck
-
-const g = (a) => {
-  return a?.b?.c?.d
-};
+const g = a => a?.b?.c?.d;

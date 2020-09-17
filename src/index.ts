@@ -8,6 +8,7 @@ import pathIsTS from './path-is-ts';
 import path from 'path';
 import findUp from 'find-up';
 import Piscina from 'piscina';
+import ProgressBar from 'progress';
 
 // In this case, load-json-file is overkill.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -87,7 +88,11 @@ async function transformCode(codemodPath: string, inputFiles: string[]) {
     workerData: {codemodPath}
   });
 
-  inputFiles.forEach(inputFile => piscina.runTask(inputFile));
+  const progressBar = new ProgressBar(':bar (:current/:total, :percent%)', {total: inputFiles.length})
+  await Promise.all(inputFiles.map(async inputFile => {
+    await piscina.runTask(inputFile);
+    progressBar.tick();
+  }))
 }
 
 async function codemod(pathToCodemod: string, inputFilesPatterns: string[], options: Options): Promise<void> {

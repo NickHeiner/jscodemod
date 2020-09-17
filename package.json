@@ -21,6 +21,7 @@
     "@babel/plugin-syntax-pipeline-operator": "7.10.4",
     "@babel/plugin-transform-typescript": "7.11.0",
     "@types/lodash": "4.14.161",
+    "@types/progress": "2.0.3",
     "@typescript-eslint/eslint-plugin": "4.1.1",
     "@typescript-eslint/parser": "4.1.1",
     "babel": "6.23.0",
@@ -36,6 +37,7 @@
     "lodash": "4.17.20",
     "nth-log": "1.1.0",
     "piscina": "1.6.3",
+    "progress": "2.0.3",
     "resolve-bin": "0.4.0",
     "tempy": "0.7.0"
   }
