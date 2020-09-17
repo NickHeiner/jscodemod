@@ -1,6 +1,17 @@
 # jscodemod
 Codemod runner
 
+## CLI Usage
+To specify which files to run on, pass a set of [globby](https://www.npmjs.com/package/globby) patterns. Depending on your shell, you may need to wrap the patterns in single quotes to prevent shell expansion:
+
+```
+# Will be shell expanded, which may not be what you want
+$ jscodemod --codemod codemod.js src/**/*.js
+
+# Will not be shell expanded
+$ jscodemod --codemod codemod.js 'src/**/*.js'
+```
+
 ## How to write a codemod
 ### Babel Plugin
 1. Use [ASTExplorer](https://astexplorer.net/) with the "transform" option enabled for an interactive environment for developing your plugin.

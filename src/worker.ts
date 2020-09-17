@@ -13,6 +13,7 @@ function getCodemod(codemodPath: string): Codemod {
   return codemod.default || codemod;
 }
 
+// Can this be passed to all workers instead of done in each?
 const codemod = getCodemod(piscina.workerData.codemodPath);
 
 export default async function main(sourceCodeFile: string) {

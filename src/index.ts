@@ -78,7 +78,7 @@ async function getCodemodPath(pathToCodemod: string, options: Options) {
     return compileTS(pathToCodemod, options);
   }
 
-  return pathToCodemod;
+  return path.resolve(pathToCodemod);
 }
 
 async function transformCode(codemodPath: string, inputFiles: string[]) {
@@ -88,11 +88,11 @@ async function transformCode(codemodPath: string, inputFiles: string[]) {
     workerData: {codemodPath}
   });
 
-  const progressBar = new ProgressBar(':bar (:current/:total, :percent%)', {total: inputFiles.length})
+  const progressBar = new ProgressBar(':bar (:current/:total, :percent%)', {total: inputFiles.length});
   await Promise.all(inputFiles.map(async inputFile => {
     await piscina.runTask(inputFile);
     progressBar.tick();
-  }))
+  }));
 }
 
 async function codemod(pathToCodemod: string, inputFilesPatterns: string[], options: Options): Promise<void> {

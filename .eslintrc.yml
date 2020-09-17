@@ -1,5 +1,6 @@
 ignorePatterns: 
   - test/fixtures/*/source
+  - test/fixtures/react
   - build
 
 parser: '@typescript-eslint/parser'
@@ -8,3 +9,7 @@ plugins:
 extends: 
   - nth
   - plugin:@typescript-eslint/recommended
+
+env:
+  es6: true
+  node: true

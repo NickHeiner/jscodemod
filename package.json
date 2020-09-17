@@ -13,8 +13,9 @@
     "jscodemod": "./build/bin.js",
     "build": "rm -rf build && tsc && chmod a+x ./build/bin.js",
     "demo": "yarn build && yarn jscodemod --codemod test/fixtures/arrow-function-inline-return/codemod/index.ts --tsconfig test/fixtures/arrow-function-inline-return/codemod/tsconfig.json test/fixtures/arrow-function-inline-return/source",
+    "demo:react:prefix": "yarn build && yarn jscodemod --codemod test/fixtures/prepend-string/codemod.js 'test/fixtures/react/packages/**/*.js'",
     "test": "yarn lint",
-    "lint": "eslint test *.ts --max-warnings 0 --cache",
+    "lint": "eslint test src/**/*.ts --max-warnings 0 --cache",
     "lint:fix": "yarn lint --fix"
   },
   "devDependencies": {
@@ -35,6 +36,7 @@
     "find-up": "5.0.0",
     "globby": "11.0.1",
     "lodash": "4.17.20",
+    "loud-rejection": "2.2.0",
     "nth-log": "1.1.0",
     "piscina": "1.6.3",
     "progress": "2.0.3",
