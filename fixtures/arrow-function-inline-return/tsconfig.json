@@ -6,6 +6,8 @@
     "module": "commonjs",
     "strict": true,
 
+    "rootDir": ".",
+
     "outDir": "should-be-ignored",
     
     "noUnusedLocals": true,

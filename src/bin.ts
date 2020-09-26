@@ -67,6 +67,7 @@ async function main() {
     );
   } catch (err) {
     log.fatal({err});
+    console.log(err.stack);
     log.info("If you need help, please see this project's README, or the --help output.")
     process.exit(1);
   }

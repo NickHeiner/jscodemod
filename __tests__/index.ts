@@ -61,7 +61,15 @@ function createTest({fixtureName, testName, spawnArgs, expectedExitCode = 0, sna
     if (snapshot) {
       const files = await log.logPhase(
         {phase: 'snapshot glob', level: 'debug'}, 
-        () => globby('!node_modules', {cwd: testDir})
+        async (_logProgress, setAdditionalLogData) => {
+          // We'll consider codemods that modify `package.json` or these other config files to be out of scope.
+          const files = await globby(
+            ['**/*', '!node_modules', '!yarn.lock', '!package.json', '!tsconfig.json'], 
+            {cwd: testDir}
+          );
+          setAdditionalLogData({foundFileCount: files.length});
+          return files.map(file => path.join(testDir, file));
+        }
       );
       for (const file of files) {
         log.debug({file}, 'Read file');
@@ -84,7 +92,6 @@ describe('happy path', () => {
     snapshot: true
   });
   createTest({
-    modifier: 'only',
     fixtureName: 'arrow-function-inline-return',
     spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), 'source', '*.ts'],
     snapshot: true
