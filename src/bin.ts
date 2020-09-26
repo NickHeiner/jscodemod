@@ -87,6 +87,8 @@ async function main() {
       }
     );
   } catch (err) {
+    // TODO: Maybe known errors should be marked with a flag, since showing a stack trace for them probably
+    // is just noise.
     log.fatal({err});
     log.info("If you need help, please see this project's README, or the --help output.");
     process.exit(1);
