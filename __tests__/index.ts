@@ -139,6 +139,7 @@ describe('error handling', () => {
   });
 
   createTest({
+    modifier: 'only',
     testName: 'Path to TSC is not specified, and no TSC can be found.',
     fixtureName: 'no-tsc',
     spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), 'input.js'],

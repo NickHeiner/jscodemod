@@ -11,11 +11,12 @@ async function findUpDetailed(
   fileOrDirectory: string, opts: Parameters<typeof findUp>[1]
 ): Promise<DetailedFindUpResult> {
   const checkedPaths: string[] = [];
-  const foundPath = await findUp(directory => {
+  const foundPath = await findUp(async directory => {
     const pathToCheck = path.join(directory, fileOrDirectory);
     checkedPaths.push(pathToCheck);
-    return findUp.exists(pathToCheck) && directory;
+    return await findUp.exists(pathToCheck) ? pathToCheck : undefined;
   }, opts);
+
   return {foundPath, checkedPaths};
 }
 
