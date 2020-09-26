@@ -89,7 +89,6 @@ async function codemod(
   
     const originalNodeModules = await findUp(
       'node_modules',
-      // async dir => findUp.exists(path.join(dir, 'node_modules')), 
       {cwd: path.dirname(pathToCodemod), type: 'directory'}
     );
     // If this var is not defined, then it means that the codemod had no node_modules. This seems very unlikely, but I
