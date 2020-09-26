@@ -1,7 +1,6 @@
 import tempy from 'tempy';
 import execa, {ExecaReturnValue} from 'execa';
 import path from 'path';
-import cpy from 'cpy';
 import 'loud-rejection/register';
 import createLog from 'nth-log';
 import _ from 'lodash';
@@ -17,42 +16,57 @@ type TestArgs = {
   expectedExitCode?: number;
   snapshot?: boolean;
   assert?: (ExecaReturnValue, testDir: string) => void;
+  modifier?: 'only' | 'skip';
 }
 
+// I don't think we can import JSON via ESM.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const packageJson = require('../package');
 
-function spawnTest({fixtureName, testName, spawnArgs, expectedExitCode = 0, snapshot, assert}: TestArgs) {
-  it(testName || fixtureName, async () => {
+function createTest({fixtureName, testName, spawnArgs, expectedExitCode = 0, snapshot, assert, modifier}: TestArgs) {
+  // This is part of our dynamic testing approach.
+  /* eslint-disable jest/no-conditional-expect */
+
+  const testMethod = modifier ? it[modifier] : it;
+  testMethod(testName || fixtureName, async () => {
     const testDir = await tempy.directory({prefix: `${packageJson.name}-test-${fixtureName}`});
+    log.debug({testDir});
 
     const repoRoot = path.resolve(__dirname, '..');
     const fixtureDir = path.resolve(repoRoot, 'fixtures', fixtureName);
 
     await execa('cp', ['-r', fixtureDir + path.sep, testDir]);
-    // await cpy(fixtureDir, testDir, {
-    //   parents: true, 
-    //   rename: basename => path.relative(repoRoot, basename)
-    // });
+    await execa('yarn', {cwd: testDir});
+    await execa('ln', ['-s', repoRoot, path.join('node_modules', packageJson.name)], {cwd: testDir})
 
     const binPath = path.resolve(repoRoot, packageJson.bin.jscodemod);
 
     let spawnResult;
     try {
-      spawnResult = await execa(binPath, spawnArgs, {cwd: testDir});
+      spawnResult = await log.logPhase(
+        {phase: 'spawn codemod', level: 'debug'}, 
+        () => execa(binPath, spawnArgs, {cwd: testDir})
+      );
     } catch (error) {
       spawnResult = error;
     }
 
-    log.debug({
+    const logMethodToUse = spawnResult.exitCode === expectedExitCode ? 'debug' : 'fatal';
+    log[logMethodToUse]({
       testDir,
       ..._.pick(spawnResult, 'stdout')
     });
 
     expect(spawnResult.exitCode).toBe(expectedExitCode);
     if (snapshot) {
-      const files = await globby(testDir);
+      const files = await log.logPhase(
+        {phase: 'snapshot glob', level: 'debug'}, 
+        () => globby('!node_modules', {cwd: testDir})
+      );
       for (const file of files) {
+        log.debug({file}, 'Read file');
         const fileContents = await fs.readFile(file, 'utf-8');
+        
         expect(fileContents).toMatchSnapshot();
       }
     }
@@ -60,11 +74,36 @@ function spawnTest({fixtureName, testName, spawnArgs, expectedExitCode = 0, snap
       await assert(spawnResult, testDir);
     }
   });
+  /* eslint-enable jest/no-conditional-expect */
 }
 
-spawnTest({
-  fixtureName: 'prepend-string',
-  spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), 'source'],
-  snapshot: true
+describe('happy path', () => {
+  createTest({
+    fixtureName: 'prepend-string',
+    spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), 'source'],
+    snapshot: true
+  });
+  createTest({
+    modifier: 'only',
+    fixtureName: 'arrow-function-inline-return',
+    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), 'source', '*.ts'],
+    snapshot: true
+  });
+});
+
+describe('error handling', () => {
+  createTest({
+    testName: 'missing pattern of files to transform',
+    fixtureName: 'prepend-string',
+    spawnArgs: ['--codemod', path.join('codemod', 'codemod.js')],
+    expectedExitCode: 1
+  });
+
+  createTest({
+    testName: 'missing path to codemod',
+    fixtureName: 'prepend-string',
+    spawnArgs: ['source'],
+    expectedExitCode: 1
+  });
 });
 

@@ -1,5 +1,5 @@
 {
-  "include": ["*.ts"],
+  "include": ["codemod/*.ts"],
 
   "compilerOptions": {
     "target": "ES2019",

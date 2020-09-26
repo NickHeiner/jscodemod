@@ -1,1 +1,3 @@
-const f = () => 1;
+const f = () => {
+  return 1
+};
