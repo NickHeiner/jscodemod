@@ -3519,7 +3519,7 @@ lodash.sortby@^4.7.0:
   resolved "https://registry.yarnpkg.com/lodash.sortby/-/lodash.sortby-4.7.0.tgz#edd14c824e2cc9c1e0b0a1b42bb5210516a42438"
   integrity sha1-7dFMgk4sycHgsKG0K7UhBRakJDg=
 
-lodash@4.17.20, lodash@^4.17.14, lodash@^4.17.15, lodash@^4.17.19:
+lodash@4.17.20, lodash@^4.17.14, lodash@^4.17.15, lodash@^4.17.19, lodash@^4.17.20:
   version "4.17.20"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.20.tgz#b44a9b6297bcb698f1c51a3545a2b3b368d59c52"
   integrity sha512-PlhdFcillOINfeV7Ni6oF1TAEayyZBoZ8bcshTHqOYJYlrqzRK5hagpagky5o4HfCzzd1TRkXPMFq6cKk9rGmA==
@@ -3815,14 +3815,14 @@ npm-run-path@^4.0.0:
   dependencies:
     path-key "^3.0.0"
 
-nth-log@1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/nth-log/-/nth-log-1.1.0.tgz#519c34b40abe5566f1868aaea550b6c49c8ee406"
-  integrity sha512-RdwKP/VRW3XtNO+jD43iVSLDZim+olQ96dfLhmMGmCFNv2iAPkbKe6Eoe+BuwlcLQJfocDWQ4IZspnBt8jnGJw==
+nth-log@2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/nth-log/-/nth-log-2.0.0.tgz#1ab7b9c3af8693b5e0af1bcfd60c760cb2fe5559"
+  integrity sha512-TTZPvLTl6pc7TbCJm4BMsJwpPxKOZB7/T3MSPPvzWIwewsBdWWVK6xtZnOSCmEbpTpSyS6ExMyGrpSFCzawD8g==
   dependencies:
     bunyan "^1.8.12"
     bunyan-format "^0.2.1"
-    lodash "^4.17.15"
+    lodash "^4.17.20"
     pretty-ms "^5.1.0"
 
 nwsapi@^2.2.0:

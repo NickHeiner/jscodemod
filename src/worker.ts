@@ -1,7 +1,9 @@
-import baseLog from 'nth-log';
+import createLog from 'nth-log';
 import {Codemod} from './types';
 import piscina from 'piscina';
 import fs from 'fs';
+
+const baseLog = createLog({name: 'jscodemod-worker'});
 
 const pFs = fs.promises;
 

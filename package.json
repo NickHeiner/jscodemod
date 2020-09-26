@@ -39,7 +39,7 @@
     "globby": "11.0.1",
     "lodash": "4.17.20",
     "loud-rejection": "2.2.0",
-    "nth-log": "1.1.0",
+    "nth-log": "2.0.0",
     "ora": "5.1.0",
     "piscina": "1.6.3",
     "progress": "2.0.3",

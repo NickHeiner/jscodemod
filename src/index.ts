@@ -4,8 +4,7 @@ import {promisify} from 'util';
 import resolveBin from 'resolve-bin';
 import tempy from 'tempy';
 import execa from 'execa';
-// TODO: Fix this so the output doesn't say 'nth-log'.
-import log from 'nth-log';
+import createLogger from 'nth-log';
 import pathIsTS from './path-is-ts';
 import path from 'path';
 import findUp from 'find-up';
@@ -13,6 +12,8 @@ import Piscina from 'piscina';
 import ProgressBar from 'progress';
 import {cyan} from 'ansi-colors';
 import ora from 'ora';
+
+const log = createLogger({name: 'jscodemod-coordinator'});
 
 // In this case, load-json-file is overkill.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
