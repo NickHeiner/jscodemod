@@ -129,7 +129,7 @@ async function getGitRoot(inputFilesPaths: string[]): Promise<string> {
   return path.resolve(gitDir, '..');
 }
 
-async function execGit(gitRoot: string, args: string[]): Promise<execa.ExecaReturnValue> {
+function execGit(gitRoot: string, args: string[]): Promise<execa.ExecaReturnValue> {
   return execa('git', args, {cwd: gitRoot});
 }
 
@@ -154,7 +154,7 @@ async function execBigCommand(
       variableArgCount: variableArgs.length,
       variableArgLengthBytes: commandLengthBytes,
       shellArgMaxBytes
-    }, 'Splitting command to avoid an E2BIG error.')
+    }, 'Splitting command to avoid an E2BIG error.');
     const midpointIndex = variableArgs.length / 2;
     const firstHalfVariableArgs = variableArgs.slice(0, midpointIndex);
     const secondHalfVariableArgs = variableArgs.slice(midpointIndex);

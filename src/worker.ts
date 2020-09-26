@@ -19,7 +19,7 @@ function getCodemod(codemodPath: string): Codemod {
  */
 const codemod = getCodemod(piscina.workerData.codemodPath);
 
-export default async function main(sourceCodeFile: string) {
+export default async function main(sourceCodeFile: string): Promise<void> {
   const log = baseLog.child({sourceCodeFile});
   log.debug({action: 'start'});
 
