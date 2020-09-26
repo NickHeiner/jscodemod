@@ -1,0 +1,19 @@
+ignorePatterns: 
+  - test/fixtures/*/source
+  - test/fixtures/react
+  - build
+
+parser: '@typescript-eslint/parser'
+plugins: 
+  - '@typescript-eslint'
+extends: 
+  - nth
+  - plugin:@typescript-eslint/recommended
+
+rules:
+  # Is there a case where no-unused-vars doesn't cover this?
+  '@typescript-eslint/no-unused-vars': off
+
+env:
+  es6: true
+  node: true

@@ -1,0 +1,1 @@
+module.exports = ({source}) => `/* prefix */\n${source}`;
