@@ -4,6 +4,7 @@ import yargs from 'yargs';
 import codemod from './';
 import _ from 'lodash';
 import 'loud-rejection/register';
+import log from './log';
 
 const tsOnlyNote = '(Only applicable if your codemod is written in TypeScript)';
 
@@ -57,8 +58,18 @@ const argv = yargs
   .help()
   .argv;
 
-codemod(
-  argv.codemod, 
-  argv._, 
-  _.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'ignoreNodeModules', 'resetDirtyInputFiles')
-);
+async function main() {
+  try {
+    await codemod(
+      argv.codemod, 
+      argv._, 
+      _.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'ignoreNodeModules', 'resetDirtyInputFiles')
+    );
+  } catch (err) {
+    log.fatal({err});
+    log.info("If you need help, please see this project's README, or the --help output.")
+    process.exit(1);
+  }
+}
+
+main();

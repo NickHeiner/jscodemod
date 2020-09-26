@@ -4,7 +4,6 @@ import {promisify} from 'util';
 import resolveBin from 'resolve-bin';
 import tempy from 'tempy';
 import execa from 'execa';
-import createLogger from 'nth-log';
 import pathIsTS from './path-is-ts';
 import path from 'path';
 import findUp from 'find-up';
@@ -12,8 +11,7 @@ import Piscina from 'piscina';
 import ProgressBar from 'progress';
 import {cyan} from 'ansi-colors';
 import ora from 'ora';
-
-const log = createLogger({name: 'jscodemod-coordinator'});
+import log from './log';
 
 // In this case, load-json-file is overkill.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -196,6 +194,12 @@ async function codemod(
   const inputFiles = (await globby(inputFilesPatterns)).map(filePath => path.resolve(filePath));
   const logMethod = options.dry ? 'info' : 'debug';
   log[logMethod]({inputFiles, count: inputFiles.length}, 'Input file pattern matched these files.');
+
+  if (!inputFiles.length) {
+    const err = new Error('No files were found to transform.');
+    Object.assign(err, {inputFilesPatterns});
+    throw err;
+  }
 
   if (options.dry) {
     log.info('Exiting early because "dry" was set.');

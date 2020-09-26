@@ -34,7 +34,7 @@ function test({fixtureName, testName, spawnArgs, expectedExitCode = 0, assert}: 
     log.debug({
       testDir,
       ..._.pick(spawnResult, 'stdout')
-    })
+    });
 
     expect(spawnResult.exitCode).toBe(expectedExitCode);
     await assert(spawnResult, testDir);
