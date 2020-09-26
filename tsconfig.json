@@ -1,6 +1,6 @@
 {
   "include": ["src/**/*.ts"],
-  "exclude": ["**/fixtures/**"],
+  "exclude": ["__tests__", "fixtures"],
 
   "compilerOptions": {
     "target": "ES2019",

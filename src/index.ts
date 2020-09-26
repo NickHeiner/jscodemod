@@ -23,7 +23,7 @@ const resolveBinP = promisify(resolveBin);
 
 type Options = {
   tsconfig?: string;
-  tsOutDir?: string;
+  tsOutDir?: string
   tsc?: string;
   dry?: boolean;
   ignoreNodeModules?: boolean;

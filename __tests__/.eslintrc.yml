@@ -1,0 +1,13 @@
+env:
+  jest/globals: true
+
+plugins:
+  - jest
+
+rules:
+  jest/valid-title: warn
+  jest/expect-expect: warn
+  '@typescript-eslint/no-var-requires': warn
+
+extends:
+  - plugin:jest/recommended
