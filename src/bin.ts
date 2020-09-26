@@ -5,6 +5,9 @@ import codemod from './';
 import _ from 'lodash';
 import 'loud-rejection/register';
 import log from './log';
+import PrettyError from 'pretty-error';
+
+PrettyError.start();
 
 const tsOnlyNote = '(Only applicable if your codemod is written in TypeScript)';
 
@@ -67,7 +70,6 @@ async function main() {
     );
   } catch (err) {
     log.fatal({err});
-    console.log(err.stack);
     log.info("If you need help, please see this project's README, or the --help output.")
     process.exit(1);
   }

@@ -169,6 +169,7 @@ async function execBigCommand(
 async function codemod(
   pathToCodemod: string, inputFilesPatterns: string[], {ignoreNodeModules = true, ...options}: Options
 ): Promise<void | string[]> {
+  throw new Error('fak');
   const finalPatterns = [...inputFilesPatterns];
   if (ignoreNodeModules) {
     inputFilesPatterns.forEach(filePattern => {
