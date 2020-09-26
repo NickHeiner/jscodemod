@@ -37,7 +37,7 @@ function createTest({fixtureName, testName, spawnArgs, expectedExitCode = 0, sna
 
     await execa('cp', ['-r', fixtureDir + path.sep, testDir]);
     await execa('yarn', {cwd: testDir});
-    await execa('ln', ['-s', repoRoot, path.join('node_modules', packageJson.name)], {cwd: testDir})
+    await execa('ln', ['-s', repoRoot, path.join('node_modules', packageJson.name)], {cwd: testDir});
 
     const binPath = path.resolve(repoRoot, packageJson.bin.jscodemod);
 

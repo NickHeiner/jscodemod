@@ -70,7 +70,7 @@ async function main() {
     );
   } catch (err) {
     log.fatal({err});
-    log.info("If you need help, please see this project's README, or the --help output.")
+    log.info("If you need help, please see this project's README, or the --help output.");
     process.exit(1);
   }
 }
