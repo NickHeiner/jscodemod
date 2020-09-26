@@ -6,6 +6,7 @@ import createLog from 'nth-log';
 import _ from 'lodash';
 import globby from 'globby';
 import {promises as fs} from 'fs';
+import parseJson from 'parse-json';
 
 const log = createLog({name: 'test'});
 
@@ -26,6 +27,7 @@ const packageJson = require('../package');
 function createTest({fixtureName, testName, spawnArgs, expectedExitCode = 0, snapshot, assert, modifier}: TestArgs) {
   // This is part of our dynamic testing approach.
   /* eslint-disable jest/no-conditional-expect */
+  /* eslint-disable jest/no-standalone-expect */
 
   const testMethod = modifier ? it[modifier] : it;
   testMethod(testName || fixtureName, async () => {
@@ -71,12 +73,13 @@ function createTest({fixtureName, testName, spawnArgs, expectedExitCode = 0, sna
           return files.map(file => path.join(testDir, file));
         }
       );
-      for (const file of files) {
-        log.debug({file}, 'Read file');
-        const fileContents = await fs.readFile(file, 'utf-8');
-        
-        expect(fileContents).toMatchSnapshot();
-      }
+      const fileContents = Object.fromEntries(
+        await Promise.all(files.map(async file => {
+          log.debug({file}, 'Read file');
+          return [path.relative(testDir, file), await fs.readFile(file, 'utf-8')];
+        }))
+      );
+      expect(fileContents).toMatchSnapshot();
     }
     if (assert) {
       await assert(spawnResult, testDir);
@@ -85,11 +88,32 @@ function createTest({fixtureName, testName, spawnArgs, expectedExitCode = 0, sna
   /* eslint-enable jest/no-conditional-expect */
 }
 
+const sanitizeLogLine = (logEntry: Record<string, unknown>) => 
+  _.omit(logEntry, ['name', 'hostname', 'pid', 'time', 'v']);
+
+const getJsonLogs = (stdout: string) => stdout.split('\n').map(line => sanitizeLogLine(parseJson(line)));
+
 describe('happy path', () => {
   createTest({
     fixtureName: 'prepend-string',
     spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), 'source'],
     snapshot: true
+  });
+  createTest({
+    testName: 'dry',
+    fixtureName: 'prepend-string',
+    spawnArgs: ['--dry', '--json-output', '--codemod', path.join('codemod', 'codemod.js'), 'source'],
+    snapshot: true,
+    assert(spawnResult, testDir) {
+      const jsonLogs = getJsonLogs(spawnResult.stdout);
+      const [inputFilesLogLine, otherLogLines] = _.partition(jsonLogs, 'inputFiles');
+      expect(otherLogLines).toMatchSnapshot();
+
+      const relativeInputFiles = new Set(
+        (inputFilesLogLine[0].inputFiles as string[]).map(inputFile => path.relative(testDir, inputFile))
+      );
+      expect(relativeInputFiles).toEqual(new Set(['source/a.js', 'source/b.js']));
+    }
   });
   createTest({
     fixtureName: 'arrow-function-inline-return',

@@ -1,7 +1,8 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`happy path arrow-function-inline-return 1`] = `
-"import * as BabelTypes from '@babel/types';
+Object {
+  "codemod/babel-plugin.ts": "import * as BabelTypes from '@babel/types';
 import {Visitor} from '@babel/traverse';
 
 // TODO is our intentional any type.
@@ -21,11 +22,8 @@ export default ({types: t}: {types: typeof BabelTypes}): {visitor: Visitor<TODO>
         }
       }
     }
-  });"
-`;
-
-exports[`happy path arrow-function-inline-return 2`] = `
-"import {Codemod} from 'jscodemod';
+  });",
+  "codemod/index.ts": "import {Codemod} from 'jscodemod';
 import babelPlugin from './babel-plugin';
 import {transformSync} from '@babel/core';
 
@@ -39,29 +37,45 @@ const codemod: Codemod = {
   }
 };
 
-export default codemod;"
+export default codemod;",
+  "source/optional-chaining.js": "const g = a => a?.b?.c?.d;",
+  "source/ts.ts": "const f = () => 1;",
+}
 `;
 
-exports[`happy path arrow-function-inline-return 3`] = `"const g = a => a?.b?.c?.d;"`;
-
-exports[`happy path arrow-function-inline-return 4`] = `"const f = () => 1;"`;
-
-exports[`happy path prepend-string 1`] = `
-"module.exports = {
+exports[`happy path dry 1`] = `
+Object {
+  "codemod/codemod.js": "module.exports = {
   transform({source}) {
     return \`/* prefix */\\\\n\${source}\`;
   }
-};"
+};",
+  "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
+  "source/a.js": "console.log('a');",
+  "source/b.js": "function b() {}",
+}
 `;
 
-exports[`happy path prepend-string 2`] = `"module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;"`;
-
-exports[`happy path prepend-string 3`] = `
-"/* prefix */
-console.log('a');"
+exports[`happy path dry 2`] = `
+Array [
+  Object {
+    "level": 30,
+    "msg": "Exiting early because \\"dry\\" was set.",
+  },
+]
 `;
 
-exports[`happy path prepend-string 4`] = `
-"/* prefix */
-function b() {}"
+exports[`happy path prepend-string 1`] = `
+Object {
+  "codemod/codemod.js": "module.exports = {
+  transform({source}) {
+    return \`/* prefix */\\\\n\${source}\`;
+  }
+};",
+  "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
+  "source/a.js": "/* prefix */
+console.log('a');",
+  "source/b.js": "/* prefix */
+function b() {}",
+}
 `;
