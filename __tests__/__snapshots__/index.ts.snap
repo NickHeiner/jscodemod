@@ -1,0 +1,21 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`prepend-string 1`] = `
+"module.exports = {
+  transform({source}) {
+    return \`/* prefix */\\\\n\${source}\`;
+  }
+};"
+`;
+
+exports[`prepend-string 2`] = `"module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;"`;
+
+exports[`prepend-string 3`] = `
+"/* prefix */
+console.log('a');"
+`;
+
+exports[`prepend-string 4`] = `
+"/* prefix */
+function b() {}"
+`;

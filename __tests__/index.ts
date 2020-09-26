@@ -5,6 +5,8 @@ import cpy from 'cpy';
 import 'loud-rejection/register';
 import createLog from 'nth-log';
 import _ from 'lodash';
+import globby from 'globby';
+import {promises as fs} from 'fs';
 
 const log = createLog({name: 'test'});
 
@@ -13,23 +15,33 @@ type TestArgs = {
   testName?: string;
   spawnArgs: string[];
   expectedExitCode?: number;
-  assert: (ExecaReturnValue, testDir: string) => void;
+  snapshot?: boolean;
+  assert?: (ExecaReturnValue, testDir: string) => void;
 }
 
 const packageJson = require('../package');
 
-function test({fixtureName, testName, spawnArgs, expectedExitCode = 0, assert}: TestArgs) {
+function spawnTest({fixtureName, testName, spawnArgs, expectedExitCode = 0, snapshot, assert}: TestArgs) {
   it(testName || fixtureName, async () => {
     const testDir = await tempy.directory({prefix: `${packageJson.name}-test-${fixtureName}`});
 
     const repoRoot = path.resolve(__dirname, '..');
     const fixtureDir = path.resolve(repoRoot, 'fixtures', fixtureName);
 
-    await cpy(fixtureDir, testDir);
+    await execa('cp', ['-r', fixtureDir + path.sep, testDir]);
+    // await cpy(fixtureDir, testDir, {
+    //   parents: true, 
+    //   rename: basename => path.relative(repoRoot, basename)
+    // });
 
     const binPath = path.resolve(repoRoot, packageJson.bin.jscodemod);
 
-    const spawnResult = await execa(binPath, spawnArgs, {cwd: testDir});
+    let spawnResult;
+    try {
+      spawnResult = await execa(binPath, spawnArgs, {cwd: testDir});
+    } catch (error) {
+      spawnResult = error;
+    }
 
     log.debug({
       testDir,
@@ -37,15 +49,22 @@ function test({fixtureName, testName, spawnArgs, expectedExitCode = 0, assert}: 
     });
 
     expect(spawnResult.exitCode).toBe(expectedExitCode);
-    await assert(spawnResult, testDir);
+    if (snapshot) {
+      const files = await globby(testDir);
+      for (const file of files) {
+        const fileContents = await fs.readFile(file, 'utf-8');
+        expect(fileContents).toMatchSnapshot();
+      }
+    }
+    if (assert) {
+      await assert(spawnResult, testDir);
+    }
   });
 }
 
-test({
+spawnTest({
   fixtureName: 'prepend-string',
-  spawnArgs: ['--codemod', 'codemod.js', 'source'],
-  assert: (spawnResult, testDir) => {
-
-  }
+  spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), 'source'],
+  snapshot: true
 });
 
