@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`happy path arrow-function-inline-return 1`] = `
+exports[`happy path TS without manually specifying any of the args determining how to compile 1`] = `
 Object {
   "codemod/babel-plugin.ts": "import * as BabelTypes from '@babel/types';
 import {Visitor} from '@babel/traverse';

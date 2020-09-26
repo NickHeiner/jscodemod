@@ -7,6 +7,7 @@ import execa from 'execa';
 import pathIsTS from './path-is-ts';
 import path from 'path';
 import findUp from 'find-up';
+import findUpDetailed from './find-up-detailed';
 import Piscina from 'piscina';
 import ProgressBar from 'progress';
 import {cyan} from 'ansi-colors';
@@ -58,13 +59,15 @@ async function getTSConfigPath(pathToCodemod: string, specifiedTSConfig?: string
   }
 
   const codemodDir = path.dirname(pathToCodemod);
-  const foundPath = await findUp('tsconfig.json', {cwd: codemodDir});
+  const {foundPath, checkedPaths} = await findUpDetailed('tsconfig.json', {cwd: codemodDir});
 
   if (!foundPath) {
-    throw new Error(
+    const err = new Error(
       `This tool was not able to find a ${cyan('tsconfig.json')} file by doing a find-up from ${cyan(codemodDir)}. ` +
       'Please manually specify a tsconfig file path.'
     );
+    Object.assign(err, {checkedPaths});
+    throw err;
   }
 
   return foundPath;

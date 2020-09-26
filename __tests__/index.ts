@@ -56,7 +56,7 @@ function createTest({fixtureName, testName, spawnArgs, expectedExitCode = 0, sna
     const logMethodToUse = spawnResult.exitCode === expectedExitCode ? 'debug' : 'fatal';
     log[logMethodToUse]({
       testDir,
-      ..._.pick(spawnResult, 'stdout')
+      ..._.pick(spawnResult, 'stdout', 'stderr', 'exitCode')
     });
 
     expect(spawnResult.exitCode).toBe(expectedExitCode);
@@ -116,6 +116,7 @@ describe('happy path', () => {
     }
   });
   createTest({
+    testName: 'TS without manually specifying any of the args determining how to compile',
     fixtureName: 'arrow-function-inline-return',
     spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), 'source', '*.ts'],
     snapshot: true
@@ -134,6 +135,13 @@ describe('error handling', () => {
     testName: 'missing path to codemod',
     fixtureName: 'prepend-string',
     spawnArgs: ['source'],
+    expectedExitCode: 1
+  });
+
+  createTest({
+    testName: 'Path to TSC is not specified, and no TSC can be found.',
+    fixtureName: 'no-tsc',
+    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), 'input.js'],
     expectedExitCode: 1
   });
 });
