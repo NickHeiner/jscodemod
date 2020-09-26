@@ -44,6 +44,7 @@
     "ansi-colors": "4.1.1",
     "find-up": "5.0.0",
     "globby": "11.0.1",
+    "load-json-file": "6.2.0",
     "lodash": "4.17.20",
     "loud-rejection": "2.2.0",
     "nth-log": "2.0.0",
@@ -51,7 +52,6 @@
     "piscina": "1.6.3",
     "pretty-error": "2.1.1",
     "progress": "2.0.3",
-    "resolve-bin": "0.4.0",
     "tempy": "0.7.1"
   }
 }

@@ -1,7 +1,5 @@
 import globby from 'globby';
 import _ from 'lodash';
-import {promisify} from 'util';
-import resolveBin from 'resolve-bin';
 import tempy from 'tempy';
 import execa from 'execa';
 import pathIsTS from './path-is-ts';
@@ -14,14 +12,13 @@ import {cyan} from 'ansi-colors';
 import ora from 'ora';
 import createLog from 'nth-log';
 import fs from 'fs';
+import loadJsonFile from 'load-json-file';
 
 const noOpLogger = createLog({name: 'no-op', stream: fs.createWriteStream('/dev/null')});
 
 // In this case, load-json-file is overkill.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const packageJson = require('../package');
-
-const resolveBinP = promisify(resolveBin);
 
 type Options = {
   tsconfig?: string;
@@ -40,7 +37,24 @@ async function getTSCPath(specifiedTSCPath?: string): Promise<string> {
     return specifiedTSCPath;
   }
 
-  return resolveBinP('typescript', {executable: 'tsc'});
+  // I originally wanted to use resolve-bin here, but that resolves from this file's location, which is not what
+  // we want. We want to resolve from the codemod.
+  const {foundPath: typescriptPath, checkedPaths} = await findUpDetailed(
+    path.join('node_modules', 'typescript'), {type: 'directory'}
+  );
+  if (typescriptPath) {
+    const tsPackageJsonPath = path.join(typescriptPath, 'package.json');
+    const tsPackageJson = await loadJsonFile<{bin: {tsc: string}}>(tsPackageJsonPath);
+    return path.join(typescriptPath, tsPackageJson.bin.tsc);
+  }
+
+  const err = new Error(
+    "If you have a TypeScript codemod, and you don't specify a path to a 'tsc' executable that will " +
+    "compile your codemod, then this tool searches in your codemod's node_modules. However, TypeScript could not be " +
+    'found there either.'
+  );
+  Object.assign(err, {checkedPaths});
+  throw err;
 }
 
 // The rule is too broad.

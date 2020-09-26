@@ -139,11 +139,18 @@ describe('error handling', () => {
   });
 
   createTest({
-    modifier: 'only',
     testName: 'Path to TSC is not specified, and no TSC can be found.',
     fixtureName: 'no-tsc',
-    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), 'input.js'],
-    expectedExitCode: 1
+    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), '--json-output', 'input.js'],
+    expectedExitCode: 1,
+    assert(spawnResult) {
+      const jsonLogs = getJsonLogs(spawnResult.stdout);
+      expect(jsonLogs).toContainEqual(expect.objectContaining({
+        // It's more ergonomic to have this be a single string literal.
+        // eslint-disable-next-line max-len
+        msg: "If you have a TypeScript codemod, and you don't specify a path to a 'tsc' executable that will compile your codemod, then this tool searches in your codemod's node_modules. However, TypeScript could not be found there either."
+      }));
+    }
   });
 });
 
