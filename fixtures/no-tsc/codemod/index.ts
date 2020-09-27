@@ -4,7 +4,7 @@ import {Codemod} from 'jscodemod';
 
 const codemod: Codemod = {
   transform({source}) {
-    return `/* prefix */\n${source}`;
+    return `/* prefix no-tsc */\n${source}`;
   }
 };
 
