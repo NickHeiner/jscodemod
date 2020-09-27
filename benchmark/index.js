@@ -31,6 +31,7 @@ const resolveBinP = promisify(resolveBin);
 
 const {argv} = yargs
   .usage('$0 <repo directory path>')
+  .strict()
   .options({
     testRun: {
       type: 'boolean',
@@ -52,7 +53,7 @@ async function runBenchmarks() {
   const repoToTransform = argv._[0];
   const execInRepo = (binPath, args, opts) => {
     log.debug({binPath, args, fullCommand: `${binPath} ${args.join(' ')}`});
-    execa.sync(binPath, args, {...opts, cwd: repoToTransform});
+    // execa.sync(binPath, args, {...opts, cwd: repoToTransform});
   };
 
   log.info('For a valid comparison, make sure that both codemods run on the same set of input files.');
@@ -76,7 +77,7 @@ async function runBenchmarks() {
     binPath, 
     [
       '--codemod', pathFromRepoRoot('fixtures', 'prepend-string', 'codemod', 'codemod.js'), 
-      '**/*.{js,ts,tsx}', '!**/node_modules'
+      '**/*.{js,ts,tsx}'
     ],
     execOpts
   );
