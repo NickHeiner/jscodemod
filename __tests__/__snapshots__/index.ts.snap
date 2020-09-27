@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`error handling Path to TSC is specified 1`] = `
+exports[`TS compilation flags Path to TSC is specified 1`] = `
 Object {
   "codemod/index.ts": "import {Codemod} from 'jscodemod';
 
@@ -20,7 +20,7 @@ module.exports = {
 }
 `;
 
-exports[`error handling Specified tsconfig path 1`] = `
+exports[`TS compilation flags Specified tsconfig path 1`] = `
 Object {
   "codemod/index.ts": "import {Codemod} from 'jscodemod';
 
@@ -114,6 +114,7 @@ Object {
   }
 };",
   "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
+  "codemod/node_modules/sample-dep/index.js": "console.log('node_modules file');",
   "source/a.js": "console.log('a');",
   "source/b.js": "function b() {}",
   "source/blank.js": "",
@@ -137,6 +138,7 @@ Object {
   }
 };",
   "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
+  "codemod/node_modules/sample-dep/index.js": "console.log('node_modules file');",
   "source/a.js": "/* prefix */
 console.log('a');",
   "source/b.js": "/* prefix */

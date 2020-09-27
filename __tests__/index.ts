@@ -141,7 +141,9 @@ describe('error handling', () => {
     spawnArgs: ['source'],
     expectedExitCode: 1
   });
+});
 
+describe('TS compilation flags', () => {
   createTest({
     testName: 'Path to TSC is not specified, and no TSC can be found.',
     fixtureName: 'no-tsc',
@@ -190,5 +192,5 @@ describe('error handling', () => {
     ],
     snapshot: true
   });
-});
+})
 
