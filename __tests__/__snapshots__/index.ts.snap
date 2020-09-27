@@ -106,6 +106,25 @@ export default codemod;",
 }
 `;
 
+exports[`happy path Transform node_modules 1`] = `
+Object {
+  "codemod/codemod.js": "module.exports = {
+  transform({source}) {
+    return \`/* prefix */\\\\n\${source}\`;
+  }
+};",
+  "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
+  "node_modules/sample-dep/index.js": "/* prefix */
+console.log('node_modules file');",
+  "source/a.js": "/* prefix */
+console.log('a');",
+  "source/b.js": "/* prefix */
+function b() {}",
+  "source/blank.js": "/* prefix */
+",
+}
+`;
+
 exports[`happy path dry 1`] = `
 Object {
   "codemod/codemod.js": "module.exports = {
@@ -114,7 +133,6 @@ Object {
   }
 };",
   "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
-  "codemod/node_modules/sample-dep/index.js": "console.log('node_modules file');",
   "source/a.js": "console.log('a');",
   "source/b.js": "function b() {}",
   "source/blank.js": "",
@@ -138,7 +156,7 @@ Object {
   }
 };",
   "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
-  "codemod/node_modules/sample-dep/index.js": "console.log('node_modules file');",
+  "node_modules/sample-dep/index.js": "console.log('node_modules file');",
   "source/a.js": "/* prefix */
 console.log('a');",
   "source/b.js": "/* prefix */

@@ -13,6 +13,7 @@ const tsOnlyNote = '(Only applicable if your codemod is written in TypeScript)';
 
 const argv = yargs
   .usage('$0 [options] <file globs>')
+  // TODO: Some of these options should be hidden.
   .options({
     codemod: {
       alias: 'c',
