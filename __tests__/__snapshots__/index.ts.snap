@@ -1,5 +1,25 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`error handling Path to TSC is specified 1`] = `
+Object {
+  "codemod/index.ts": "import {Codemod} from 'jscodemod';
+
+// Compiling this will not work automatically, because no TSC will be found.
+
+const codemod: Codemod = {
+  transform({source}) {
+    return \`/* prefix */\\\\n\${source}\`;
+  }
+};
+
+export default codemod;",
+  "input.js": "/* prefix */
+module.exports = {
+  input: 'file'
+};",
+}
+`;
+
 exports[`error handling Specified tsconfig path 1`] = `
 Object {
   "codemod/index.ts": "import {Codemod} from 'jscodemod';

@@ -8,6 +8,7 @@ import globby from 'globby';
 import {promises as fs} from 'fs';
 import parseJson from 'parse-json';
 import stripAnsi from 'strip-ansi';
+import resolveBin from 'resolve-bin';
 
 const log = createLog({name: 'test'});
 
@@ -156,6 +157,14 @@ describe('error handling', () => {
     }
   });
 
+  const localTSC = resolveBin.sync('typescript', {executable: 'tsc'});
+  createTest({
+    testName: 'Path to TSC is specified',
+    fixtureName: 'no-tsc',
+    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), '--tsc', localTSC, 'input.js'],
+    snapshot: true
+  });
+
   createTest({
     testName: 'Path to tsconfig is not specified, and no tsconfig can be found.',
     fixtureName: 'tsconfig-non-standard-location',
@@ -176,7 +185,6 @@ describe('error handling', () => {
     fixtureName: 'tsconfig-non-standard-location',
     spawnArgs: [
       '--codemod', path.join('codemod', 'index.ts'), 
-      '--json-output', 
       '--tsconfig', path.join('configs', 'tsconfig.json'), 
       'input.js'
     ],
