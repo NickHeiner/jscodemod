@@ -217,7 +217,7 @@ async function codemod(
 
   if (!inputFiles.length) {
     const err = new Error('No files were found to transform.');
-    Object.assign(err, {finalPatterns});
+    Object.assign(err, {inputFilePatterns: finalPatterns});
     throw err;
   }
 
