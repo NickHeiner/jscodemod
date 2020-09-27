@@ -14,6 +14,10 @@ $ jscodemod --codemod codemod.js 'src/**/*.js'
 
 ## Comparison with jscodeshift
 Piscina v. `child_process.fork`.
+Yargs v. custom arg parser. Yargs throws errors on unrecognized flags (e.g. `--typo-flag --codmod`), whereas the JSCodeshift custom parser does not.
+
+### Issues
+https://github.com/facebook/jscodeshift/issues/307
 
 ## How to write a codemod
 ### Babel Plugin

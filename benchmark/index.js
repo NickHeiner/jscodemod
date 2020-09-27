@@ -1,5 +1,6 @@
 #! /usr/bin/env node
 
+const _ = require('lodash');
 const yargs = require('yargs');
 const path = require('path');
 const benchmark = require('benchmark');
@@ -23,7 +24,9 @@ const {argv} = yargs
     testRun: {
       type: 'boolean',
       describe: 'Instead of running the benchmark, run each benchmarked command against the input repo. ' +
-      'This verifies that the codemods work.'
+      'This verifies that the codemods work. This is also useful to ensure that each benchmarked command is running ' +
+      'against the same set of input files. If commands are running against different input sets, then the ' +
+      'comparison will be invalid.'
     }
   })
   .check(argv => {
@@ -36,7 +39,10 @@ const {argv} = yargs
 
 async function runBenchmarks() {
   const repoToTransform = argv._[0];
-  const execInRepo = (binPath, args, opts) => execa.sync(binPath, args, {...opts, cwd: repoToTransform});
+  const execInRepo = (binPath, args, opts) => {
+    log.debug({binPath, args, fullCommand: `${binPath} ${args.join(' ')}`});
+    execa.sync(binPath, args, {...opts, cwd: repoToTransform})
+  };
 
   const resetChanges = async silent => {
     if (!silent) {
@@ -49,14 +55,24 @@ async function runBenchmarks() {
   const binPath = pathFromRepoRoot(packageJson.bin);
   const jscodeshiftBinPath = await resolveBinP('jscodeshift', {executable: 'jscodeshift'});
 
+  // Possible source of error: the input file patterns passed to each codemod tool return different sets of files.
   const jscodemodString = execOpts => execInRepo(
     binPath, 
-    ['--codemod', pathFromRepoRoot('fixtures', 'prepend-string', 'codemod', 'codemod.js'), '.'],
+    [
+      '--codemod', pathFromRepoRoot('fixtures', 'prepend-string', 'codemod', 'codemod.js'), 
+      '**/*.{js,ts,tsx}', '!node_modules'
+    ],
     execOpts
   );
   const jscodeshiftString = execOpts => execInRepo(
     jscodeshiftBinPath, 
-    ['--transform', pathFromRepoRoot('fixtures', 'prepend-string', 'codemod', 'jscodeshift-codemod.js'), '.'],
+    [
+      '--no-babel', 
+      '--transform', pathFromRepoRoot('fixtures', 'prepend-string', 'codemod', 'jscodeshift-codemod.js'), 
+      '--extensions', 'js,ts,tsx', 
+      '--ignore-pattern', 'node_modules', 
+      '.'
+    ],
     execOpts
   );
 
@@ -65,25 +81,24 @@ async function runBenchmarks() {
     jscodemodString({stdio: 'inherit'});
     await resetChanges();
     jscodeshiftString({stdio: 'inherit'});
+    return;
   }
 
-  // const codemodBenchmark = benchmark.Suite({
-  //   setup() {
-  //   } 
-  // });
+  const codemodBenchmark = benchmark.Suite({
+    setup: resetChanges
+  });
 
-  // codemodBenchmark
-  //   .add('jscodemod#string', () => {
-  //     execaInTempDir(
-  //       binPath, 
-  //       ['--codemod', pathFromRepoRoot('test', 'fixtures', 'prepend-string', 'codemod', 'codemod.js')],
-  //       '.'
-  //     )
-  //   })
-  //   .on('complete', (arg) => {
-  //     console.log('complete', {arg});
-  //   })
-  //   .run();
+  codemodBenchmark
+    .add('jscodemod#string', () => {
+      jscodemodString({stdio: 'inherit'});
+    })
+    .add('jscodeshift#string', () => {
+      jscodeshiftString({stdio: 'inherit'});
+    })
+    .on('complete', (arg) => {
+      console.log('complete', {arg});
+    })
+    .run();
 }
 
 runBenchmarks();
