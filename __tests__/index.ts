@@ -7,6 +7,7 @@ import _ from 'lodash';
 import globby from 'globby';
 import {promises as fs} from 'fs';
 import parseJson from 'parse-json';
+import stripAnsi from 'strip-ansi';
 
 const log = createLog({name: 'test'});
 
@@ -88,8 +89,10 @@ function createTest({fixtureName, testName, spawnArgs, expectedExitCode = 0, sna
   /* eslint-enable jest/no-conditional-expect */
 }
 
-const sanitizeLogLine = (logEntry: Record<string, unknown>) => 
-  _.omit(logEntry, ['name', 'hostname', 'pid', 'time', 'v']);
+const sanitizeLogLine = (logEntry: {msg: string} & Record<string, unknown>) => ({
+  ..._.omit(logEntry, ['name', 'hostname', 'pid', 'time', 'v']),
+  msg: stripAnsi(logEntry.msg)
+})
 
 const getJsonLogs = (stdout: string) => stdout.split('\n').map(line => sanitizeLogLine(parseJson(line)));
 
@@ -151,6 +154,33 @@ describe('error handling', () => {
         msg: "If you have a TypeScript codemod, and you don't specify a path to a 'tsc' executable that will compile your codemod, then this tool searches in your codemod's node_modules. However, TypeScript could not be found there either."
       }));
     }
+  });
+
+  createTest({
+    testName: 'Path to tsconfig is not specified, and no tsconfig can be found.',
+    fixtureName: 'tsconfig-non-standard-location',
+    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), '--json-output', 'input.js'],
+    expectedExitCode: 1,
+    assert(spawnResult) {
+      const jsonLogs = getJsonLogs(spawnResult.stdout);
+      expect(jsonLogs).toContainEqual(expect.objectContaining({
+        // It's more ergonomic to have this be a single string literal.
+        // eslint-disable-next-line max-len
+        msg: 'This tool was not able to find a tsconfig.json file by doing a find-up from codemod. Please manually specify a tsconfig file path.'
+      }));
+    }
+  });
+
+  createTest({
+    testName: 'Specified tsconfig path',
+    fixtureName: 'tsconfig-non-standard-location',
+    spawnArgs: [
+      '--codemod', path.join('codemod', 'index.ts'), 
+      '--json-output', 
+      '--tsconfig', path.join('configs', 'tsconfig.json'), 
+      'input.js'
+    ],
+    snapshot: true
   });
 });
 

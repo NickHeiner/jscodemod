@@ -1,5 +1,48 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`error handling Specified tsconfig path 1`] = `
+Object {
+  "codemod/index.ts": "import {Codemod} from 'jscodemod';
+
+// Compiling this will not work, because no TSC will be found.
+
+const codemod: Codemod = {
+  transform({source}) {
+    return \`/* prefix */\\\\n\${source}\`;
+  }
+};
+
+export default codemod;",
+  "configs/tsconfig.json": "{
+  \\"include\\": [\\"../codemod/*.ts\\"],
+
+  \\"compilerOptions\\": {
+    \\"target\\": \\"ES2019\\",
+    \\"module\\": \\"commonjs\\",
+    \\"strict\\": true,
+
+    \\"rootDir\\": \\"..\\",
+
+    \\"outDir\\": \\"should-be-ignored\\",
+    
+    \\"noUnusedLocals\\": true,
+    \\"noUnusedParameters\\": true,
+    \\"noImplicitReturns\\": true, 
+    \\"noFallthroughCasesInSwitch\\": true,
+
+    \\"moduleResolution\\": \\"node\\",
+    \\"esModuleInterop\\": true,
+
+    \\"skipLibCheck\\": true,
+    \\"forceConsistentCasingInFileNames\\": true
+  }
+}
+",
+  "input.js": "/* prefix */
+const file = 'asdf';",
+}
+`;
+
 exports[`happy path TS without manually specifying any of the args determining how to compile 1`] = `
 Object {
   "codemod/babel-plugin.ts": "import * as BabelTypes from '@babel/types';
