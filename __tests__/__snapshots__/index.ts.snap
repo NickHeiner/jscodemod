@@ -63,6 +63,34 @@ const file = 'asdf';",
 }
 `;
 
+exports[`git Modify dirty files 1`] = `
+Object {
+  "codemod/codemod.js": "module.exports = {
+  transform({source}) {
+    return \`/* prefix git dirty */\\\\n\${source}\`;
+  }
+};",
+  "source/dirty.js": "/* prefix git dirty */
+const x = 'dirty state';",
+  "source/unmodified.js": "/* prefix git dirty */
+const x = 'starting state';",
+}
+`;
+
+exports[`git Reset dirty files 1`] = `
+Object {
+  "codemod/codemod.js": "module.exports = {
+  transform({source}) {
+    return \`/* prefix git dirty */\\\\n\${source}\`;
+  }
+};",
+  "source/dirty.js": "/* prefix git dirty */
+const x = 'starting state';",
+  "source/unmodified.js": "/* prefix git dirty */
+const x = 'starting state';",
+}
+`;
+
 exports[`happy path TS without manually specifying any of the args determining how to compile 1`] = `
 Object {
   "codemod/babel-plugin.ts": "import * as BabelTypes from '@babel/types';

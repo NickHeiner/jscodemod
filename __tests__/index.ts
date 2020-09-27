@@ -18,6 +18,7 @@ type TestArgs = {
   testName?: string;
   spawnArgs: string[];
   expectedExitCode?: number;
+  git?: boolean;
   snapshot?: true; 
   setUpNodeModules?: boolean;
   ignoreNodeModulesForSnapshot?: boolean;
@@ -30,7 +31,7 @@ type TestArgs = {
 const packageJson = require('../package');
 
 function createTest({
-  fixtureName, testName, spawnArgs, expectedExitCode = 0, snapshot, 
+  fixtureName, testName, spawnArgs, expectedExitCode = 0, snapshot, git,
   setUpNodeModules = true, ignoreNodeModulesForSnapshot = true, 
   assert, modifier
 }: TestArgs) {
@@ -49,6 +50,11 @@ function createTest({
     const fixtureDir = path.resolve(repoRoot, 'fixtures', fixtureName);
 
     await execa('cp', ['-r', fixtureDir + path.sep, testDir]);
+
+    if (git) {
+      await execa('mv', ['git', '.git'], {cwd: testDir});
+    }
+
     if (setUpNodeModules) {
       await execa('yarn', {cwd: testDir});
       await execa('ln', ['-s', repoRoot, path.join('node_modules', packageJson.name)], {cwd: testDir});
@@ -108,7 +114,7 @@ function createTest({
 const sanitizeLogLine = (logEntry: {msg: string} & Record<string, unknown>) => ({
   ..._.omit(logEntry, ['name', 'hostname', 'pid', 'time', 'v']),
   msg: stripAnsi(logEntry.msg)
-})
+});
 
 const getJsonLogs = (stdout: string) => stdout.split('\n').map(line => sanitizeLogLine(parseJson(line)));
 
@@ -220,5 +226,26 @@ describe('TS compilation flags', () => {
     ],
     snapshot: true
   });
-})
+});
+
+describe('git', () => {
+  createTest({
+    testName: 'Reset dirty files',
+    fixtureName: 'git-dirty',
+    git: true,
+    spawnArgs: [
+      '--codemod', path.join('codemod', 'codemod.js'), 
+      '--reset-dirty-input-files',
+      'source'
+    ],
+    snapshot: true
+  });
+  createTest({
+    testName: 'Modify dirty files',
+    fixtureName: 'git-dirty',
+    git: true,
+    spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), 'source'],
+    snapshot: true
+  });
+});
 
