@@ -3,7 +3,8 @@
 const yargs = require('yargs');
 const path = require('path');
 const benchmark = require('benchmark');
-const tempy = require('tempy');
+const resolveBin = require('resolve-bin');
+const {promisify} = require('util');
 const execa = require('execa');
 const packageJson = require('../package');
 const createLogger = require('nth-log').default;
@@ -14,43 +15,62 @@ PrettyError.start();
 
 const log = createLogger({name: 'benchmark'});
 
+const resolveBinP = promisify(resolveBin);
+
 const {argv} = yargs
-  .usage('$0 <repo clone URL>')
-  .option({
-    repoDir: {
-      type: 'string',
-      describe: 'If passed, use this'
+  .usage('$0 <repo directory path>')
+  .options({
+    testRun: {
+      type: 'boolean',
+      describe: 'Instead of running the benchmark, run each benchmarked command against the input repo. ' +
+      'This verifies that the codemods work.'
     }
   })
   .check(argv => {
-    if (!argv.repoDir && argv._.length !== 1) {
-      throw new Error('You must pass one repo to clone.');
+    if (argv._.length !== 1) {
+      throw new Error('You must pass a repo to run on.');
     }
     return true;
   })
   .help();
 
 async function runBenchmarks() {
-  const tempDir = await tempy.directory({prefix: `${packageJson.name}-benchmark`});
-  const execaInTempDir = (binPath, args, opts) => execa.sync(binPath, args, {...opts, cwd: tempDir});
-
   const repoToTransform = argv._[0];
-  execaInTempDir('git', ['clone', repoToTransform, tempDir], {stdio: 'inherit'});
+  const execInRepo = (binPath, args, opts) => execa.sync(binPath, args, {...opts, cwd: repoToTransform});
 
-  const codemodBenchmark = benchmark.Suite({
-    setup() {
-      execaInTempDir('git', ['restore', '.'], {cwd: tempDir});
-    } 
-  });
+  const resetChanges = async silent => {
+    if (!silent) {
+      log.warn({repoToTransform}, `Resetting uncommited changes in ${repoToTransform}.`);
+    }
+    await execInRepo('git', ['restore', '.']);
+  };
 
   const pathFromRepoRoot = (...pathParts) => path.resolve(__dirname, '..', ...pathParts);
   const binPath = pathFromRepoRoot(packageJson.bin);
+  const jscodeshiftBinPath = await resolveBinP('jscodeshift', {executable: 'jscodeshift'});
 
-  execaInTempDir(
+  const jscodemodString = execOpts => execInRepo(
     binPath, 
-    ['--codemod', pathFromRepoRoot('test', 'fixtures', 'prepend-string', 'codemod', 'codemod.js')],
-    '.'
-  )
+    ['--codemod', pathFromRepoRoot('fixtures', 'prepend-string', 'codemod', 'codemod.js'), '.'],
+    execOpts
+  );
+  const jscodeshiftString = execOpts => execInRepo(
+    jscodeshiftBinPath, 
+    ['--transform', pathFromRepoRoot('fixtures', 'prepend-string', 'codemod', 'jscodeshift-codemod.js'), '.'],
+    execOpts
+  );
+
+  if (argv.testRun) {
+    await resetChanges();
+    jscodemodString({stdio: 'inherit'});
+    await resetChanges();
+    jscodeshiftString({stdio: 'inherit'});
+  }
+
+  // const codemodBenchmark = benchmark.Suite({
+  //   setup() {
+  //   } 
+  // });
 
   // codemodBenchmark
   //   .add('jscodemod#string', () => {

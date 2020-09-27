@@ -14,7 +14,7 @@
     "demo:react:prefix": "yarn build && yarn jscodemod --codemod test/fixtures/prepend-string/codemod.js 'test/fixtures/react/packages/**/*.js'",
     "unit": "jest",
     "test": "yarn lint && yarn build && yarn unit",
-    "lint": "eslint __tests__ src --max-warnings 0 --cache",
+    "lint": "eslint __tests__ src benchmark --max-warnings 0 --cache",
     "lint:fix": "yarn lint --fix",
     "prepublish": "yarn build"
   },

@@ -12,6 +12,9 @@ $ jscodemod --codemod codemod.js src/**/*.js
 $ jscodemod --codemod codemod.js 'src/**/*.js'
 ```
 
+## Comparison with jscodeshift
+Piscina v. `child_process.fork`.
+
 ## How to write a codemod
 ### Babel Plugin
 1. Use [ASTExplorer](https://astexplorer.net/) with the "transform" option enabled for an interactive environment for developing your plugin.
