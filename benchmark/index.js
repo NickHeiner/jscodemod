@@ -8,6 +8,7 @@ const resolveBin = require('resolve-bin');
 const {promisify} = require('util');
 const execa = require('execa');
 const packageJson = require('../package');
+const CliTable = require('cli-table3');
 const createLogger = require('nth-log').default;
 const PrettyError = require('pretty-error');
 require('loud-rejection/register');
@@ -41,7 +42,7 @@ async function runBenchmarks() {
   const repoToTransform = argv._[0];
   const execInRepo = (binPath, args, opts) => {
     log.debug({binPath, args, fullCommand: `${binPath} ${args.join(' ')}`});
-    execa.sync(binPath, args, {...opts, cwd: repoToTransform})
+    execa.sync(binPath, args, {...opts, cwd: repoToTransform});
   };
 
   const resetChanges = async silent => {
@@ -95,8 +96,27 @@ async function runBenchmarks() {
     .add('jscodeshift#string', () => {
       jscodeshiftString({stdio: 'inherit'});
     })
-    .on('complete', (arg) => {
-      console.log('complete', {arg});
+    .on('complete', arg => {
+      // This is brittle, but something more robust might be more complexity than it's worth, given Benchmark's API.
+      const jscodemodStringStats = arg.currentTarget[0].stats;
+      const jscodeshiftStringStats = arg.currentTarget[1].stats;
+      
+      const table = new CliTable({
+        head: ['Runner', 'Transform', 'Mean Duration (seconds)', 'Standard Deviation (seconds)', 'Sample count']
+      });
+
+      table.push([
+        'jscodemod', 'string', jscodemodStringStats.mean, jscodemodStringStats.deviation, 
+        jscodemodStringStats.sample.length
+      ]);
+      table.push([
+        'jscodeshift', 'string', jscodeshiftStringStats.mean, jscodeshiftStringStats.deviation, 
+        jscodeshiftStringStats.sample.length
+      ]);
+      
+      // This is intentional.
+      // eslint-disable-next-line no-console
+      console.log(table.toString());
     })
     .run();
 }
