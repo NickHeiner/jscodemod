@@ -19,6 +19,16 @@ const log = createLogger({name: 'benchmark'});
 
 const resolveBinP = promisify(resolveBin);
 
+/**
+ * To make this script's results more accurate:
+ *  1. Provide a robust mechanism to ensure that the set of input files are the same.
+ *  2. Provide a way to run more samples.
+ *  3. Protect against the issue of the machine's environment changing between different suite runs. (For instance,
+ *        if you run this locally, and during one suite, you're doing nothing else on your machine, and on the next
+ *        suite, you launch a bitcoin miner, that will make the comparison invalid.)
+ *  4. In the output, include environment info (OS, Node version, hardware configuration, background utilization levels)
+ */
+
 const {argv} = yargs
   .usage('$0 <repo directory path>')
   .options({
@@ -59,11 +69,14 @@ async function runBenchmarks() {
   const jscodeshiftBinPath = await resolveBinP('jscodeshift', {executable: 'jscodeshift'});
 
   // Possible source of error: the input file patterns passed to each codemod tool return different sets of files.
+  // 
+  // You may need to hit control+c multiple times to kill this script. I thought execa was supposed to propagate that
+  // and automatically kill child processes, but maybe that doesn't work as well with .sync?
   const jscodemodString = execOpts => execInRepo(
     binPath, 
     [
       '--codemod', pathFromRepoRoot('fixtures', 'prepend-string', 'codemod', 'codemod.js'), 
-      '**/*.{js,ts,tsx}', '!node_modules'
+      '**/*.{js,ts,tsx}', '!**/node_modules'
     ],
     execOpts
   );

@@ -16,6 +16,22 @@ $ jscodemod --codemod codemod.js 'src/**/*.js'
 Piscina v. `child_process.fork`.
 Yargs v. custom arg parser. Yargs throws errors on unrecognized flags (e.g. `--typo-flag --codmod`), whereas the JSCodeshift custom parser does not.
 
+### Performance
+I've observed jscodemod being 30x-50x faster than jscodeshift, on a comparison that simply does a string concatenation. (This removes any difference due to using different code parsers.)
+
+Use the included `./benchmark/index.js` script to run your own benchmarks. Here's a result of mine, running against [Nodejs](https://github.com/nodejs/node):
+
+```
+$ λ ./benchmark/index.js ~/code/node/
+┌─────────────┬───────────┬─────────────────────────┬──────────────────────────────┬──────────────┐
+│ Runner      │ Transform │ Mean Duration (seconds) │ Standard Deviation (seconds) │ Sample count │
+├─────────────┼───────────┼─────────────────────────┼──────────────────────────────┼──────────────┤
+│ jscodemod   │ string    │ 1.92                    │ 0.0542                       │ 6            │
+├─────────────┼───────────┼─────────────────────────┼──────────────────────────────┼──────────────┤
+│ jscodeshift │ string    │ 47.1                    │ 1.62                         │ 5            │
+└─────────────┴───────────┴─────────────────────────┴──────────────────────────────┴──────────────┘
+```
+
 ### Issues
 https://github.com/facebook/jscodeshift/issues/307
 
