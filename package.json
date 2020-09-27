@@ -6,9 +6,7 @@
   "repository": "git@github.com:NickHeiner/jscodemod.git",
   "author": "Nick Heiner <nth23@cornell.edu>",
   "license": "MIT",
-  "bin": {
-    "jscodemod": "./build/bin.js"
-  },
+  "bin": "./build/bin.js",
   "scripts": {
     "jscodemod": "./build/bin.js",
     "build": "rm -rf build && tsc && chmod a+x ./build/bin.js",
@@ -33,6 +31,7 @@
     "@typescript-eslint/parser": "4.1.1",
     "babel": "6.23.0",
     "babel-jest": "26.3.0",
+    "benchmark": "2.1.4",
     "eslint": "7.9.0",
     "eslint-config-nth": "2.0.1",
     "eslint-plugin-jest": "24.0.1",
