@@ -116,7 +116,7 @@ describe('happy path', () => {
       const relativeInputFiles = new Set(
         (inputFilesLogLine[0].inputFiles as string[]).map(inputFile => path.relative(testDir, inputFile))
       );
-      expect(relativeInputFiles).toEqual(new Set(['source/a.js', 'source/b.js']));
+      expect(relativeInputFiles).toEqual(new Set(['source/a.js', 'source/b.js', 'source/blank.js']));
     }
   });
   createTest({

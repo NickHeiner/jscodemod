@@ -116,6 +116,7 @@ Object {
   "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
   "source/a.js": "console.log('a');",
   "source/b.js": "function b() {}",
+  "source/blank.js": "",
 }
 `;
 
@@ -140,5 +141,7 @@ Object {
 console.log('a');",
   "source/b.js": "/* prefix */
 function b() {}",
+  "source/blank.js": "/* prefix */
+",
 }
 `;
