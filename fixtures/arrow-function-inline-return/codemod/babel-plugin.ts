@@ -1,6 +1,9 @@
 import * as BabelTypes from '@babel/types';
 import {Visitor} from '@babel/traverse';
-import {TODO} from '../../../../src/types';
+
+// TODO is our intentional any type.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type TODO = any;
 
 export default ({types: t}: {types: typeof BabelTypes}): {visitor: Visitor<TODO>} => 
   ({

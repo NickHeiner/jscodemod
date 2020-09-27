@@ -1,33 +1,33 @@
 import globby from 'globby';
 import _ from 'lodash';
-import {promisify} from 'util';
-import resolveBin from 'resolve-bin';
 import tempy from 'tempy';
 import execa from 'execa';
-import createLogger from 'nth-log';
 import pathIsTS from './path-is-ts';
 import path from 'path';
 import findUp from 'find-up';
+import findUpDetailed from './find-up-detailed';
 import Piscina from 'piscina';
 import ProgressBar from 'progress';
 import {cyan} from 'ansi-colors';
 import ora from 'ora';
+import createLog from 'nth-log';
+import fs from 'fs';
+import loadJsonFile from 'load-json-file';
 
-const log = createLogger({name: 'jscodemod-coordinator'});
+const noOpLogger = createLog({name: 'no-op', stream: fs.createWriteStream('/dev/null')});
 
 // In this case, load-json-file is overkill.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const packageJson = require('../package');
 
-const resolveBinP = promisify(resolveBin);
-
 type Options = {
   tsconfig?: string;
-  tsOutDir?: string;
+  tsOutDir?: string
   tsc?: string;
   dry?: boolean;
   ignoreNodeModules?: boolean;
   resetDirtyInputFiles?: boolean;
+  log?: ReturnType<typeof createLog>
 }
 
 // The rule is too broad.
@@ -37,7 +37,24 @@ async function getTSCPath(specifiedTSCPath?: string): Promise<string> {
     return specifiedTSCPath;
   }
 
-  return resolveBinP('typescript', {executable: 'tsc'});
+  // I originally wanted to use resolve-bin here, but that resolves from this file's location, which is not what
+  // we want. We want to resolve from the codemod.
+  const {foundPath: typescriptPath, checkedPaths} = await findUpDetailed(
+    path.join('node_modules', 'typescript'), {type: 'directory'}
+  );
+  if (typescriptPath) {
+    const tsPackageJsonPath = path.join(typescriptPath, 'package.json');
+    const tsPackageJson = await loadJsonFile<{bin: {tsc: string}}>(tsPackageJsonPath);
+    return path.join(typescriptPath, tsPackageJson.bin.tsc);
+  }
+
+  const err = new Error(
+    "If you have a TypeScript codemod, and you don't specify a path to a 'tsc' executable that will " +
+    "compile your codemod, then this tool searches in your codemod's node_modules. However, TypeScript could not be " +
+    'found there either.'
+  );
+  Object.assign(err, {checkedPaths});
+  throw err;
 }
 
 // The rule is too broad.
@@ -56,121 +73,122 @@ async function getTSConfigPath(pathToCodemod: string, specifiedTSConfig?: string
   }
 
   const codemodDir = path.dirname(pathToCodemod);
-  const foundPath = await findUp('tsconfig.json', {cwd: codemodDir});
+  const {foundPath, checkedPaths} = await findUpDetailed('tsconfig.json', {cwd: codemodDir});
 
   if (!foundPath) {
-    throw new Error(
+    const err = new Error(
       `This tool was not able to find a ${cyan('tsconfig.json')} file by doing a find-up from ${cyan(codemodDir)}. ` +
       'Please manually specify a tsconfig file path.'
     );
+    Object.assign(err, {checkedPaths});
+    throw err;
   }
 
   return foundPath;
 }
 
-async function compileTS(
-  pathToCodemod: string, {tsconfig: specifiedTSConfig, tsOutDir: specifiedTSOutDir, tsc: specifiedTSC}: Options
-): Promise<string> {
-  const tscConfigPath = await getTSConfigPath(pathToCodemod, specifiedTSConfig);
-  const tsc = await getTSCPath(specifiedTSC);
-  const tsOutDir = await getTSOutDir(specifiedTSOutDir);
-
-  const tscArgs = ['--project', tscConfigPath, '--outDir', tsOutDir];
-  log.debug({tsc, tscArgs}, 'exec');
-  await execa(tsc, tscArgs);
-
-  const originalNodeModules = await findUp(
-    'node_modules',
-    // async dir => findUp.exists(path.join(dir, 'node_modules')), 
-    {cwd: path.dirname(pathToCodemod), type: 'directory'}
-  );
-  // If this var is not defined, then it means that the codemod had no node_modules. This seems very unlikely, but I
-  // suppose it's possible.
-  if (originalNodeModules) {
-    await execa('ln', ['-s', originalNodeModules, 'node_modules'], {cwd: tsOutDir});
-  }
-  log.debug({originalNodeModules}, 'Searched for original node_modules');
-
-  return path.join(tsOutDir, path.dirname(pathToCodemod), `${path.basename(pathToCodemod, '.ts')}.js`);
-}
-
-// The rule is too broad.
-// eslint-disable-next-line require-await
-async function getCodemodPath(pathToCodemod: string, options: Options) {
-  if (pathIsTS(pathToCodemod)) {
-    return compileTS(pathToCodemod, options);
-  }
-
-  return path.resolve(pathToCodemod);
-}
-
-async function transformCode(codemodPath: string, inputFiles: string[]) {
-  const piscina = new Piscina({
-    filename: require.resolve('./worker'),
-    argv: [codemodPath],
-    workerData: {codemodPath}
-  });
-
-  const progressBar = new ProgressBar(':bar (:current/:total, :percent%)', {total: inputFiles.length});
-  await Promise.all(inputFiles.map(async inputFile => {
-    await piscina.runTask(inputFile);
-    progressBar.tick();
-  }));
-}
-
-async function getGitRoot(inputFilesPaths: string[]): Promise<string> {
-  // Assume that all files are in the same .git root, and there are no submodules.
-  const arbitraryFilePath = path.dirname(inputFilesPaths[0]);
-  const gitDir = await findUp('.git', {cwd: arbitraryFilePath, type: 'directory'});
-  if (!gitDir) {
-    throw new Error(`Could not find the git root for ${cyan(arbitraryFilePath)}.`);
-  }
-  // We want to pop up a level, since we want a directory we can execute git from, and you can't execute git
-  // from the .git directory itself.
-  return path.resolve(gitDir, '..');
-}
-
-function execGit(gitRoot: string, args: string[]): Promise<execa.ExecaReturnValue> {
-  return execa('git', args, {cwd: gitRoot});
-}
-
-const getShellArgMax = _.once(async () => parseInt((await execa('getconf', ['ARG_MAX'])).stdout));
-
-async function execBigCommand(
-  constantArgs: string[], 
-  variableArgs: string[], 
-  execCommand: (args: string[]) => Promise<execa.ExecaReturnValue>
-) {
-  const combinedArgs = [...constantArgs, ...variableArgs];
-  const commandLengthBytes = new TextEncoder().encode(combinedArgs.join(' ')).length;
-  const shellArgMaxBytes = await getShellArgMax();
-
-  /**
-   * My understanding is that if the commandLengthBytes < shellArgMaxBytes, then we should be safe. However, 
-   * experimentally, this was not true. I still saw E2BIG errors. I don't know if it's because I'm misinterpreting 
-   * what results of TextEncoder and `ARG_MAX`. But, if I divide by 2, then it worked in my anecdotal testing.
-   */
-  if (commandLengthBytes > shellArgMaxBytes / 2) {
-    log.debug({
-      variableArgCount: variableArgs.length,
-      variableArgLengthBytes: commandLengthBytes,
-      shellArgMaxBytes
-    }, 'Splitting command to avoid an E2BIG error.');
-    const midpointIndex = variableArgs.length / 2;
-    const firstHalfVariableArgs = variableArgs.slice(0, midpointIndex);
-    const secondHalfVariableArgs = variableArgs.slice(midpointIndex);
-
-    // It's probably safer to run in serial here. The caller may not expect their command to be parallelized.
-    await execBigCommand(constantArgs, firstHalfVariableArgs, execCommand);
-    await execBigCommand(constantArgs, secondHalfVariableArgs, execCommand);
-  } else {
-    await execCommand(combinedArgs);
-  }
-}
-
 async function codemod(
-  pathToCodemod: string, inputFilesPatterns: string[], {ignoreNodeModules = true, ...options}: Options
+  pathToCodemod: string, inputFilesPatterns: string[], {ignoreNodeModules = true, log = noOpLogger, ...options}: Options
 ): Promise<void | string[]> {
+  async function compileTS(
+    pathToCodemod: string, {tsconfig: specifiedTSConfig, tsOutDir: specifiedTSOutDir, tsc: specifiedTSC}: Options
+  ): Promise<string> {
+    const tscConfigPath = await getTSConfigPath(pathToCodemod, specifiedTSConfig);
+    const tsc = await getTSCPath(specifiedTSC);
+    const tsOutDir = await getTSOutDir(specifiedTSOutDir);
+  
+    const tscArgs = ['--project', tscConfigPath, '--outDir', tsOutDir];
+    log.debug({tsc, tscArgs}, 'exec');
+    await execa(tsc, tscArgs);
+  
+    const originalNodeModules = await findUp(
+      'node_modules',
+      {cwd: path.dirname(pathToCodemod), type: 'directory'}
+    );
+    // If this var is not defined, then it means that the codemod had no node_modules. This seems very unlikely, but I
+    // suppose it's possible.
+    if (originalNodeModules) {
+      await execa('ln', ['-s', originalNodeModules, 'node_modules'], {cwd: tsOutDir});
+    }
+    log.debug({originalNodeModules}, 'Searched for original node_modules');
+  
+    return path.join(tsOutDir, path.dirname(pathToCodemod), `${path.basename(pathToCodemod, '.ts')}.js`);
+  }
+  
+  // The rule is too broad.
+  // eslint-disable-next-line require-await
+  async function getCodemodPath(pathToCodemod: string, options: Options) {
+    if (pathIsTS(pathToCodemod)) {
+      return compileTS(pathToCodemod, options);
+    }
+  
+    return path.resolve(pathToCodemod);
+  }
+  
+  async function transformCode(codemodPath: string, inputFiles: string[]) {
+    const piscina = new Piscina({
+      filename: require.resolve('./worker'),
+      argv: [codemodPath],
+      workerData: {codemodPath}
+    });
+  
+    const progressBar = new ProgressBar(':bar (:current/:total, :percent%)', {total: inputFiles.length});
+    await Promise.all(inputFiles.map(async inputFile => {
+      await piscina.runTask(inputFile);
+      progressBar.tick();
+    }));
+  }
+  
+  async function getGitRoot(inputFilesPaths: string[]): Promise<string> {
+    // Assume that all files are in the same .git root, and there are no submodules.
+    const arbitraryFilePath = path.dirname(inputFilesPaths[0]);
+    const gitDir = await findUp('.git', {cwd: arbitraryFilePath, type: 'directory'});
+    if (!gitDir) {
+      throw new Error(`Could not find the git root for ${cyan(arbitraryFilePath)}.`);
+    }
+    // We want to pop up a level, since we want a directory we can execute git from, and you can't execute git
+    // from the .git directory itself.
+    return path.resolve(gitDir, '..');
+  }
+  
+  function execGit(gitRoot: string, args: string[]): Promise<execa.ExecaReturnValue> {
+    return execa('git', args, {cwd: gitRoot});
+  }
+  
+  const getShellArgMax = _.once(async () => parseInt((await execa('getconf', ['ARG_MAX'])).stdout));
+  
+  async function execBigCommand(
+    constantArgs: string[], 
+    variableArgs: string[], 
+    execCommand: (args: string[]) => Promise<execa.ExecaReturnValue>
+  ) {
+    const combinedArgs = [...constantArgs, ...variableArgs];
+    const commandLengthBytes = new TextEncoder().encode(combinedArgs.join(' ')).length;
+    const shellArgMaxBytes = await getShellArgMax();
+  
+    /**
+     * My understanding is that if the commandLengthBytes < shellArgMaxBytes, then we should be safe. However, 
+     * experimentally, this was not true. I still saw E2BIG errors. I don't know if it's because I'm misinterpreting 
+     * what results of TextEncoder and `ARG_MAX`. But, if I divide by 2, then it worked in my anecdotal testing.
+     */
+    if (commandLengthBytes > shellArgMaxBytes / 2) {
+      log.debug({
+        variableArgCount: variableArgs.length,
+        variableArgLengthBytes: commandLengthBytes,
+        shellArgMaxBytes
+      }, 'Splitting command to avoid an E2BIG error.');
+      const midpointIndex = variableArgs.length / 2;
+      const firstHalfVariableArgs = variableArgs.slice(0, midpointIndex);
+      const secondHalfVariableArgs = variableArgs.slice(midpointIndex);
+  
+      // It's probably safer to run in serial here. The caller may not expect their command to be parallelized.
+      await execBigCommand(constantArgs, firstHalfVariableArgs, execCommand);
+      await execBigCommand(constantArgs, secondHalfVariableArgs, execCommand);
+    } else {
+      await execCommand(combinedArgs);
+    }
+  }
+
   const finalPatterns = [...inputFilesPatterns];
   if (ignoreNodeModules) {
     inputFilesPatterns.forEach(filePattern => {
@@ -196,6 +214,12 @@ async function codemod(
   const inputFiles = (await globby(inputFilesPatterns)).map(filePath => path.resolve(filePath));
   const logMethod = options.dry ? 'info' : 'debug';
   log[logMethod]({inputFiles, count: inputFiles.length}, 'Input file pattern matched these files.');
+
+  if (!inputFiles.length) {
+    const err = new Error('No files were found to transform.');
+    Object.assign(err, {inputFilesPatterns});
+    throw err;
+  }
 
   if (options.dry) {
     log.info('Exiting early because "dry" was set.');

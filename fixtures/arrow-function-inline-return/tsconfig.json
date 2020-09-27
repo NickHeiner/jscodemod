@@ -1,10 +1,12 @@
 {
-  "include": ["*.ts"],
+  "include": ["codemod/*.ts"],
 
   "compilerOptions": {
     "target": "ES2019",
     "module": "commonjs",
     "strict": true,
+
+    "rootDir": ".",
 
     "outDir": "should-be-ignored",
     

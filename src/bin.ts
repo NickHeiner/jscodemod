@@ -4,6 +4,10 @@ import yargs from 'yargs';
 import codemod from './';
 import _ from 'lodash';
 import 'loud-rejection/register';
+import createLogger from 'nth-log';
+import PrettyError from 'pretty-error';
+
+PrettyError.start();
 
 const tsOnlyNote = '(Only applicable if your codemod is written in TypeScript)';
 
@@ -46,6 +50,12 @@ const argv = yargs
       default: false,
       describe: 'If true, use git to restore dirty files to a clean state before running the codemod. ' +
         'This assumes that all input files have the same .git root. If you use submodules, this may not work.'
+    },
+    jsonOutput: {
+      type: 'boolean',
+      default: false,
+      describe: 'Output logs as JSON, instead of human-readable formatting. Useful if you want to consume the output ' +
+        ' of this tool from another tool, or process the logs using your own Bunyan log processor/formatter.'
     }
   })
   .check(argv => {
@@ -57,8 +67,32 @@ const argv = yargs
   .help()
   .argv;
 
-codemod(
-  argv.codemod, 
-  argv._, 
-  _.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'ignoreNodeModules', 'resetDirtyInputFiles')
-);
+async function main() {
+  // This type is not flowing properly from createLogger.
+  const logOpts: {name: string; stream?: unknown} = {name: 'jscodemod-coordinator'};
+  if (argv.jsonOutput) {
+    logOpts.stream = process.stdout;
+  }
+  const log = createLogger(logOpts);
+
+  // This is not an exhaustive error wrapper, but I think it's ok for now. Making it catch more cases would introduce
+  // complexity without adding much safety.
+  try {
+    await codemod(
+      argv.codemod, 
+      argv._, 
+      {
+        ..._.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'ignoreNodeModules', 'resetDirtyInputFiles'),
+        log
+      }
+    );
+  } catch (err) {
+    // TODO: Maybe known errors should be marked with a flag, since showing a stack trace for them probably
+    // is just noise.
+    log.fatal({err});
+    log.info("If you need help, please see this project's README, or the --help output.");
+    process.exit(1);
+  }
+}
+
+main();

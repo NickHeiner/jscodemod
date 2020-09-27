@@ -1,16 +1,14 @@
 {
-  "include": ["src/**/*.ts"],
-  "exclude": ["__tests__", "fixtures"],
+  "include": ["codemod/*.ts"],
 
   "compilerOptions": {
     "target": "ES2019",
     "module": "commonjs",
-    "allowJs": true,                       
-    "checkJs": true,                       
-
     "strict": true,
 
-    "outDir": "build",
+    "rootDir": ".",
+
+    "outDir": "should-be-ignored",
     
     "noUnusedLocals": true,
     "noUnusedParameters": true,
