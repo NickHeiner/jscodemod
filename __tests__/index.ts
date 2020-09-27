@@ -7,6 +7,9 @@ import _ from 'lodash';
 import globby from 'globby';
 import {promises as fs} from 'fs';
 import parseJson from 'parse-json';
+import stripAnsi from 'strip-ansi';
+import resolveBin from 'resolve-bin';
+import sanitizeFilename from 'sanitize-filename';
 
 const log = createLog({name: 'test'});
 
@@ -15,7 +18,10 @@ type TestArgs = {
   testName?: string;
   spawnArgs: string[];
   expectedExitCode?: number;
-  snapshot?: boolean;
+  git?: boolean;
+  snapshot?: true; 
+  setUpNodeModules?: boolean;
+  ignoreNodeModulesForSnapshot?: boolean;
   assert?: (ExecaReturnValue, testDir: string) => void;
   modifier?: 'only' | 'skip';
 }
@@ -24,29 +30,42 @@ type TestArgs = {
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const packageJson = require('../package');
 
-function createTest({fixtureName, testName, spawnArgs, expectedExitCode = 0, snapshot, assert, modifier}: TestArgs) {
+function createTest({
+  fixtureName, testName, spawnArgs, expectedExitCode = 0, snapshot, git,
+  setUpNodeModules = true, ignoreNodeModulesForSnapshot = true, 
+  assert, modifier
+}: TestArgs) {
   // This is part of our dynamic testing approach.
   /* eslint-disable jest/no-conditional-expect */
   /* eslint-disable jest/no-standalone-expect */
 
   const testMethod = modifier ? it[modifier] : it;
-  testMethod(testName || fixtureName, async () => {
-    const testDir = await tempy.directory({prefix: `${packageJson.name}-test-${fixtureName}`});
+  const testNameWithDefault = testName || fixtureName;
+  testMethod(testNameWithDefault, async () => {
+    const testDirSuffix = sanitizeFilename(testNameWithDefault).replace(' ', '-').toLowerCase();
+    const testDir = await tempy.directory({prefix: `${packageJson.name}-test-${testDirSuffix}`});
     log.debug({testDir});
 
     const repoRoot = path.resolve(__dirname, '..');
     const fixtureDir = path.resolve(repoRoot, 'fixtures', fixtureName);
 
     await execa('cp', ['-r', fixtureDir + path.sep, testDir]);
-    await execa('yarn', {cwd: testDir});
-    await execa('ln', ['-s', repoRoot, path.join('node_modules', packageJson.name)], {cwd: testDir});
 
+    if (git) {
+      await execa('mv', ['git', '.git'], {cwd: testDir});
+    }
+
+    if (setUpNodeModules) {
+      await execa('yarn', {cwd: testDir});
+      await execa('ln', ['-s', repoRoot, path.join('node_modules', packageJson.name)], {cwd: testDir});
+    }
+    
     const binPath = path.resolve(repoRoot, packageJson.bin.jscodemod);
 
     let spawnResult;
     try {
       spawnResult = await log.logPhase(
-        {phase: 'spawn codemod', level: 'debug'}, 
+        {phase: 'spawn codemod', level: 'debug', binPath, spawnArgs}, 
         () => execa(binPath, spawnArgs, {cwd: testDir})
       );
     } catch (error) {
@@ -65,8 +84,12 @@ function createTest({fixtureName, testName, spawnArgs, expectedExitCode = 0, sna
         {phase: 'snapshot glob', level: 'debug'}, 
         async (_logProgress, setAdditionalLogData) => {
           // We'll consider codemods that modify `package.json` or these other config files to be out of scope.
+          const globPatterns = ['**/*', '!yarn.lock', '!package.json', '!tsconfig.json'];
+          if (ignoreNodeModulesForSnapshot) {
+            globPatterns.push('!node_modules');
+          }
           const files = await globby(
-            ['**/*', '!node_modules', '!yarn.lock', '!package.json', '!tsconfig.json'], 
+            globPatterns, 
             {cwd: testDir}
           );
           setAdditionalLogData({foundFileCount: files.length});
@@ -88,8 +111,10 @@ function createTest({fixtureName, testName, spawnArgs, expectedExitCode = 0, sna
   /* eslint-enable jest/no-conditional-expect */
 }
 
-const sanitizeLogLine = (logEntry: Record<string, unknown>) => 
-  _.omit(logEntry, ['name', 'hostname', 'pid', 'time', 'v']);
+const sanitizeLogLine = (logEntry: {msg: string} & Record<string, unknown>) => ({
+  ..._.omit(logEntry, ['name', 'hostname', 'pid', 'time', 'v']),
+  msg: stripAnsi(logEntry.msg)
+});
 
 const getJsonLogs = (stdout: string) => stdout.split('\n').map(line => sanitizeLogLine(parseJson(line)));
 
@@ -97,7 +122,21 @@ describe('happy path', () => {
   createTest({
     fixtureName: 'prepend-string',
     spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), 'source'],
+    setUpNodeModules: false,
+    ignoreNodeModulesForSnapshot: false,
     snapshot: true
+  });
+  createTest({
+    testName: 'Transform node_modules',
+    fixtureName: 'prepend-string',
+    setUpNodeModules: false,
+    spawnArgs: [
+      '--codemod', path.join('codemod', 'codemod.js'), 
+      '--ignore-node-modules', 'false', 
+      '**/*.js', '!codemod'
+    ],
+    snapshot: true,
+    ignoreNodeModulesForSnapshot: false
   });
   createTest({
     testName: 'dry',
@@ -109,10 +148,9 @@ describe('happy path', () => {
       const [inputFilesLogLine, otherLogLines] = _.partition(jsonLogs, 'inputFiles');
       expect(otherLogLines).toMatchSnapshot();
 
-      const relativeInputFiles = new Set(
-        (inputFilesLogLine[0].inputFiles as string[]).map(inputFile => path.relative(testDir, inputFile))
-      );
-      expect(relativeInputFiles).toEqual(new Set(['source/a.js', 'source/b.js']));
+      const inputFiles = ((inputFilesLogLine[0] as Record<string, unknown>).inputFiles as string[]);
+      const relativeInputFiles = new Set(inputFiles.map(inputFile => path.relative(testDir, inputFile)));
+      expect(relativeInputFiles).toEqual(new Set(['source/a.js', 'source/b.js', 'source/blank.js']));
     }
   });
   createTest({
@@ -137,7 +175,9 @@ describe('error handling', () => {
     spawnArgs: ['source'],
     expectedExitCode: 1
   });
+});
 
+describe('TS compilation flags', () => {
   createTest({
     testName: 'Path to TSC is not specified, and no TSC can be found.',
     fixtureName: 'no-tsc',
@@ -151,6 +191,61 @@ describe('error handling', () => {
         msg: "If you have a TypeScript codemod, and you don't specify a path to a 'tsc' executable that will compile your codemod, then this tool searches in your codemod's node_modules. However, TypeScript could not be found there either."
       }));
     }
+  });
+
+  const localTSC = resolveBin.sync('typescript', {executable: 'tsc'});
+  createTest({
+    testName: 'Path to TSC is specified',
+    fixtureName: 'no-tsc',
+    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), '--tsc', localTSC, 'input.js'],
+    snapshot: true
+  });
+
+  createTest({
+    testName: 'Path to tsconfig is not specified, and no tsconfig can be found.',
+    fixtureName: 'tsconfig-non-standard-location',
+    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), '--json-output', 'input.js'],
+    expectedExitCode: 1,
+    assert(spawnResult) {
+      const jsonLogs = getJsonLogs(spawnResult.stdout);
+      expect(jsonLogs).toContainEqual(expect.objectContaining({
+        // It's more ergonomic to have this be a single string literal.
+        // eslint-disable-next-line max-len
+        msg: 'This tool was not able to find a tsconfig.json file by doing a find-up from codemod. Please manually specify a tsconfig file path.'
+      }));
+    }
+  });
+
+  createTest({
+    testName: 'Specified tsconfig path',
+    fixtureName: 'tsconfig-non-standard-location',
+    spawnArgs: [
+      '--codemod', path.join('codemod', 'index.ts'), 
+      '--tsconfig', path.join('configs', 'tsconfig.json'), 
+      'input.js'
+    ],
+    snapshot: true
+  });
+});
+
+describe('git', () => {
+  createTest({
+    testName: 'Reset dirty files',
+    fixtureName: 'git-dirty',
+    git: true,
+    spawnArgs: [
+      '--codemod', path.join('codemod', 'codemod.js'), 
+      '--reset-dirty-input-files',
+      'source'
+    ],
+    snapshot: true
+  });
+  createTest({
+    testName: 'Modify dirty files',
+    fixtureName: 'git-dirty',
+    git: true,
+    spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), 'source'],
+    snapshot: true
   });
 });
 

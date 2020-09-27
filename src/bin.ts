@@ -13,6 +13,7 @@ const tsOnlyNote = '(Only applicable if your codemod is written in TypeScript)';
 
 const argv = yargs
   .usage('$0 [options] <file globs>')
+  // TODO: Some of these options should be hidden.
   .options({
     codemod: {
       alias: 'c',
@@ -25,6 +26,7 @@ const argv = yargs
       type: 'string',
       describe: `${tsOnlyNote} path to the tsconfig.json`
     },
+    // I'm going to skip adding tests for this for now, because I'm not sure it's actually necessary.
     tsOutDir: {
       type: 'string',
       describe: `${tsOnlyNote} directory in which to compile your codemod to. Defaults to a temporary directory.`

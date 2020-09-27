@@ -1,5 +1,5 @@
 module.exports = {
   transform({source}) {
-    return `/* prefix */\n${source}`;
+    return `/* prefix prepend string */\n${source}`;
   }
 };

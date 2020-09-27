@@ -1,0 +1,7 @@
+{
+  "name": "no-tsconfig",
+  "private": true,
+  "dependencies": {
+    "typescript": "4.0.3"
+  }
+}

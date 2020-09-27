@@ -1,5 +1,96 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`TS compilation flags Path to TSC is specified 1`] = `
+Object {
+  "codemod/index.ts": "import {Codemod} from 'jscodemod';
+
+// Compiling this will not work automatically, because no TSC will be found.
+
+const codemod: Codemod = {
+  transform({source}) {
+    return \`/* prefix no-tsc */\\\\n\${source}\`;
+  }
+};
+
+export default codemod;",
+  "input.js": "/* prefix no-tsc */
+module.exports = {
+  input: 'file'
+};",
+}
+`;
+
+exports[`TS compilation flags Specified tsconfig path 1`] = `
+Object {
+  "codemod/index.ts": "import {Codemod} from 'jscodemod';
+
+// Compiling this will not work, because no TSC will be found.
+
+const codemod: Codemod = {
+  transform({source}) {
+    return \`/* prefix tsconfig-non-standard-location */\\\\n\${source}\`;
+  }
+};
+
+export default codemod;",
+  "configs/tsconfig.json": "{
+  \\"include\\": [\\"../codemod/*.ts\\"],
+
+  \\"compilerOptions\\": {
+    \\"target\\": \\"ES2019\\",
+    \\"module\\": \\"commonjs\\",
+    \\"strict\\": true,
+
+    \\"rootDir\\": \\"..\\",
+
+    \\"outDir\\": \\"should-be-ignored\\",
+    
+    \\"noUnusedLocals\\": true,
+    \\"noUnusedParameters\\": true,
+    \\"noImplicitReturns\\": true, 
+    \\"noFallthroughCasesInSwitch\\": true,
+
+    \\"moduleResolution\\": \\"node\\",
+    \\"esModuleInterop\\": true,
+
+    \\"skipLibCheck\\": true,
+    \\"forceConsistentCasingInFileNames\\": true
+  }
+}
+",
+  "input.js": "/* prefix tsconfig-non-standard-location */
+const file = 'asdf';",
+}
+`;
+
+exports[`git Modify dirty files 1`] = `
+Object {
+  "codemod/codemod.js": "module.exports = {
+  transform({source}) {
+    return \`/* prefix git dirty */\\\\n\${source}\`;
+  }
+};",
+  "source/dirty.js": "/* prefix git dirty */
+const x = 'dirty state';",
+  "source/unmodified.js": "/* prefix git dirty */
+const x = 'starting state';",
+}
+`;
+
+exports[`git Reset dirty files 1`] = `
+Object {
+  "codemod/codemod.js": "module.exports = {
+  transform({source}) {
+    return \`/* prefix git dirty */\\\\n\${source}\`;
+  }
+};",
+  "source/dirty.js": "/* prefix git dirty */
+const x = 'starting state';",
+  "source/unmodified.js": "/* prefix git dirty */
+const x = 'starting state';",
+}
+`;
+
 exports[`happy path TS without manually specifying any of the args determining how to compile 1`] = `
 Object {
   "codemod/babel-plugin.ts": "import * as BabelTypes from '@babel/types';
@@ -43,16 +134,36 @@ export default codemod;",
 }
 `;
 
+exports[`happy path Transform node_modules 1`] = `
+Object {
+  "codemod/codemod.js": "module.exports = {
+  transform({source}) {
+    return \`/* prefix prepend string */\\\\n\${source}\`;
+  }
+};",
+  "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
+  "node_modules/sample-dep/index.js": "/* prefix prepend string */
+console.log('node_modules file');",
+  "source/a.js": "/* prefix prepend string */
+console.log('a');",
+  "source/b.js": "/* prefix prepend string */
+function b() {}",
+  "source/blank.js": "/* prefix prepend string */
+",
+}
+`;
+
 exports[`happy path dry 1`] = `
 Object {
   "codemod/codemod.js": "module.exports = {
   transform({source}) {
-    return \`/* prefix */\\\\n\${source}\`;
+    return \`/* prefix prepend string */\\\\n\${source}\`;
   }
 };",
   "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
   "source/a.js": "console.log('a');",
   "source/b.js": "function b() {}",
+  "source/blank.js": "",
 }
 `;
 
@@ -69,13 +180,16 @@ exports[`happy path prepend-string 1`] = `
 Object {
   "codemod/codemod.js": "module.exports = {
   transform({source}) {
-    return \`/* prefix */\\\\n\${source}\`;
+    return \`/* prefix prepend string */\\\\n\${source}\`;
   }
 };",
   "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
-  "source/a.js": "/* prefix */
+  "node_modules/sample-dep/index.js": "console.log('node_modules file');",
+  "source/a.js": "/* prefix prepend string */
 console.log('a');",
-  "source/b.js": "/* prefix */
+  "source/b.js": "/* prefix prepend string */
 function b() {}",
+  "source/blank.js": "/* prefix prepend string */
+",
 }
 `;
