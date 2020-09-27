@@ -22,6 +22,6 @@ jobs:
     - name: Install
       run: yarn --frozen-lockfile
     - name: Test
-      run: yarn test
+      run: loglevel=debug yarn test
       env:
         CI: true
