@@ -45,6 +45,8 @@ async function runBenchmarks() {
     execa.sync(binPath, args, {...opts, cwd: repoToTransform});
   };
 
+  log.info('For a valid comparison, make sure that both codemods run on the same set of input files.');
+
   const resetChanges = async silent => {
     if (!silent) {
       log.warn({repoToTransform}, `Resetting uncommited changes in ${repoToTransform}.`);
@@ -105,15 +107,18 @@ async function runBenchmarks() {
         head: ['Runner', 'Transform', 'Mean Duration (seconds)', 'Standard Deviation (seconds)', 'Sample count']
       });
 
-      table.push([
-        'jscodemod', 'string', jscodemodStringStats.mean, jscodemodStringStats.deviation, 
-        jscodemodStringStats.sample.length
-      ]);
-      table.push([
-        'jscodeshift', 'string', jscodeshiftStringStats.mean, jscodeshiftStringStats.deviation, 
-        jscodeshiftStringStats.sample.length
-      ]);
-      
+      // eslint-disable-next-line no-magic-numbers
+      const significantDigits = number => number.toPrecision(3);
+
+      const addTableEntry = (runnerName, transformName, stats) => 
+        table.push([
+          runnerName, transformName, significantDigits(stats.mean), significantDigits(stats.deviation), 
+          stats.sample.length
+        ]);
+
+      addTableEntry('jscodemod', 'string', jscodemodStringStats);
+      addTableEntry('jscodeshift', 'string', jscodeshiftStringStats);
+
       // This is intentional.
       // eslint-disable-next-line no-console
       console.log(table.toString());
