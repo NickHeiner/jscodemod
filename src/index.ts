@@ -211,13 +211,13 @@ async function codemod(
     });
     finalPatterns.push('!**/node_modules');
   }
-  const inputFiles = (await globby(inputFilesPatterns)).map(filePath => path.resolve(filePath));
+  const inputFiles = (await globby(finalPatterns)).map(filePath => path.resolve(filePath));
   const logMethod = options.dry ? 'info' : 'debug';
-  log[logMethod]({inputFiles, count: inputFiles.length, inputFilesPatterns}, 'Input file pattern matched these files.');
+  log[logMethod]({inputFiles, count: inputFiles.length, finalPatterns}, 'Input file pattern matched these files.');
 
   if (!inputFiles.length) {
     const err = new Error('No files were found to transform.');
-    Object.assign(err, {inputFilesPatterns});
+    Object.assign(err, {inputFilePatterns: finalPatterns});
     throw err;
   }
 

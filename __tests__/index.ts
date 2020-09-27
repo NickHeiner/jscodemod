@@ -60,7 +60,7 @@ function createTest({
       await execa('ln', ['-s', repoRoot, path.join('node_modules', packageJson.name)], {cwd: testDir});
     }
     
-    const binPath = path.resolve(repoRoot, packageJson.bin.jscodemod);
+    const binPath = path.resolve(repoRoot, packageJson.bin);
 
     let spawnResult;
     try {
@@ -121,7 +121,7 @@ const getJsonLogs = (stdout: string) => stdout.split('\n').map(line => sanitizeL
 describe('happy path', () => {
   createTest({
     fixtureName: 'prepend-string',
-    spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), 'source'],
+    spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), '.', '!codemod'],
     setUpNodeModules: false,
     ignoreNodeModulesForSnapshot: false,
     snapshot: true
