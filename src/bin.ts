@@ -25,6 +25,7 @@ const argv = yargs
       type: 'string',
       describe: `${tsOnlyNote} path to the tsconfig.json`
     },
+    // I'm going to skip adding tests for this for now, because I'm not sure it's actually necessary.
     tsOutDir: {
       type: 'string',
       describe: `${tsOnlyNote} directory in which to compile your codemod to. Defaults to a temporary directory.`
