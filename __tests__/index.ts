@@ -30,6 +30,11 @@ type TestArgs = {
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const packageJson = require('../package');
 
+const replaceAll = (string: string, pattern: string | RegExp, replacement: string) => {
+  const newString = string.replace(pattern, replacement);
+  return newString === string ? string : replaceAll(newString, pattern, replacement);
+}
+
 function createTest({
   fixtureName, testName, spawnArgs, expectedExitCode = 0, snapshot, git,
   setUpNodeModules = true, ignoreNodeModulesForSnapshot = true, 
@@ -42,7 +47,7 @@ function createTest({
   const testMethod = modifier ? it[modifier] : it;
   const testNameWithDefault = testName || fixtureName;
   testMethod(testNameWithDefault, async () => {
-    const testDirSuffix = sanitizeFilename(testNameWithDefault).replace(' ', '-').toLowerCase();
+    const testDirSuffix = replaceAll(sanitizeFilename(testNameWithDefault), ' ', '-').toLowerCase();
     const testDir = await tempy.directory({prefix: `${packageJson.name}-test-${testDirSuffix}`});
     log.debug({testDir});
 
@@ -53,6 +58,11 @@ function createTest({
 
     if (git) {
       await execa('mv', ['git', '.git'], {cwd: testDir});
+      const gitignores = await globby('**/gitignore', {cwd: testDir});
+      await Promise.all(gitignores.map(gitignorePath => {
+        const dirname = path.dirname(gitignorePath);
+        return execa('mv', [gitignorePath, path.join(dirname, '.gitignore')], {cwd: testDir});
+      }));
     }
 
     if (setUpNodeModules) {
