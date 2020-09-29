@@ -25,7 +25,6 @@ type Options = {
   tsOutDir?: string
   tsc?: string;
   dry?: boolean;
-  ignoreNodeModules?: boolean;
   resetDirtyInputFiles?: boolean;
   log?: ReturnType<typeof createLog>
 }
@@ -88,7 +87,7 @@ async function getTSConfigPath(pathToCodemod: string, specifiedTSConfig?: string
 }
 
 async function codemod(
-  pathToCodemod: string, inputFilesPatterns: string[], {ignoreNodeModules = true, log = noOpLogger, ...options}: Options
+  pathToCodemod: string, inputFilesPatterns: string[], {log = noOpLogger, ...options}: Options
 ): Promise<void | string[]> {
   async function compileTS(
     pathToCodemod: string, {tsconfig: specifiedTSConfig, tsOutDir: specifiedTSOutDir, tsc: specifiedTSC}: Options
@@ -189,35 +188,13 @@ async function codemod(
     }
   }
 
-  const finalPatterns = [...inputFilesPatterns];
-  if (ignoreNodeModules) {
-    inputFilesPatterns.forEach(filePattern => {
-      /**
-       * If the input file path is something like "../foo", then we need to pass the glob pattern "!../node_modules"
-       * to ignore it. This is fairly simple to do (scan all the input file paths, and construct one or more 
-       * exclusion globs as needed), but I'd rather save on the complexity until someone asks for this to work.
-       */
-      const resolvedPattern = path.resolve(filePattern);
-      if (!resolvedPattern.startsWith(process.cwd())) {
-        throw new Error(
-          'The automatic ignoreNodeModules option only works when all the input file patterns point to files that ' +
-          `are contained within the current working directory (${cyan(process.cwd())}). However, input pattern ` +
-          `${cyan(filePattern)} resolved to ${cyan(resolvedPattern)}, which is not contained within the current ` +
-          `working directory. To resolve this, set ${cyan('ignoreNodeModules')} to false, and manually pass your own ` +
-          `globby exclude pattern. For instance, if your input file pattern was ${cyan('../foo')}, you would need ` +
-          `${cyan('!../**/node_modules')}.`
-        );
-      }
-    });
-    finalPatterns.push('!**/node_modules');
-  }
-  const inputFiles = (await globby(finalPatterns)).map(filePath => path.resolve(filePath));
+  const inputFiles = (await globby(inputFilesPatterns)).map(filePath => path.resolve(filePath));
   const logMethod = options.dry ? 'info' : 'debug';
-  log[logMethod]({inputFiles, count: inputFiles.length, finalPatterns}, 'Input file pattern matched these files.');
+  log[logMethod]({inputFiles, count: inputFiles.length, inputFilesPatterns}, 'Input file pattern matched these files.');
 
   if (!inputFiles.length) {
     const err = new Error('No files were found to transform.');
-    Object.assign(err, {inputFilePatterns: finalPatterns});
+    Object.assign(err, {inputFilePatterns: inputFilesPatterns});
     throw err;
   }
 

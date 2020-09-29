@@ -41,11 +41,6 @@ const argv = yargs
       type: 'boolean',
       describe: 'Print a list of files to modify, then stop.'
     },
-    ignoreNodeModules: {
-      type: 'boolean',
-      default: true,
-      describe: 'If true, automatically filter out node_modules from the set of files to transform.'
-    },
     resetDirtyInputFiles: {
       alias: 'r',
       type: 'boolean',
@@ -85,7 +80,7 @@ async function main() {
       argv.codemod, 
       argv._, 
       {
-        ..._.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'ignoreNodeModules', 'resetDirtyInputFiles'),
+        ..._.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'resetDirtyInputFiles'),
         log
       }
     );
