@@ -171,7 +171,8 @@ Object {
 `;
 
 exports[`happy path dry porcelain 2`] = `
-"<test-dir>/source/a.js
+"<test-dir>/source/.dotfile.js
+<test-dir>/source/a.js
 <test-dir>/source/b.js
 <test-dir>/source/blank.js"
 `;

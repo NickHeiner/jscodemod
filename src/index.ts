@@ -196,7 +196,7 @@ async function codemod(
   }
 
   async function getFilesToModify() {
-    const inputFiles = (await globby(inputFilesPatterns)).map(filePath => path.resolve(filePath));
+    const inputFiles = (await globby(inputFilesPatterns, {dot: true})).map(filePath => path.resolve(filePath));
     if (!inputFiles.length) {
       const err = new Error('No files were found to transform.');
       Object.assign(err, {inputFilesPatterns});
