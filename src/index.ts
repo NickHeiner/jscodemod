@@ -54,6 +54,30 @@ function execGit(gitRoot: string, args: string[]): Promise<execa.ExecaReturnValu
   return execa('git', args, {cwd: gitRoot});
 }
 
+async function resetDirtyInputFiles(gitRoot: string | null, filesToModify: string[], log: TODO) {
+  if (!gitRoot) {
+    throw new Error('If you pass option "resetDirtyInputFiles", then all files must be in the same git root. ' +
+      'However, no git root was found.');
+  }
+  const dirtyFiles = (await execGit(gitRoot, ['status', '--porcelain'])).stdout.split('\n')
+    // This assumes that none of the file paths have spaces in them.
+    // It would be better to just split on the first ' ' we see.
+    .map(line => line.trim().split(' '))
+    .filter(([statusCode]) => statusCode === 'M')
+    .map(([_statusCode, filePath]) => path.join(gitRoot, filePath));
+
+  const dirtyInputFiles = _.intersection(dirtyFiles, filesToModify);
+  log.debug({modifiedInputFiles: dirtyInputFiles, count: dirtyInputFiles.length});
+
+  if (dirtyInputFiles.length) {
+    const spinner = 
+      ora(`Restoring ${cyan(dirtyInputFiles.length.toString())} dirty files to a clean state.`).start();
+    await execBigCommand(['restore', '--staged'], dirtyInputFiles, (args: string[]) => execGit(gitRoot, args), log);
+    await execBigCommand(['restore'], dirtyInputFiles, (args: string[]) => execGit(gitRoot, args), log);
+    spinner.succeed();
+  }
+}
+
 async function codemod(
   pathToCodemod: string, inputFilesPatterns: string[], {log = noOpLogger, ...options}: Options
 ): Promise<void | string[]> {
@@ -89,27 +113,7 @@ async function codemod(
   log.debug({gitRoot});
 
   if (options.resetDirtyInputFiles) {
-    if (!gitRoot) {
-      throw new Error('If you pass option "resetDirtyInputFiles", then all files must be in the same git root. ' +
-        'However, no git root was found.');
-    }
-    const dirtyFiles = (await execGit(gitRoot, ['status', '--porcelain'])).stdout.split('\n')
-      // This assumes that none of the file paths have spaces in them.
-      // It would be better to just split on the first ' ' we see.
-      .map(line => line.trim().split(' '))
-      .filter(([statusCode]) => statusCode === 'M')
-      .map(([_statusCode, filePath]) => path.join(gitRoot, filePath));
-
-    const dirtyInputFiles = _.intersection(dirtyFiles, filesToModify);
-    log.debug({modifiedInputFiles: dirtyInputFiles, count: dirtyInputFiles.length});
-
-    if (dirtyInputFiles.length) {
-      const spinner = 
-        ora(`Restoring ${cyan(dirtyInputFiles.length.toString())} dirty files to a clean state.`).start();
-      await execBigCommand(['restore', '--staged'], dirtyInputFiles, (args: string[]) => execGit(gitRoot, args), log);
-      await execBigCommand(['restore'], dirtyInputFiles, (args: string[]) => execGit(gitRoot, args), log);
-      spinner.succeed();
-    }
+    resetDirtyInputFiles(gitRoot, filesToModify, log);
   }
   
   await transformCode(codemodPath, filesToModify);
