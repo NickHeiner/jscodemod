@@ -1,6 +1,6 @@
 import execa from 'execa';
 import _ from 'lodash';
-import { TODO } from './types';
+import {TODO} from './types';
 
 const getShellArgMax = _.once(async () => parseInt((await execa('getconf', ['ARG_MAX'])).stdout));
   

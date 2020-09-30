@@ -3,7 +3,6 @@ import _ from 'lodash';
 import execa from 'execa';
 import pathIsTS from './path-is-ts';
 import path from 'path';
-import findUp from 'find-up';
 import Piscina from 'piscina';
 import ProgressBar from 'progress';
 import {cyan} from 'ansi-colors';
@@ -11,8 +10,9 @@ import ora from 'ora';
 import createLog from 'nth-log';
 import fs from 'fs';
 import compileTS from './compile-ts';
-import { TODO } from './types';
+import {TODO} from './types';
 import execBigCommand from './exec-big-command';
+import getGitRoot from './get-git-root';
 
 const noOpLogger = createLog({name: 'no-op', stream: fs.createWriteStream('/dev/null')});
 
@@ -36,41 +36,27 @@ async function getCodemodPath(pathToCodemod: string, options: Options, log: TODO
   return path.resolve(pathToCodemod);
 }
 
+async function transformCode(codemodPath: string, inputFiles: string[]) {
+  const piscina = new Piscina({
+    filename: require.resolve('./worker'),
+    argv: [codemodPath],
+    workerData: {codemodPath}
+  });
+
+  const progressBar = new ProgressBar(':bar (:current/:total, :percent%)', {total: inputFiles.length});
+  await Promise.all(inputFiles.map(async inputFile => {
+    await piscina.runTask(inputFile);
+    progressBar.tick();
+  }));
+}
+
+function execGit(gitRoot: string, args: string[]): Promise<execa.ExecaReturnValue> {
+  return execa('git', args, {cwd: gitRoot});
+}
+
 async function codemod(
   pathToCodemod: string, inputFilesPatterns: string[], {log = noOpLogger, ...options}: Options
 ): Promise<void | string[]> {
-  
-  async function transformCode(codemodPath: string, inputFiles: string[]) {
-    const piscina = new Piscina({
-      filename: require.resolve('./worker'),
-      argv: [codemodPath],
-      workerData: {codemodPath}
-    });
-  
-    const progressBar = new ProgressBar(':bar (:current/:total, :percent%)', {total: inputFiles.length});
-    await Promise.all(inputFiles.map(async inputFile => {
-      await piscina.runTask(inputFile);
-      progressBar.tick();
-    }));
-  }
-  
-  async function getGitRoot(inputFilesPaths: string[]): Promise<string>;
-  async function getGitRoot(inputFilesPaths: string[]) {
-    // Assume that all files are in the same .git root, and there are no submodules.
-    const arbitraryFilePath = path.dirname(inputFilesPaths[0]);
-    const gitDir = await findUp('.git', {cwd: arbitraryFilePath, type: 'directory'});
-    if (!gitDir) {
-      return null;
-    }
-    // We want to pop up a level, since we want a directory we can execute git from, and you can't execute git
-    // from the .git directory itself.
-    return path.resolve(gitDir, '..');
-  }
-  
-  function execGit(gitRoot: string, args: string[]): Promise<execa.ExecaReturnValue> {
-    return execa('git', args, {cwd: gitRoot});
-  }
-  
   const codemodPath = await getCodemodPath(pathToCodemod, _.pick(options, 'tsconfig', 'tsOutDir', 'tsc'), log);
   log.debug({codemodPath});
 

@@ -6,7 +6,7 @@ import type {Options} from './';
 import {cyan} from 'ansi-colors';
 import execa from 'execa';
 import findUp from 'find-up';
-import { TODO } from './types';
+import {TODO} from './types';
 
 type PackageJson = {name: string};
 const packageJson = loadJsonFile.sync('../package') as PackageJson;
