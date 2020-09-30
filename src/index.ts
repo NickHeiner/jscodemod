@@ -139,17 +139,12 @@ async function codemod(
     }));
   }
   
-  type GetGitRootOptions = {throwOnNotFound: boolean};
   async function getGitRoot(inputFilesPaths: string[]): Promise<string>;
-  async function getGitRoot(inputFilesPaths: string[], opts: GetGitRootOptions): Promise<string | null>;
-  async function getGitRoot(inputFilesPaths: string[], opts?: GetGitRootOptions) {
+  async function getGitRoot(inputFilesPaths: string[]) {
     // Assume that all files are in the same .git root, and there are no submodules.
     const arbitraryFilePath = path.dirname(inputFilesPaths[0]);
     const gitDir = await findUp('.git', {cwd: arbitraryFilePath, type: 'directory'});
     if (!gitDir) {
-      if (opts?.throwOnNotFound) {
-        throw new Error(`Could not find the git root for ${cyan(arbitraryFilePath)}.`);
-      }
       return null;
     }
     // We want to pop up a level, since we want a directory we can execute git from, and you can't execute git
@@ -195,39 +190,16 @@ async function codemod(
     }
   }
 
-  async function getFilesToModify() {
-    const inputFiles = (await globby(inputFilesPatterns, {dot: true})).map(filePath => path.resolve(filePath));
-    if (!inputFiles.length) {
-      const err = new Error('No files were found to transform.');
-      Object.assign(err, {inputFilesPatterns});
-      throw err;
-    }
-
-    const gitRoot = await getGitRoot(inputFiles, {throwOnNotFound: false});
-    
-    log.debug({gitRoot});
-
-    if (!gitRoot) {
-      return {filesToModify: inputFiles};
-    }
-
-    const gitTrackedFiles = 
-      (await execGit(gitRoot, ['ls-tree', '-r', '--name-only', 'head']))
-        .stdout
-        .trim()
-        .split('\n')
-        .map(filePath => path.join(gitRoot, filePath));
-  
-    return {
-      filesToModify: _.intersection(inputFiles, gitTrackedFiles),
-      gitRoot
-    };
-  }
-
   const codemodPath = await getCodemodPath(pathToCodemod, _.pick(options, 'tsconfig', 'tsOutDir', 'tsc'));
   log.debug({codemodPath});
 
-  const {filesToModify, gitRoot} = await getFilesToModify();
+  const filesToModify = (await globby(inputFilesPatterns, {dot: true, gitignore: true}))
+    .map(filePath => path.resolve(filePath));
+  if (!filesToModify.length) {
+    const err = new Error('No files were found to transform.');
+    Object.assign(err, {inputFilesPatterns});
+    throw err;
+  }
 
   const logMethod = options.dry ? 'info' : 'debug';
   log[logMethod](
@@ -245,6 +217,9 @@ async function codemod(
     }
     return filesToModify;
   }
+
+  const gitRoot = await getGitRoot(filesToModify);
+  log.debug({gitRoot});
 
   if (options.resetDirtyInputFiles) {
     if (!gitRoot) {
