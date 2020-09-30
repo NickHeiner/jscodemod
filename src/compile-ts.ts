@@ -9,7 +9,7 @@ import findUp from 'find-up';
 import {TODO} from './types';
 
 type PackageJson = {name: string};
-const packageJson = loadJsonFile.sync('../package') as PackageJson;
+const packageJson = loadJsonFile.sync(path.resolve(__dirname, '..', 'package.json')) as PackageJson;
 
 // The rule is too broad.
 // eslint-disable-next-line require-await
