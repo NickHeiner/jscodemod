@@ -144,6 +144,15 @@ describe('happy path', () => {
     }
   });
   createTest({
+    testName: 'dry porcelain',
+    fixtureName: 'prepend-string',
+    spawnArgs: ['--dry', '--porcelain', '--codemod', path.join('codemod', 'codemod.js'), 'source'],
+    snapshot: true,
+    assert(spawnResult, testDir) {
+      expect(spawnResult.stdout).toMatchSnapshot();
+    }
+  });
+  createTest({
     testName: 'TS without manually specifying any of the args determining how to compile',
     fixtureName: 'arrow-function-inline-return',
     spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), 'source', '*.ts'],
