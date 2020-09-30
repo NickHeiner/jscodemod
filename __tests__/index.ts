@@ -21,7 +21,6 @@ type TestArgs = {
   git?: boolean;
   snapshot?: true; 
   setUpNodeModules?: boolean;
-  ignoreNodeModulesForSnapshot?: boolean;
   assert?: (ExecaReturnValue, testDir: string) => void;
   modifier?: 'only' | 'skip';
 }
@@ -33,12 +32,10 @@ const packageJson = require('../package');
 const replaceAll = (string: string, pattern: string | RegExp, replacement: string) => {
   const newString = string.replace(pattern, replacement);
   return newString === string ? string : replaceAll(newString, pattern, replacement);
-}
+};
 
 function createTest({
-  fixtureName, testName, spawnArgs, expectedExitCode = 0, snapshot, git,
-  setUpNodeModules = true, ignoreNodeModulesForSnapshot = true, 
-  assert, modifier
+  fixtureName, testName, spawnArgs, expectedExitCode = 0, snapshot, git, setUpNodeModules = true, assert, modifier
 }: TestArgs) {
   // This is part of our dynamic testing approach.
   /* eslint-disable jest/no-conditional-expect */
@@ -94,10 +91,7 @@ function createTest({
         {phase: 'snapshot glob', level: 'debug'}, 
         async (_logProgress, setAdditionalLogData) => {
           // We'll consider codemods that modify `package.json` or these other config files to be out of scope.
-          const globPatterns = ['**/*', '!yarn.lock', '!package.json', '!tsconfig.json'];
-          if (ignoreNodeModulesForSnapshot) {
-            globPatterns.push('!node_modules');
-          }
+          const globPatterns = ['**/*', '!yarn.lock', '!package.json', '!tsconfig.json', '!node_modules'];
           const files = await globby(
             globPatterns, 
             {cwd: testDir}
@@ -133,20 +127,7 @@ describe('happy path', () => {
     fixtureName: 'prepend-string',
     spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), '.', '!codemod'],
     setUpNodeModules: false,
-    ignoreNodeModulesForSnapshot: false,
     snapshot: true
-  });
-  createTest({
-    testName: 'Transform node_modules',
-    fixtureName: 'prepend-string',
-    setUpNodeModules: false,
-    spawnArgs: [
-      '--codemod', path.join('codemod', 'codemod.js'), 
-      '--ignore-node-modules', 'false', 
-      '**/*.js', '!codemod'
-    ],
-    snapshot: true,
-    ignoreNodeModulesForSnapshot: false
   });
   createTest({
     testName: 'dry',
@@ -155,10 +136,9 @@ describe('happy path', () => {
     snapshot: true,
     assert(spawnResult, testDir) {
       const jsonLogs = getJsonLogs(spawnResult.stdout);
-      const [inputFilesLogLine, otherLogLines] = _.partition(jsonLogs, 'inputFiles');
-      expect(otherLogLines).toMatchSnapshot();
+      const inputFilesLogLine = _.find(jsonLogs, 'filesToModify');
 
-      const inputFiles = ((inputFilesLogLine[0] as Record<string, unknown>).inputFiles as string[]);
+      const inputFiles = ((inputFilesLogLine as Record<string, unknown>).filesToModify as string[]);
       const relativeInputFiles = new Set(inputFiles.map(inputFile => path.relative(testDir, inputFile)));
       expect(relativeInputFiles).toEqual(new Set(['source/a.js', 'source/b.js', 'source/blank.js']));
     }

@@ -184,7 +184,6 @@ Object {
   }
 };",
   "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
-  "node_modules/sample-dep/index.js": "console.log('node_modules file');",
   "source/a.js": "/* prefix prepend string */
 console.log('a');",
   "source/b.js": "/* prefix prepend string */

@@ -193,30 +193,42 @@ async function codemod(
     }
   }
 
+  async function getFilesToModify() {
+    const inputFiles = (await globby(inputFilesPatterns)).map(filePath => path.resolve(filePath));
+    if (!inputFiles.length) {
+      const err = new Error('No files were found to transform.');
+      Object.assign(err, {inputFilePatterns: inputFilesPatterns});
+      throw err;
+    }
+
+    // @ts-ignore
+    const gitRoot = await getGitRoot(inputFiles, {throwOnNotFound: false});
+    
+    log.debug({gitRoot});
+
+    if (!gitRoot) {
+      return {filesToModify: inputFiles};
+    }
+
+    const gitTrackedFiles = 
+      (await execGit(gitRoot, ['ls-tree', '-r', '--name-only', 'head']))
+        .stdout
+        .trim()
+        .split('\n')
+        .map(filePath => path.join(gitRoot, filePath));
+  
+    return {
+      filesToModify: _.intersection(inputFiles, gitTrackedFiles),
+      gitRoot
+    };
+  }
+
   const codemodPath = await getCodemodPath(pathToCodemod, _.pick(options, 'tsconfig', 'tsOutDir', 'tsc'));
   log.debug({codemodPath});
 
-  const inputFiles = (await globby(inputFilesPatterns)).map(filePath => path.resolve(filePath));
-  if (!inputFiles.length) {
-    const err = new Error('No files were found to transform.');
-    Object.assign(err, {inputFilePatterns: inputFilesPatterns});
-    throw err;
-  }
+  const {filesToModify, gitRoot} = await getFilesToModify();
 
   const logMethod = options.dry ? 'info' : 'debug';
-
-  // @ts-ignore
-  const gitRoot = await getGitRoot(inputFiles, {throwOnNotFound: false});
-  log.debug({gitRoot});
-  const gitTrackedFiles = 
-    (await execGit(gitRoot, ['ls-tree', '-r', '--name-only', 'head']))
-    .stdout
-    .trim()
-    .split('\n')
-    .map(filePath => path.join(gitRoot, filePath));
-
-  const filesToModify = _.intersection(inputFiles, gitTrackedFiles);
-
   log[logMethod](
     {filesToModify, count: filesToModify.length, inputFilesPatterns}, 
     'Input file pattern matched these files.'
@@ -228,6 +240,10 @@ async function codemod(
   }
 
   if (options.resetDirtyInputFiles) {
+    if (!gitRoot) {
+      throw new Error('If you pass option "resetDirtyInputFiles", then all files must be in the same git root. ' +
+        'However, no git root was found.');
+    }
     const dirtyFiles = (await execGit(gitRoot, ['status', '--porcelain'])).stdout.split('\n')
       // This assumes that none of the file paths have spaces in them.
       // It would be better to just split on the first ' ' we see.
