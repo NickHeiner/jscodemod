@@ -70,8 +70,12 @@ Object {
     return \`/* prefix git dirty */\\\\n\${source}\`;
   }
 };",
+  "git-ignored.js": "console.log('git ignored');
+",
+  "git-untracked.js": "",
   "source/dirty.js": "/* prefix git dirty */
 const x = 'dirty state';",
+  "source/nested-git-ignored.js": "console.log('nested git ignored');",
   "source/unmodified.js": "/* prefix git dirty */
 const x = 'starting state';",
 }
@@ -84,8 +88,12 @@ Object {
     return \`/* prefix git dirty */\\\\n\${source}\`;
   }
 };",
+  "git-ignored.js": "console.log('git ignored');
+",
+  "git-untracked.js": "",
   "source/dirty.js": "/* prefix git dirty */
 const x = 'starting state';",
+  "source/nested-git-ignored.js": "console.log('nested git ignored');",
   "source/unmodified.js": "/* prefix git dirty */
 const x = 'starting state';",
 }
@@ -134,25 +142,6 @@ export default codemod;",
 }
 `;
 
-exports[`happy path Transform node_modules 1`] = `
-Object {
-  "codemod/codemod.js": "module.exports = {
-  transform({source}) {
-    return \`/* prefix prepend string */\\\\n\${source}\`;
-  }
-};",
-  "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
-  "node_modules/sample-dep/index.js": "/* prefix prepend string */
-console.log('node_modules file');",
-  "source/a.js": "/* prefix prepend string */
-console.log('a');",
-  "source/b.js": "/* prefix prepend string */
-function b() {}",
-  "source/blank.js": "/* prefix prepend string */
-",
-}
-`;
-
 exports[`happy path dry 1`] = `
 Object {
   "codemod/codemod.js": "module.exports = {
@@ -165,15 +154,6 @@ Object {
   "source/b.js": "function b() {}",
   "source/blank.js": "",
 }
-`;
-
-exports[`happy path dry 2`] = `
-Array [
-  Object {
-    "level": 30,
-    "msg": "Exiting early because \\"dry\\" was set.",
-  },
-]
 `;
 
 exports[`happy path prepend-string 1`] = `

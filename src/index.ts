@@ -140,7 +140,8 @@ async function codemod(
   
   type GetGitRootOptions = {throwOnNotFound: boolean};
   async function getGitRoot(inputFilesPaths: string[]): Promise<string>;
-  async function getGitRoot(inputFilesPaths: string[], opts?: GetGitRootOptions): Promise<string | null> {
+  async function getGitRoot(inputFilesPaths: string[], opts: GetGitRootOptions): Promise<string | null>;
+  async function getGitRoot(inputFilesPaths: string[], opts?: GetGitRootOptions) {
     // Assume that all files are in the same .git root, and there are no submodules.
     const arbitraryFilePath = path.dirname(inputFilesPaths[0]);
     const gitDir = await findUp('.git', {cwd: arbitraryFilePath, type: 'directory'});
@@ -201,7 +202,6 @@ async function codemod(
       throw err;
     }
 
-    // @ts-ignore
     const gitRoot = await getGitRoot(inputFiles, {throwOnNotFound: false});
     
     log.debug({gitRoot});
