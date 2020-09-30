@@ -237,6 +237,8 @@ async function codemod(
 
   if (options.dry) {
     if (options.porcelain) {
+      // We want undecorated output for porcelain.
+      // eslint-disable-next-line no-console
       filesToModify.forEach(filePath => console.log(filePath));
     } else {
       log.info('Exiting early because "dry" was set.');
