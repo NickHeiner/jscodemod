@@ -1,3 +1,0 @@
-[submodule "test/fixtures/react"]
-	path = test/fixtures/react
-	url = git@github.com:facebook/react.git

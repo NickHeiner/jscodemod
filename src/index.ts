@@ -25,7 +25,7 @@ type Options = {
   tsOutDir?: string
   tsc?: string;
   dry?: boolean;
-  ignoreNodeModules?: boolean;
+  porcelain?: boolean;
   resetDirtyInputFiles?: boolean;
   log?: ReturnType<typeof createLog>
 }
@@ -88,7 +88,7 @@ async function getTSConfigPath(pathToCodemod: string, specifiedTSConfig?: string
 }
 
 async function codemod(
-  pathToCodemod: string, inputFilesPatterns: string[], {ignoreNodeModules = true, log = noOpLogger, ...options}: Options
+  pathToCodemod: string, inputFilesPatterns: string[], {log = noOpLogger, ...options}: Options
 ): Promise<void | string[]> {
   async function compileTS(
     pathToCodemod: string, {tsconfig: specifiedTSConfig, tsOutDir: specifiedTSOutDir, tsc: specifiedTSC}: Options
@@ -139,12 +139,13 @@ async function codemod(
     }));
   }
   
-  async function getGitRoot(inputFilesPaths: string[]): Promise<string> {
+  async function getGitRoot(inputFilesPaths: string[]): Promise<string>;
+  async function getGitRoot(inputFilesPaths: string[]) {
     // Assume that all files are in the same .git root, and there are no submodules.
     const arbitraryFilePath = path.dirname(inputFilesPaths[0]);
     const gitDir = await findUp('.git', {cwd: arbitraryFilePath, type: 'directory'});
     if (!gitDir) {
-      throw new Error(`Could not find the git root for ${cyan(arbitraryFilePath)}.`);
+      return null;
     }
     // We want to pop up a level, since we want a directory we can execute git from, and you can't execute git
     // from the .git directory itself.
@@ -189,70 +190,62 @@ async function codemod(
     }
   }
 
-  const finalPatterns = [...inputFilesPatterns];
-  if (ignoreNodeModules) {
-    inputFilesPatterns.forEach(filePattern => {
-      /**
-       * If the input file path is something like "../foo", then we need to pass the glob pattern "!../node_modules"
-       * to ignore it. This is fairly simple to do (scan all the input file paths, and construct one or more 
-       * exclusion globs as needed), but I'd rather save on the complexity until someone asks for this to work.
-       */
-      const resolvedPattern = path.resolve(filePattern);
-      if (!resolvedPattern.startsWith(process.cwd())) {
-        throw new Error(
-          'The automatic ignoreNodeModules option only works when all the input file patterns point to files that ' +
-          `are contained within the current working directory (${cyan(process.cwd())}). However, input pattern ` +
-          `${cyan(filePattern)} resolved to ${cyan(resolvedPattern)}, which is not contained within the current ` +
-          `working directory. To resolve this, set ${cyan('ignoreNodeModules')} to false, and manually pass your own ` +
-          `globby exclude pattern. For instance, if your input file pattern was ${cyan('../foo')}, you would need ` +
-          `${cyan('!../**/node_modules')}.`
-        );
-      }
-    });
-    finalPatterns.push('!**/node_modules');
-  }
-  const inputFiles = (await globby(finalPatterns)).map(filePath => path.resolve(filePath));
-  const logMethod = options.dry ? 'info' : 'debug';
-  log[logMethod]({inputFiles, count: inputFiles.length, finalPatterns}, 'Input file pattern matched these files.');
+  const codemodPath = await getCodemodPath(pathToCodemod, _.pick(options, 'tsconfig', 'tsOutDir', 'tsc'));
+  log.debug({codemodPath});
 
-  if (!inputFiles.length) {
+  const filesToModify = (await globby(inputFilesPatterns, {dot: true, gitignore: true}))
+    .map(filePath => path.resolve(filePath));
+  if (!filesToModify.length) {
     const err = new Error('No files were found to transform.');
-    Object.assign(err, {inputFilePatterns: finalPatterns});
+    Object.assign(err, {inputFilesPatterns});
     throw err;
   }
 
+  const logMethod = options.dry ? 'info' : 'debug';
+  log[logMethod](
+    {filesToModify, count: filesToModify.length, inputFilesPatterns}, 
+    'Input file pattern matched these files.'
+  );
+
   if (options.dry) {
-    log.info('Exiting early because "dry" was set.');
-    return inputFiles;
+    if (options.porcelain) {
+      // We want undecorated output for porcelain.
+      // eslint-disable-next-line no-console
+      filesToModify.forEach(filePath => console.log(filePath));
+    } else {
+      log.info('Exiting early because "dry" was set.');
+    }
+    return filesToModify;
   }
 
-  if (options.resetDirtyInputFiles) {
-    const gitRoot = await getGitRoot(inputFiles);
-    log.debug({gitRoot});
+  const gitRoot = await getGitRoot(filesToModify);
+  log.debug({gitRoot});
 
-    const modifiedFiles = (await execGit(gitRoot, ['status', '--porcelain'])).stdout.split('\n')
+  if (options.resetDirtyInputFiles) {
+    if (!gitRoot) {
+      throw new Error('If you pass option "resetDirtyInputFiles", then all files must be in the same git root. ' +
+        'However, no git root was found.');
+    }
+    const dirtyFiles = (await execGit(gitRoot, ['status', '--porcelain'])).stdout.split('\n')
       // This assumes that none of the file paths have spaces in them.
       // It would be better to just split on the first ' ' we see.
       .map(line => line.trim().split(' '))
       .filter(([statusCode]) => statusCode === 'M')
       .map(([_statusCode, filePath]) => path.join(gitRoot, filePath));
 
-    const modifiedInputFiles = _.intersection(modifiedFiles, inputFiles);
-    log.debug({modifiedInputFiles, count: modifiedInputFiles.length});
+    const dirtyInputFiles = _.intersection(dirtyFiles, filesToModify);
+    log.debug({modifiedInputFiles: dirtyInputFiles, count: dirtyInputFiles.length});
 
-    if (modifiedInputFiles.length) {
+    if (dirtyInputFiles.length) {
       const spinner = 
-        ora(`Restoring ${cyan(modifiedInputFiles.length.toString())} dirty files to a clean state.`).start();
-      await execBigCommand(['restore', '--staged'], modifiedInputFiles, (args: string[]) => execGit(gitRoot, args));
-      await execBigCommand(['restore'], modifiedInputFiles, (args: string[]) => execGit(gitRoot, args));
+        ora(`Restoring ${cyan(dirtyInputFiles.length.toString())} dirty files to a clean state.`).start();
+      await execBigCommand(['restore', '--staged'], dirtyInputFiles, (args: string[]) => execGit(gitRoot, args));
+      await execBigCommand(['restore'], dirtyInputFiles, (args: string[]) => execGit(gitRoot, args));
       spinner.succeed();
     }
   }
   
-  const codemodPath = await getCodemodPath(pathToCodemod, _.pick(options, 'tsconfig', 'tsOutDir', 'tsc'));
-  log.debug({codemodPath});
-  
-  await transformCode(codemodPath, inputFiles);
+  await transformCode(codemodPath, filesToModify);
 }
 
 export default codemod;

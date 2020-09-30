@@ -21,7 +21,6 @@ type TestArgs = {
   git?: boolean;
   snapshot?: true; 
   setUpNodeModules?: boolean;
-  ignoreNodeModulesForSnapshot?: boolean;
   assert?: (ExecaReturnValue, testDir: string) => void;
   modifier?: 'only' | 'skip';
 }
@@ -30,10 +29,13 @@ type TestArgs = {
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const packageJson = require('../package');
 
+const replaceAll = (string: string, pattern: string | RegExp, replacement: string) => {
+  const newString = string.replace(pattern, replacement);
+  return newString === string ? string : replaceAll(newString, pattern, replacement);
+};
+
 function createTest({
-  fixtureName, testName, spawnArgs, expectedExitCode = 0, snapshot, git,
-  setUpNodeModules = true, ignoreNodeModulesForSnapshot = true, 
-  assert, modifier
+  fixtureName, testName, spawnArgs, expectedExitCode = 0, snapshot, git, setUpNodeModules = true, assert, modifier
 }: TestArgs) {
   // This is part of our dynamic testing approach.
   /* eslint-disable jest/no-conditional-expect */
@@ -42,7 +44,7 @@ function createTest({
   const testMethod = modifier ? it[modifier] : it;
   const testNameWithDefault = testName || fixtureName;
   testMethod(testNameWithDefault, async () => {
-    const testDirSuffix = sanitizeFilename(testNameWithDefault).replace(' ', '-').toLowerCase();
+    const testDirSuffix = replaceAll(sanitizeFilename(testNameWithDefault), ' ', '-').toLowerCase();
     const testDir = await tempy.directory({prefix: `${packageJson.name}-test-${testDirSuffix}`});
     log.debug({testDir});
 
@@ -53,6 +55,11 @@ function createTest({
 
     if (git) {
       await execa('mv', ['git', '.git'], {cwd: testDir});
+      const gitignores = await globby('**/gitignore', {cwd: testDir});
+      await Promise.all(gitignores.map(gitignorePath => {
+        const dirname = path.dirname(gitignorePath);
+        return execa('mv', [gitignorePath, path.join(dirname, '.gitignore')], {cwd: testDir});
+      }));
     }
 
     if (setUpNodeModules) {
@@ -84,10 +91,7 @@ function createTest({
         {phase: 'snapshot glob', level: 'debug'}, 
         async (_logProgress, setAdditionalLogData) => {
           // We'll consider codemods that modify `package.json` or these other config files to be out of scope.
-          const globPatterns = ['**/*', '!yarn.lock', '!package.json', '!tsconfig.json'];
-          if (ignoreNodeModulesForSnapshot) {
-            globPatterns.push('!node_modules');
-          }
+          const globPatterns = ['**/*', '!yarn.lock', '!package.json', '!tsconfig.json', '!node_modules'];
           const files = await globby(
             globPatterns, 
             {cwd: testDir}
@@ -123,20 +127,7 @@ describe('happy path', () => {
     fixtureName: 'prepend-string',
     spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), '.', '!codemod'],
     setUpNodeModules: false,
-    ignoreNodeModulesForSnapshot: false,
     snapshot: true
-  });
-  createTest({
-    testName: 'Transform node_modules',
-    fixtureName: 'prepend-string',
-    setUpNodeModules: false,
-    spawnArgs: [
-      '--codemod', path.join('codemod', 'codemod.js'), 
-      '--ignore-node-modules', 'false', 
-      '**/*.js', '!codemod'
-    ],
-    snapshot: true,
-    ignoreNodeModulesForSnapshot: false
   });
   createTest({
     testName: 'dry',
@@ -145,12 +136,23 @@ describe('happy path', () => {
     snapshot: true,
     assert(spawnResult, testDir) {
       const jsonLogs = getJsonLogs(spawnResult.stdout);
-      const [inputFilesLogLine, otherLogLines] = _.partition(jsonLogs, 'inputFiles');
-      expect(otherLogLines).toMatchSnapshot();
+      const inputFilesLogLine = _.find(jsonLogs, 'filesToModify');
 
-      const inputFiles = ((inputFilesLogLine[0] as Record<string, unknown>).inputFiles as string[]);
+      const inputFiles = ((inputFilesLogLine as Record<string, unknown>).filesToModify as string[]);
       const relativeInputFiles = new Set(inputFiles.map(inputFile => path.relative(testDir, inputFile)));
-      expect(relativeInputFiles).toEqual(new Set(['source/a.js', 'source/b.js', 'source/blank.js']));
+      expect(relativeInputFiles).toEqual(
+        new Set(['source/.dotfile.js', 'source/a.js', 'source/b.js', 'source/blank.js'])
+      );
+    }
+  });
+  createTest({
+    testName: 'dry porcelain',
+    fixtureName: 'prepend-string',
+    spawnArgs: ['--dry', '--porcelain', '--codemod', path.join('codemod', 'codemod.js'), 'source'],
+    snapshot: true,
+    assert(spawnResult, testDir) {
+      const sanitizedStdout = replaceAll(spawnResult.stdout, testDir, '<test-dir>');
+      expect(sanitizedStdout).toMatchSnapshot();
     }
   });
   createTest({

@@ -10,8 +10,7 @@
   "scripts": {
     "jscodemod": "./build/bin.js",
     "build": "rm -rf build && tsc && chmod a+x ./build/bin.js",
-    "demo": "yarn build && yarn jscodemod --codemod test/fixtures/arrow-function-inline-return/codemod/index.ts --tsconfig test/fixtures/arrow-function-inline-return/codemod/tsconfig.json test/fixtures/arrow-function-inline-return/source",
-    "demo:react:prefix": "yarn build && yarn jscodemod --codemod test/fixtures/prepend-string/codemod.js 'test/fixtures/react/packages/**/*.js'",
+    "demo": "yarn build && yarn jscodemod --codemod fixtures/prepend-string/codemod.js fixtures/prepend-string/source",
     "unit": "jest",
     "test": "yarn lint && yarn build && yarn unit",
     "lint": "eslint __tests__ src benchmark --max-warnings 0 --cache",
