@@ -72,7 +72,7 @@ Object {
 };",
   "git-ignored.js": "console.log('git ignored');
 ",
-  "git-untracked.js": "",
+  "git-untracked.js": "// git untracked",
   "source/dirty.js": "/* prefix git dirty */
 const x = 'dirty state';",
   "source/nested-git-ignored.js": "console.log('nested git ignored');",
@@ -90,7 +90,7 @@ Object {
 };",
   "git-ignored.js": "console.log('git ignored');
 ",
-  "git-untracked.js": "",
+  "git-untracked.js": "// git untracked",
   "source/dirty.js": "/* prefix git dirty */
 const x = 'starting state';",
   "source/nested-git-ignored.js": "console.log('nested git ignored');",
