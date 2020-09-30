@@ -149,7 +149,8 @@ describe('happy path', () => {
     spawnArgs: ['--dry', '--porcelain', '--codemod', path.join('codemod', 'codemod.js'), 'source'],
     snapshot: true,
     assert(spawnResult, testDir) {
-      expect(spawnResult.stdout).toMatchSnapshot();
+      const sanitizedStdout = replaceAll(spawnResult.stdout, testDir, '<test-dir>');
+      expect(sanitizedStdout).toMatchSnapshot();
     }
   });
   createTest({

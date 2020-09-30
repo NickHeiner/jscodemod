@@ -171,9 +171,9 @@ Object {
 `;
 
 exports[`happy path dry porcelain 2`] = `
-"/private/var/folders/5q/vbysv3n16x57dtk8gh2bnr0w0000gn/T/jscodemod-test-dry-porcelain9cb27617a5e4f8c23d699151fb48b0bb/source/a.js
-/private/var/folders/5q/vbysv3n16x57dtk8gh2bnr0w0000gn/T/jscodemod-test-dry-porcelain9cb27617a5e4f8c23d699151fb48b0bb/source/b.js
-/private/var/folders/5q/vbysv3n16x57dtk8gh2bnr0w0000gn/T/jscodemod-test-dry-porcelain9cb27617a5e4f8c23d699151fb48b0bb/source/blank.js"
+"<test-dir>/source/a.js
+<test-dir>/source/b.js
+<test-dir>/source/blank.js"
 `;
 
 exports[`happy path prepend-string 1`] = `
