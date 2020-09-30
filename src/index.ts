@@ -138,12 +138,17 @@ async function codemod(
     }));
   }
   
-  async function getGitRoot(inputFilesPaths: string[]): Promise<string> {
+  type GetGitRootOptions = {throwOnNotFound: boolean};
+  async function getGitRoot(inputFilesPaths: string[]): Promise<string>;
+  async function getGitRoot(inputFilesPaths: string[], opts?: GetGitRootOptions): Promise<string | null> {
     // Assume that all files are in the same .git root, and there are no submodules.
     const arbitraryFilePath = path.dirname(inputFilesPaths[0]);
     const gitDir = await findUp('.git', {cwd: arbitraryFilePath, type: 'directory'});
     if (!gitDir) {
-      throw new Error(`Could not find the git root for ${cyan(arbitraryFilePath)}.`);
+      if (opts?.throwOnNotFound) {
+        throw new Error(`Could not find the git root for ${cyan(arbitraryFilePath)}.`);
+      }
+      return null;
     }
     // We want to pop up a level, since we want a directory we can execute git from, and you can't execute git
     // from the .git directory itself.
@@ -188,48 +193,61 @@ async function codemod(
     }
   }
 
-  const inputFiles = (await globby(inputFilesPatterns)).map(filePath => path.resolve(filePath));
-  const logMethod = options.dry ? 'info' : 'debug';
-  log[logMethod]({inputFiles, count: inputFiles.length, inputFilesPatterns}, 'Input file pattern matched these files.');
+  const codemodPath = await getCodemodPath(pathToCodemod, _.pick(options, 'tsconfig', 'tsOutDir', 'tsc'));
+  log.debug({codemodPath});
 
+  const inputFiles = (await globby(inputFilesPatterns)).map(filePath => path.resolve(filePath));
   if (!inputFiles.length) {
     const err = new Error('No files were found to transform.');
     Object.assign(err, {inputFilePatterns: inputFilesPatterns});
     throw err;
   }
 
+  const logMethod = options.dry ? 'info' : 'debug';
+
+  // @ts-ignore
+  const gitRoot = await getGitRoot(inputFiles, {throwOnNotFound: false});
+  log.debug({gitRoot});
+  const gitTrackedFiles = 
+    (await execGit(gitRoot, ['ls-tree', '-r', '--name-only', 'head']))
+    .stdout
+    .trim()
+    .split('\n')
+    .map(filePath => path.join(gitRoot, filePath));
+
+  const filesToModify = _.intersection(inputFiles, gitTrackedFiles);
+
+  log[logMethod](
+    {filesToModify, count: filesToModify.length, inputFilesPatterns}, 
+    'Input file pattern matched these files.'
+  );
+
   if (options.dry) {
     log.info('Exiting early because "dry" was set.');
-    return inputFiles;
+    return filesToModify;
   }
 
   if (options.resetDirtyInputFiles) {
-    const gitRoot = await getGitRoot(inputFiles);
-    log.debug({gitRoot});
-
-    const modifiedFiles = (await execGit(gitRoot, ['status', '--porcelain'])).stdout.split('\n')
+    const dirtyFiles = (await execGit(gitRoot, ['status', '--porcelain'])).stdout.split('\n')
       // This assumes that none of the file paths have spaces in them.
       // It would be better to just split on the first ' ' we see.
       .map(line => line.trim().split(' '))
       .filter(([statusCode]) => statusCode === 'M')
       .map(([_statusCode, filePath]) => path.join(gitRoot, filePath));
 
-    const modifiedInputFiles = _.intersection(modifiedFiles, inputFiles);
-    log.debug({modifiedInputFiles, count: modifiedInputFiles.length});
+    const dirtyInputFiles = _.intersection(dirtyFiles, filesToModify);
+    log.debug({modifiedInputFiles: dirtyInputFiles, count: dirtyInputFiles.length});
 
-    if (modifiedInputFiles.length) {
+    if (dirtyInputFiles.length) {
       const spinner = 
-        ora(`Restoring ${cyan(modifiedInputFiles.length.toString())} dirty files to a clean state.`).start();
-      await execBigCommand(['restore', '--staged'], modifiedInputFiles, (args: string[]) => execGit(gitRoot, args));
-      await execBigCommand(['restore'], modifiedInputFiles, (args: string[]) => execGit(gitRoot, args));
+        ora(`Restoring ${cyan(dirtyInputFiles.length.toString())} dirty files to a clean state.`).start();
+      await execBigCommand(['restore', '--staged'], dirtyInputFiles, (args: string[]) => execGit(gitRoot, args));
+      await execBigCommand(['restore'], dirtyInputFiles, (args: string[]) => execGit(gitRoot, args));
       spinner.succeed();
     }
   }
   
-  const codemodPath = await getCodemodPath(pathToCodemod, _.pick(options, 'tsconfig', 'tsOutDir', 'tsc'));
-  log.debug({codemodPath});
-  
-  await transformCode(codemodPath, inputFiles);
+  await transformCode(codemodPath, filesToModify);
 }
 
 export default codemod;
