@@ -6,6 +6,7 @@ import _ from 'lodash';
 import 'loud-rejection/register';
 import createLogger from 'nth-log';
 import PrettyError from 'pretty-error';
+import fs from 'fs';
 
 PrettyError.start();
 
@@ -41,11 +42,17 @@ const argv = yargs
       type: 'boolean',
       describe: 'Print a list of files to modify, then stop.'
     },
+    porcelain: {
+      alias: 'p',
+      default: false,
+      type: 'boolean',
+      describe: 'Produce machine-readable output.'
+    },
     resetDirtyInputFiles: {
       alias: 'r',
       type: 'boolean',
       default: false,
-      describe: 'If true, use git to restore dirty files to a clean state before running the codemod. ' +
+      describe: 'Use git to restore dirty files to a clean state before running the codemod. ' +
         'This assumes that all input files have the same .git root. If you use submodules, this may not work.'
     },
     jsonOutput: {
@@ -59,6 +66,9 @@ const argv = yargs
     if (!argv._.length) {
       throw new Error('You must pass at least one globby pattern of files to transform.');
     }
+    if (argv.porcelain && !argv.dry) {
+      throw new Error('Porcelain is only supported for dry mode.');
+    }
     return true;
   })
   .strict()
@@ -71,6 +81,9 @@ async function main() {
   if (argv.jsonOutput) {
     logOpts.stream = process.stdout;
   }
+  if (argv.porcelain) {
+    logOpts.stream = fs.createWriteStream('/dev/null');
+  }
   const log = createLogger(logOpts);
 
   // This is not an exhaustive error wrapper, but I think it's ok for now. Making it catch more cases would introduce
@@ -80,7 +93,7 @@ async function main() {
       argv.codemod, 
       argv._, 
       {
-        ..._.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'resetDirtyInputFiles'),
+        ..._.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'resetDirtyInputFiles', 'porcelain'),
         log
       }
     );

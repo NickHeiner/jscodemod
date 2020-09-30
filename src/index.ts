@@ -25,6 +25,7 @@ type Options = {
   tsOutDir?: string
   tsc?: string;
   dry?: boolean;
+  porcelain?: boolean;
   resetDirtyInputFiles?: boolean;
   log?: ReturnType<typeof createLog>
 }
@@ -198,7 +199,7 @@ async function codemod(
     const inputFiles = (await globby(inputFilesPatterns)).map(filePath => path.resolve(filePath));
     if (!inputFiles.length) {
       const err = new Error('No files were found to transform.');
-      Object.assign(err, {inputFilePatterns: inputFilesPatterns});
+      Object.assign(err, {inputFilesPatterns});
       throw err;
     }
 
@@ -235,7 +236,11 @@ async function codemod(
   );
 
   if (options.dry) {
-    log.info('Exiting early because "dry" was set.');
+    if (options.porcelain) {
+      filesToModify.forEach(filePath => console.log(filePath));
+    } else {
+      log.info('Exiting early because "dry" was set.');
+    }
     return filesToModify;
   }
 
