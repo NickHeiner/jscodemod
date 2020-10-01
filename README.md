@@ -73,5 +73,5 @@ core_1.default.transformSync()
 
 If this is supposed to work and I messed it up, please let me know. :)
 
-TODO: maybe this has to do with `esModuleInterop`.
+<!-- TODO: maybe this has to do with `esModuleInterop`. -->
 
