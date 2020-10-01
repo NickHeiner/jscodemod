@@ -86,18 +86,13 @@ async function codemod(
   
   const codemod = loadCodemod(codemodPath);
   log.warn({codemodPath, codemod});
+  
+  // The next line is a bit gnarly to make TS happy.
   const codemodIgnores = _.compact(([] as (RegExp | undefined)[]).concat(codemod.ignore));
+
   const filesToModify = _((await globby(inputFilesPatterns, {dot: true, gitignore: true})))
     .map(filePath => path.resolve(filePath))
-    .reject(filePath => {
-      const some = _.some(codemodIgnores, ignorePattern => {
-        const test = ignorePattern.test(filePath)
-        log.warn({test, filePath, ignorePattern});
-        return test;
-      })
-      log.warn({some});
-      return some;
-    })
+    .reject(filePath => _.some(codemodIgnores, ignorePattern => ignorePattern.test(filePath)))
     .value();
 
   if (!filesToModify.length) {
