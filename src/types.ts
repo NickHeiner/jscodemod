@@ -6,6 +6,7 @@ export type Codemod = {
   transform(opts: {
     source: string;
     filePath: string;
+    commandLineArgs?: string;
   }): CodemodResult | Promise<CodemodResult>;
 }
 

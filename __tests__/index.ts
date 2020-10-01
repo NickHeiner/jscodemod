@@ -125,16 +125,20 @@ const getJsonLogs = (stdout: string) => stdout.split('\n').map(line => sanitizeL
 describe('happy path', () => {
   createTest({
     fixtureName: 'prepend-string',
-    spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), '.', '!codemod'],
+    spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), '--codemodArgs', 'a b c', '.', '!codemod'],
     setUpNodeModules: false,
     snapshot: true,
     assert(spawnResult, testDir) {
       const sanitizedStdout = stripAnsi(replaceAll(spawnResult.stdout, testDir, '<test-dir>'));
-      const postProcessOutput = 
-        sanitizedStdout.split('\n').find(line => line.includes('codemod post process'));
+      const findLine = substring => sanitizedStdout.split('\n').find(line => line.includes(substring));
 
+      const postProcessOutput = findLine('codemod post process');
       expect(postProcessOutput).toBeTruthy();
       expect(postProcessOutput).toMatchSnapshot();
+
+      const commandLineArgs = findLine('commandLineArgs');
+      expect(commandLineArgs).toBeTruthy();
+      expect(commandLineArgs).toMatchSnapshot();
     }
   });
   createTest({

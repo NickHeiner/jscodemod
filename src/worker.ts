@@ -18,7 +18,11 @@ export default async function main(sourceCodeFile: string): Promise<boolean> {
   log.debug({action: 'start'});
 
   const fileContents = await pFs.readFile(sourceCodeFile, 'utf-8');
-  const transformedCode = await codemod.transform({source: fileContents, filePath: sourceCodeFile});
+  const transformedCode = await codemod.transform({
+    source: fileContents, 
+    filePath: sourceCodeFile, 
+    commandLineArgs: piscina.workerData.codemodArgs
+  });
   const codeModified = Boolean(transformedCode && transformedCode !== fileContents);
   if (codeModified) {
     // This non-null assertion is safe because `codeModified` includes a check on `transformedCode`.
