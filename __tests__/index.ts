@@ -127,7 +127,15 @@ describe('happy path', () => {
     fixtureName: 'prepend-string',
     spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), '.', '!codemod'],
     setUpNodeModules: false,
-    snapshot: true
+    snapshot: true,
+    assert(spawnResult, testDir) {
+      const sanitizedStdout = stripAnsi(replaceAll(spawnResult.stdout, testDir, '<test-dir>'));
+      const postProcessOutput = 
+        sanitizedStdout.split('\n').find(line => line.includes('codemod post process'));
+
+      expect(postProcessOutput).toBeTruthy();
+      expect(postProcessOutput).toMatchSnapshot();
+    }
   });
   createTest({
     testName: 'dry',

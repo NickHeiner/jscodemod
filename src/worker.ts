@@ -13,14 +13,18 @@ const pFs = fs.promises;
  */
 const codemod = loadCodemod(piscina.workerData.codemodPath);
 
-export default async function main(sourceCodeFile: string): Promise<void> {
+export default async function main(sourceCodeFile: string): Promise<boolean> {
   const log = baseLog.child({sourceCodeFile});
   log.debug({action: 'start'});
 
   const fileContents = await pFs.readFile(sourceCodeFile, 'utf-8');
   const transformedCode = await codemod.transform({source: fileContents, filePath: sourceCodeFile});
-  if (transformedCode) {
-    await pFs.writeFile(sourceCodeFile, transformedCode);
+  const codeModified = Boolean(transformedCode && transformedCode !== fileContents);
+  if (codeModified) {
+    // This non-null assertion is safe because `codeModified` includes a check on `transformedCode`.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    await pFs.writeFile(sourceCodeFile, transformedCode!);
   }
-  log.debug({action: transformedCode ? 'modified' : 'skipped'});
+  log.debug({action: codeModified ? 'modified' : 'skipped'});
+  return codeModified;
 }
