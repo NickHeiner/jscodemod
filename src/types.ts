@@ -2,6 +2,7 @@ type CodemodResult = string | undefined | null;
 
 export type Codemod = {
   ignore?: RegExp[] | RegExp;
+  postProcess?: (modifiedFiles: string[]) => Promise<unknown>;
   transform(opts: {
     source: string;
     filePath: string;

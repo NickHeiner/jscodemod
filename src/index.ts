@@ -45,10 +45,11 @@ async function transformCode(codemodPath: string, inputFiles: string[]) {
   });
 
   const progressBar = new ProgressBar(':bar (:current/:total, :percent%)', {total: inputFiles.length});
-  await Promise.all(inputFiles.map(async inputFile => {
-    await piscina.runTask(inputFile);
+  return _.compact(await Promise.all(inputFiles.map(async inputFile => {
+    const fileModified = await piscina.runTask(inputFile);
     progressBar.tick();
-  }));
+    return fileModified ? inputFile : null;
+  })));
 }
 
 function execGit(gitRoot: string, args: string[]): Promise<execa.ExecaReturnValue> {
@@ -125,7 +126,10 @@ async function codemod(
     resetDirtyInputFiles(gitRoot, filesToModify, log);
   }
   
-  await transformCode(codemodPath, filesToModify);
+  const modifiedFiles = await transformCode(codemodPath, filesToModify);
+  if (typeof codemod.postProcess === 'function') {
+    await codemod.postProcess(modifiedFiles);
+  }
 }
 
 export default codemod;

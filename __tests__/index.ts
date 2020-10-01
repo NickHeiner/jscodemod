@@ -20,7 +20,6 @@ type TestArgs = {
   expectedExitCode?: number;
   git?: boolean;
   snapshot?: true; 
-  setUpNodeModules?: boolean;
   assert?: (ExecaReturnValue, testDir: string) => void;
   modifier?: 'only' | 'skip';
 }
@@ -35,7 +34,7 @@ const replaceAll = (string: string, pattern: string | RegExp, replacement: strin
 };
 
 function createTest({
-  fixtureName, testName, spawnArgs, expectedExitCode = 0, snapshot, git, setUpNodeModules = true, assert, modifier
+  fixtureName, testName, spawnArgs, expectedExitCode = 0, snapshot, git, assert, modifier
 }: TestArgs) {
   // This is part of our dynamic testing approach.
   /* eslint-disable jest/no-conditional-expect */
@@ -62,10 +61,9 @@ function createTest({
       }));
     }
 
-    if (setUpNodeModules) {
-      await execa('yarn', {cwd: testDir});
-      await execa('ln', ['-s', repoRoot, path.join('node_modules', packageJson.name)], {cwd: testDir});
-    }
+    await execa('yarn', {cwd: testDir});
+    await execa('mkdir', ['-p', 'node_modules']);
+    await execa('ln', ['-s', repoRoot, path.join('node_modules', packageJson.name)], {cwd: testDir});
     
     const binPath = path.resolve(repoRoot, packageJson.bin);
 
@@ -126,7 +124,6 @@ describe('happy path', () => {
   createTest({
     fixtureName: 'prepend-string',
     spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), '.', '!codemod'],
-    setUpNodeModules: false,
     snapshot: true,
     assert(spawnResult) {
       const postProcessOutput = 
