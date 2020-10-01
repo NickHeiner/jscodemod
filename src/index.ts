@@ -23,6 +23,7 @@ export type Options = {
   tsc?: string;
   dry?: boolean;
   porcelain?: boolean;
+  codemodArgs?: string;
   resetDirtyInputFiles?: boolean;
   log?: ReturnType<typeof createLog>
 }
@@ -37,11 +38,11 @@ async function getCodemodPath(pathToCodemod: string, options: Options, log: TODO
   return path.resolve(pathToCodemod);
 }
 
-async function transformCode(codemodPath: string, inputFiles: string[]) {
+async function transformCode(codemodPath: string, inputFiles: string[], codemodArgs?: string) {
   const piscina = new Piscina({
     filename: require.resolve('./worker'),
     argv: [codemodPath],
-    workerData: {codemodPath}
+    workerData: {codemodPath, codemodArgs}
   });
 
   const progressBar = new ProgressBar(':bar (:current/:total, :percent%)', {total: inputFiles.length});
@@ -126,7 +127,7 @@ async function codemod(
     resetDirtyInputFiles(gitRoot, filesToModify, log);
   }
   
-  const modifiedFiles = await transformCode(codemodPath, filesToModify);
+  const modifiedFiles = await transformCode(codemodPath, filesToModify, options.codemodArgs);
   if (typeof codemod.postProcess === 'function') {
     await log.logPhase({
       phase: 'postProcess',

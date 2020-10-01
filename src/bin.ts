@@ -48,6 +48,11 @@ const argv = yargs
       type: 'boolean',
       describe: 'Produce machine-readable output.'
     },
+    codemodArgs: {
+      type: 'string',
+      describe: 'Pass an argument directly through to the codemod, which it can parse on its own. For instance, ' +
+        'if you want to rename all instances of a variable, you could pass that variable name here.'
+    },
     resetDirtyInputFiles: {
       alias: 'r',
       type: 'boolean',
@@ -93,7 +98,7 @@ async function main() {
       argv.codemod, 
       argv._, 
       {
-        ..._.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'resetDirtyInputFiles', 'porcelain'),
+        ..._.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'resetDirtyInputFiles', 'porcelain', 'codemodArgs'),
         log
       }
     );
