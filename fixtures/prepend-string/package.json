@@ -1,6 +1,0 @@
-{
-  "name": "prepend-string",
-  "dependencies": {
-    "execa": "4.0.3"
-  }
-}

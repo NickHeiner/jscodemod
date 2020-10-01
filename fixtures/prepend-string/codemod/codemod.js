@@ -1,8 +1,8 @@
-const execa = require('execa');
-
 module.exports = {
   ignore: /codemod-ignored/,
-  postProcess: modifiedFiles => execa('echo', ['modified files post process', ...modifiedFiles]),
+  postProcess: modifiedFiles => {
+    console.log('codemod post process', JSON.stringify(modifiedFiles));
+  },
   transform({source}) {
     return `/* prefix prepend string */\n${source}`;
   }

@@ -128,7 +128,14 @@ async function codemod(
   
   const modifiedFiles = await transformCode(codemodPath, filesToModify);
   if (typeof codemod.postProcess === 'function') {
-    await codemod.postProcess(modifiedFiles);
+    await log.logPhase({
+      phase: 'postProcess',
+      modifiedFiles,
+      loglevel: 'debug'
+      // This non-null assertion is safe because if we verififed above that `postProcess` is defined, it will not
+      // have been undefined by the time this executes.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    }, () => codemod.postProcess!(modifiedFiles));
   }
 }
 

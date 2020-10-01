@@ -106,7 +106,9 @@ async function main() {
       // eslint-disable-next-line no-console
       console.log(new PrettyError().render(err));
     }
-    log.info("If you need help, please see this project's README, or the --help output.");
+    log.info("If you need help, please see this project's README, or the --help output. " + 
+      "If you're filing a bug report, please re-run this command with env var 'loglevel=debug', and provide the " + 
+      'full output.');
     process.exit(1);
   }
 }
