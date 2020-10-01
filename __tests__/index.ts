@@ -130,7 +130,7 @@ describe('happy path', () => {
     snapshot: true,
     assert(spawnResult, testDir) {
       const sanitizedStdout = stripAnsi(replaceAll(spawnResult.stdout, testDir, '<test-dir>'));
-      const findLine = substring => sanitizedStdout.split('\n').find(line => line.includes(substring))
+      const findLine = substring => sanitizedStdout.split('\n').find(line => line.includes(substring));
 
       const postProcessOutput = findLine('codemod post process');
       expect(postProcessOutput).toBeTruthy();
