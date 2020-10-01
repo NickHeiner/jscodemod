@@ -11,7 +11,7 @@ Yes. I've used jscodeshift, which was created in 2015, in the past. However, I w
 * jscodeshift has no support for [async](https://github.com/facebook/jscodeshift/issues/254) or TS transforms.
 * When writing a complex transform with jscodeshift, you end up wrapping it in a bash script, which becomes painful.
 
-For more detail, see [Comparison with JSCodeshift](./comparison-with-jscodeshift.md).
+For more detail, see [Comparison with JSCodeshift](docs/comparison-with-jscodeshift.md).
 
 ## CLI Usage
 To specify which files to run on, pass a set of [globby](https://www.npmjs.com/package/globby) patterns. Depending on your shell, you may need to wrap the patterns in single quotes to prevent shell expansion:
@@ -75,5 +75,3 @@ If this is supposed to work and I messed it up, please let me know. :)
 
 TODO: maybe this has to do with `esModuleInterop`.
 
-# Misc
-Piscina caveat https://github.com/piscinajs/piscina#multiple-thread-pools-and-embedding-piscina-as-a-dependency
