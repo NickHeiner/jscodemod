@@ -1,6 +1,7 @@
 type CodemodResult = string | undefined | null;
 
 export type Codemod = {
+  ignore?: string[];
   transform(opts: {
     source: string;
     filePath: string;

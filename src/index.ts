@@ -13,6 +13,7 @@ import compileTS from './compile-ts';
 import {TODO} from './types';
 import execBigCommand from './exec-big-command';
 import getGitRoot from './get-git-root';
+import loadCodemod from './load-codemod';
 
 const noOpLogger = createLog({name: 'no-op', stream: fs.createWriteStream('/dev/null')});
 
@@ -84,18 +85,23 @@ async function codemod(
   const codemodPath = await getCodemodPath(pathToCodemod, _.pick(options, 'tsconfig', 'tsOutDir', 'tsc'), log);
   log.debug({codemodPath});
 
-  const filesToModify = (await globby(inputFilesPatterns, {dot: true, gitignore: true}))
+  const codemod = loadCodemod(codemodPath);
+  const inputFilePatternsWithIgnores = [
+    ...inputFilesPatterns, 
+    ...(codemod.ignore || []).map(pattern => `!${pattern}`)
+  ];
+  const filesToModify = (await globby(inputFilePatternsWithIgnores, {dot: true, gitignore: true}))
     .map(filePath => path.resolve(filePath));
   if (!filesToModify.length) {
     const err = new Error('No files were found to transform.');
-    Object.assign(err, {inputFilesPatterns});
+    Object.assign(err, {inputFilePatternsWithIgnores});
     throw err;
   }
 
   const logMethod = options.dry ? 'info' : 'debug';
   log[logMethod](
-    {filesToModify, count: filesToModify.length, inputFilesPatterns}, 
-    'Input file pattern matched these files.'
+    {filesToModify, count: filesToModify.length, inputFilePatternsWithIgnores}, 
+    'Found files to modify.'
   );
 
   if (options.dry) {

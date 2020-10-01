@@ -130,6 +130,7 @@ describe('happy path', () => {
     snapshot: true
   });
   createTest({
+    modifier: 'only',
     testName: 'dry',
     fixtureName: 'prepend-string',
     spawnArgs: ['--dry', '--json-output', '--codemod', path.join('codemod', 'codemod.js'), 'source'],
