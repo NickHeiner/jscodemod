@@ -25,6 +25,7 @@
 ### Usability
 * jscodeshift has a custom command line arg parser, which does not throw on unrecognized flags, making it easy to have a typo. JSCodemod uses [`yargs`](https://www.npmjs.com/package/yargs), which provides an interface familiar to users of many other Node tools, and does throw errors on unrecognized flags.
 * jscodemod bypasses [the challenges of passing ignore patterns to jscodeshift](https://github.com/facebook/jscodeshift/issues/307), because it automatically will only process git-tracked files.
+* [jscodeshift's documentation is lacking.](https://github.com/facebook/jscodeshift/issues/390) I suppose that if one feels this way, one could just avoid using the undocumented parts of jscodeshift. But I feel like it's not doing users any favors to suggest that using these APIs is the primary way to use the tool, but then not document those APIs. By contrast, jscodemod fully documents everything that is available to users. 
 
 ### Performance
 I've observed jscodemod being 30x-50x faster than jscodeshift, on a comparison that simply does a string concatenation. (This removes any difference due to using different code parsers.)
