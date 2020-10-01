@@ -146,6 +146,10 @@ exports[`happy path dry 1`] = `
 Object {
   "codemod/codemod.js": "module.exports = {
   ignore: /codemod-ignored/,
+  postProcess: modifiedFiles => ({
+    command: 'echo',
+    args: ['modified files post process', ...modifiedFiles]
+  }),
   transform({source}) {
     return \`/* prefix prepend string */\\\\n\${source}\`;
   }
@@ -162,6 +166,10 @@ exports[`happy path dry porcelain 1`] = `
 Object {
   "codemod/codemod.js": "module.exports = {
   ignore: /codemod-ignored/,
+  postProcess: modifiedFiles => ({
+    command: 'echo',
+    args: ['modified files post process', ...modifiedFiles]
+  }),
   transform({source}) {
     return \`/* prefix prepend string */\\\\n\${source}\`;
   }
@@ -185,6 +193,10 @@ exports[`happy path prepend-string 1`] = `
 Object {
   "codemod/codemod.js": "module.exports = {
   ignore: /codemod-ignored/,
+  postProcess: modifiedFiles => ({
+    command: 'echo',
+    args: ['modified files post process', ...modifiedFiles]
+  }),
   transform({source}) {
     return \`/* prefix prepend string */\\\\n\${source}\`;
   }
