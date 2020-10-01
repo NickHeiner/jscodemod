@@ -145,6 +145,7 @@ export default codemod;",
 exports[`happy path dry 1`] = `
 Object {
   "codemod/codemod.js": "module.exports = {
+  ignore: /codemod-ignored/,
   transform({source}) {
     return \`/* prefix prepend string */\\\\n\${source}\`;
   }
@@ -153,12 +154,14 @@ Object {
   "source/a.js": "console.log('a');",
   "source/b.js": "function b() {}",
   "source/blank.js": "",
+  "source/codemod-ignored.js": "// codemod ignored",
 }
 `;
 
 exports[`happy path dry porcelain 1`] = `
 Object {
   "codemod/codemod.js": "module.exports = {
+  ignore: /codemod-ignored/,
   transform({source}) {
     return \`/* prefix prepend string */\\\\n\${source}\`;
   }
@@ -167,6 +170,7 @@ Object {
   "source/a.js": "console.log('a');",
   "source/b.js": "function b() {}",
   "source/blank.js": "",
+  "source/codemod-ignored.js": "// codemod ignored",
 }
 `;
 
@@ -180,6 +184,7 @@ exports[`happy path dry porcelain 2`] = `
 exports[`happy path prepend-string 1`] = `
 Object {
   "codemod/codemod.js": "module.exports = {
+  ignore: /codemod-ignored/,
   transform({source}) {
     return \`/* prefix prepend string */\\\\n\${source}\`;
   }
@@ -191,5 +196,6 @@ console.log('a');",
 function b() {}",
   "source/blank.js": "/* prefix prepend string */
 ",
+  "source/codemod-ignored.js": "// codemod ignored",
 }
 `;

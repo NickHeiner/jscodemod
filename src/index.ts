@@ -83,24 +83,32 @@ async function codemod(
   pathToCodemod: string, inputFilesPatterns: string[], {log = noOpLogger, ...options}: Options
 ): Promise<void | string[]> {
   const codemodPath = await getCodemodPath(pathToCodemod, _.pick(options, 'tsconfig', 'tsOutDir', 'tsc'), log);
-  log.debug({codemodPath});
-
+  
   const codemod = loadCodemod(codemodPath);
-  const inputFilePatternsWithIgnores = [
-    ...inputFilesPatterns, 
-    ...(codemod.ignore || []).map(pattern => `!${pattern}`)
-  ];
-  const filesToModify = (await globby(inputFilePatternsWithIgnores, {dot: true, gitignore: true}))
-    .map(filePath => path.resolve(filePath));
+  log.warn({codemodPath, codemod});
+  const codemodIgnores = _.compact(([] as (RegExp | undefined)[]).concat(codemod.ignore));
+  const filesToModify = _((await globby(inputFilesPatterns, {dot: true, gitignore: true})))
+    .map(filePath => path.resolve(filePath))
+    .reject(filePath => {
+      const some = _.some(codemodIgnores, ignorePattern => {
+        const test = ignorePattern.test(filePath)
+        log.warn({test, filePath, ignorePattern});
+        return test;
+      })
+      log.warn({some});
+      return some;
+    })
+    .value();
+
   if (!filesToModify.length) {
     const err = new Error('No files were found to transform.');
-    Object.assign(err, {inputFilePatternsWithIgnores});
+    Object.assign(err, {inputFilesPatterns});
     throw err;
   }
 
   const logMethod = options.dry ? 'info' : 'debug';
   log[logMethod](
-    {filesToModify, count: filesToModify.length, inputFilePatternsWithIgnores}, 
+    {filesToModify, count: filesToModify.length, inputFilesPatterns}, 
     'Found files to modify.'
   );
 
