@@ -24,10 +24,10 @@ export type TSOptions = {
   tsconfig?: string;
   tsOutDir?: string
   tsc?: string;
-  log?: ReturnType<typeof createLog>;
+  log: ReturnType<typeof createLog>;
 }
 
-export type Options = TSOptions & {
+export type NonTSOptions = {
   dry?: boolean;
   writeFiles?: boolean;
   porcelain?: boolean;
@@ -36,9 +36,16 @@ export type Options = TSOptions & {
   doPostProcess?: boolean;
 }
 
+export type Options = Omit<TSOptions, 'log'> & Partial<Pick<TSOptions, 'log'>> & NonTSOptions;
+
+type FalseyDefaultOptions = 'dry' | 'porcelain' | 'codemodArgs' | 'resetDirtyInputFiles';
+export type InternalOptions = TSOptions 
+  & Pick<NonTSOptions, FalseyDefaultOptions> 
+  & Required<Omit<NonTSOptions, FalseyDefaultOptions>>;
+
 // The rule is too broad.
 // eslint-disable-next-line require-await
-async function getCodemodPath(pathToCodemod: string, {log, ...options}: TSOptions) {
+async function getCodemodPath(pathToCodemod: string, options: TSOptions) {
   if (pathIsTS(pathToCodemod)) {
     return compileTS(pathToCodemod, options);
   }
@@ -92,9 +99,24 @@ async function resetDirtyInputFiles(gitRoot: string | null, filesToModify: strin
 async function codemod(
   pathToCodemod: string, 
   inputFilesPatterns: string[], 
-  {log = noOpLogger, doPostProcess = true, writeFiles = true, ...options}: Options = {}
+  passedOptions: Options = {}
 ): Promise<CodemodMetaResult[] | string[]> { // TODO: encode that this return type depends on whether 'dry' is passed.
-  const codemodPath = await getCodemodPath(pathToCodemod, _.pick(options, 'tsconfig', 'tsOutDir', 'tsc', 'log'));
+  const {
+    log,
+    doPostProcess,
+    writeFiles,
+    ...options
+  }: InternalOptions = {
+    log: noOpLogger, 
+    doPostProcess: true, 
+    writeFiles: true, 
+    ...passedOptions
+  };
+
+  const codemodPath = await getCodemodPath(pathToCodemod, {
+    ..._.pick(options, 'tsconfig', 'tsOutDir', 'tsc'),
+    log
+  });
   
   const codemod = loadCodemod(codemodPath);
   log.debug({codemodPath, codemod});

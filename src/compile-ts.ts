@@ -44,7 +44,7 @@ async function getTSOutDir(specifiedTSOutDir?: string): Promise<string> {
     return specifiedTSOutDir;
   }
 
-  return tempy.directory({prefix: `${packageJson.name}-ts-out-dir`});
+  return tempy.directory({prefix: `${packageJson.name.replace('/', '-')}-ts-out-dir`});
 }
 
 async function getTSConfigPath(pathToCodemod: string, specifiedTSConfig?: string) {
@@ -68,7 +68,8 @@ async function getTSConfigPath(pathToCodemod: string, specifiedTSConfig?: string
 }
 
 async function compileTS(
-  pathToCodemod: string, {tsconfig: specifiedTSConfig, tsOutDir: specifiedTSOutDir, tsc: specifiedTSC, log}: TSOptions
+  pathToCodemod: string, 
+  {tsconfig: specifiedTSConfig, tsOutDir: specifiedTSOutDir, tsc: specifiedTSC, log}: TSOptions
 ): Promise<string> {
   const tscConfigPath = await getTSConfigPath(pathToCodemod, specifiedTSConfig);
   const tsc = await getTSCPath(specifiedTSC);

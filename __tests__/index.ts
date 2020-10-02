@@ -46,7 +46,8 @@ function createTest({
   const testNameWithDefault = testName || fixtureName;
   testMethod(testNameWithDefault, async () => {
     const testDirSuffix = replaceAll(sanitizeFilename(testNameWithDefault), ' ', '-').toLowerCase();
-    const testDir = await tempy.directory({prefix: `${packageJson.name}-test-${testDirSuffix}`});
+    const testDirPrefix = `${packageJson.name.replace('/', '-')}-test-${testDirSuffix}`;
+    const testDir = await tempy.directory({prefix: testDirPrefix});
     log.debug({testDir});
 
     const repoRoot = path.resolve(__dirname, '..');
@@ -65,7 +66,9 @@ function createTest({
 
     if (setUpNodeModules) {
       await execa('yarn', {cwd: testDir});
-      await execa('ln', ['-s', repoRoot, path.join('node_modules', packageJson.name)], {cwd: testDir});
+      const symlinkLocation = path.join('node_modules', packageJson.name);
+      await execa('mkdir', ['-p', path.dirname(symlinkLocation)], {cwd: testDir});
+      await execa('ln', ['-s', repoRoot, symlinkLocation], {cwd: testDir});
     }
     
     const binPath = path.resolve(repoRoot, packageJson.bin);
