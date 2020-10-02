@@ -2,7 +2,7 @@
 
 exports[`TS compilation flags Path to TSC is specified 1`] = `
 Object {
-  "codemod/index.ts": "import {Codemod} from 'jscodemod';
+  "codemod/index.ts": "import {Codemod} from '@nth/jscodemod';
 
 // Compiling this will not work automatically, because no TSC will be found.
 
@@ -22,7 +22,7 @@ module.exports = {
 
 exports[`TS compilation flags Specified tsconfig path 1`] = `
 Object {
-  "codemod/index.ts": "import {Codemod} from 'jscodemod';
+  "codemod/index.ts": "import {Codemod} from '@nth/jscodemod';
 
 // Compiling this will not work, because no TSC will be found.
 
@@ -127,7 +127,7 @@ export default ({types: t}: {types: typeof BabelTypes}): {visitor: Visitor<TODO>
       }
     }
   });",
-  "codemod/index.ts": "import {Codemod} from 'jscodemod';
+  "codemod/index.ts": "import {Codemod} from '@nth/jscodemod';
 import babelPlugin from './babel-plugin';
 import {transformSync} from '@babel/core';
 

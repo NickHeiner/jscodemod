@@ -1,4 +1,4 @@
-import {Codemod} from 'jscodemod';
+import {Codemod} from '@nth/jscodemod';
 import babelPlugin from './babel-plugin';
 import {transformSync} from '@babel/core';
 
