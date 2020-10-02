@@ -2,7 +2,7 @@
   "name": "@nth/jscodemod",
   "version": "1.0.0-1",
   "description": "JS codemod runner",
-  "main": "index.js",
+  "main": "build/index.js",
   "repository": "git@github.com:NickHeiner/jscodemod.git",
   "author": "Nick Heiner <nth23@cornell.edu>",
   "license": "MIT",
