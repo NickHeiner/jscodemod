@@ -14,31 +14,38 @@ import {TODO} from './types';
 import execBigCommand from './exec-big-command';
 import getGitRoot from './get-git-root';
 import loadCodemod from './load-codemod';
+import {CodemodMetaResult} from './worker';
+
+export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
 
 const noOpLogger = createLog({name: 'no-op', stream: fs.createWriteStream('/dev/null')});
 
-export type Options = {
+export type TSOptions = {
   tsconfig?: string;
   tsOutDir?: string
   tsc?: string;
+  log?: ReturnType<typeof createLog>;
+}
+
+export type Options = TSOptions & {
   dry?: boolean;
   porcelain?: boolean;
   codemodArgs?: string;
   resetDirtyInputFiles?: boolean;
-  log?: ReturnType<typeof createLog>
+  doPostProcess?: boolean;
 }
 
 // The rule is too broad.
 // eslint-disable-next-line require-await
-async function getCodemodPath(pathToCodemod: string, options: Options, log: TODO) {
+async function getCodemodPath(pathToCodemod: string, {log, ...options}: TSOptions) {
   if (pathIsTS(pathToCodemod)) {
-    return compileTS(pathToCodemod, options, log);
+    return compileTS(pathToCodemod, options);
   }
 
   return path.resolve(pathToCodemod);
 }
 
-async function transformCode(codemodPath: string, inputFiles: string[], codemodArgs?: string) {
+function transformCode(codemodPath: string, inputFiles: string[], codemodArgs?: string) {
   const piscina = new Piscina({
     filename: require.resolve('./worker'),
     argv: [codemodPath],
@@ -46,11 +53,11 @@ async function transformCode(codemodPath: string, inputFiles: string[], codemodA
   });
 
   const progressBar = new ProgressBar(':bar (:current/:total, :percent%)', {total: inputFiles.length});
-  return _.compact(await Promise.all(inputFiles.map(async inputFile => {
-    const fileModified = await piscina.runTask(inputFile);
+  return Promise.all(inputFiles.map(async inputFile => {
+    const codemodMetaResult: CodemodMetaResult = await piscina.runTask(inputFile);
     progressBar.tick();
-    return fileModified ? inputFile : null;
-  })));
+    return codemodMetaResult;
+  }));
 }
 
 function execGit(gitRoot: string, args: string[]): Promise<execa.ExecaReturnValue> {
@@ -82,9 +89,11 @@ async function resetDirtyInputFiles(gitRoot: string | null, filesToModify: strin
 }
 
 async function codemod(
-  pathToCodemod: string, inputFilesPatterns: string[], {log = noOpLogger, ...options}: Options
-): Promise<void | string[]> {
-  const codemodPath = await getCodemodPath(pathToCodemod, _.pick(options, 'tsconfig', 'tsOutDir', 'tsc'), log);
+  pathToCodemod: string, 
+  inputFilesPatterns: string[], 
+  {log = noOpLogger, doPostProcess = true, ...options}: Options = {}
+): Promise<CodemodMetaResult[] | string[]> { // TODO: encode that this return type depends on whether 'dry' is passed.
+  const codemodPath = await getCodemodPath(pathToCodemod, _.pick(options, 'tsconfig', 'tsOutDir', 'tsc', 'log'));
   
   const codemod = loadCodemod(codemodPath);
   log.debug({codemodPath, codemod});
@@ -127,8 +136,9 @@ async function codemod(
     await resetDirtyInputFiles(gitRoot, filesToModify, log);
   }
   
-  const modifiedFiles = await transformCode(codemodPath, filesToModify, options.codemodArgs);
-  if (typeof codemod.postProcess === 'function') {
+  const codemodMetaResults = await transformCode(codemodPath, filesToModify, options.codemodArgs);
+  if (typeof codemod.postProcess === 'function' && doPostProcess) {
+    const modifiedFiles = _(codemodMetaResults).filter('codeModified').map('filePath').value();
     await log.logPhase({
       phase: 'postProcess',
       modifiedFiles,
@@ -138,6 +148,7 @@ async function codemod(
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     }, () => codemod.postProcess!(modifiedFiles));
   }
+  return codemodMetaResults;
 }
 
 export default codemod;

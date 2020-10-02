@@ -63,6 +63,11 @@ const file = 'asdf';",
 }
 `;
 
+exports[`getTransformedContentsOfSingleFile returns the contents of a single file 1`] = `
+"/* prefix prepend string */
+function b() {}"
+`;
+
 exports[`git Modify dirty files 1`] = `
 Object {
   "codemod/codemod.js": "module.exports = {

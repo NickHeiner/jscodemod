@@ -13,21 +13,22 @@ const pFs = fs.promises;
  */
 const codemod = loadCodemod(piscina.workerData.codemodPath);
 
-export default async function main(sourceCodeFile: string): Promise<boolean> {
+export type CodemodMetaResult = {
+  filePath: string;
+  codeModified: boolean;
+  fileContents: string;
+}
+export default async function main(sourceCodeFile: string): Promise<CodemodMetaResult> {
   const log = baseLog.child({sourceCodeFile});
   log.debug({action: 'start'});
 
-  const fileContents = await pFs.readFile(sourceCodeFile, 'utf-8');
+  const originalFileContents = await pFs.readFile(sourceCodeFile, 'utf-8');
   const transformedCode = await codemod.transform({
-    source: fileContents, 
+    source: originalFileContents, 
     filePath: sourceCodeFile, 
     commandLineArgs: piscina.workerData.codemodArgs
   });
-  const codeModified = Boolean(transformedCode && transformedCode !== fileContents);
-
-  // log.warn({
-  //   codeModified, transformedCode, fileContents
-  // })
+  const codeModified = Boolean(transformedCode && transformedCode !== originalFileContents);
 
   if (codeModified) {
     // This non-null assertion is safe because `codeModified` includes a check on `transformedCode`.
@@ -35,5 +36,9 @@ export default async function main(sourceCodeFile: string): Promise<boolean> {
     await pFs.writeFile(sourceCodeFile, transformedCode!);
   }
   log.debug({action: codeModified ? 'modified' : 'skipped'});
-  return codeModified;
+  return {
+    codeModified, 
+    fileContents: transformedCode ? transformedCode : originalFileContents,
+    filePath: sourceCodeFile
+  };
 }

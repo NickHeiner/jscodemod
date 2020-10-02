@@ -1,5 +1,5 @@
 {
-  "name": "jscodemod",
+  "name": "@nth/jscodemod",
   "version": "1.0.0-0",
   "description": "JS codemod runner",
   "main": "index.js",

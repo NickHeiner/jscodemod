@@ -10,6 +10,7 @@ import parseJson from 'parse-json';
 import stripAnsi from 'strip-ansi';
 import resolveBin from 'resolve-bin';
 import sanitizeFilename from 'sanitize-filename';
+import {getTransformedContentsOfSingleFile} from '../build';
 
 const log = createLog({name: 'test'});
 
@@ -263,3 +264,21 @@ describe('git', () => {
   });
 });
 
+describe('getTransformedContentsOfSingleFile', () => {
+  const log = createLog({name: 'test'});
+  it('returns the contents of a single file', async () => {
+    const inputFilePath = path.resolve(__dirname, '../fixtures/prepend-string/source/b.js');
+    const originalFilesContents = await fs.readFile(inputFilePath, 'utf-8');
+    expect(await getTransformedContentsOfSingleFile(
+      require.resolve('../fixtures/prepend-string/codemod/codemod.js'),
+
+      // If we use require.resolve here, then Jest will detect it as a test dependency. When the codemod modifies the
+      // file, and we're in watch mode, Jest will kick off another run, continuing ad infinitum.
+      inputFilePath,
+      {log}
+    )).toMatchSnapshot();
+    expect(originalFilesContents).toEqual(
+      await fs.readFile(inputFilePath, 'utf-8') 
+    );
+  });
+});
