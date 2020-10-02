@@ -47,10 +47,7 @@ async function transformCode(codemodPath: string, inputFiles: string[], codemodA
 
   const progressBar = new ProgressBar(':bar (:current/:total, :percent%)', {total: inputFiles.length});
   return _.compact(await Promise.all(inputFiles.map(async inputFile => {
-    console.log('start piscina');
     const fileModified = await piscina.runTask(inputFile);
-    console.log('end piscina', fileModified);
-
     progressBar.tick();
     return fileModified ? inputFile : null;
   })));
@@ -90,7 +87,7 @@ async function codemod(
   const codemodPath = await getCodemodPath(pathToCodemod, _.pick(options, 'tsconfig', 'tsOutDir', 'tsc'), log);
   
   const codemod = loadCodemod(codemodPath);
-  log.warn({codemodPath, codemod});
+  log.debug({codemodPath, codemod});
   
   // The next line is a bit gnarly to make TS happy.
   const codemodIgnores = _.compact(([] as (RegExp | undefined)[]).concat(codemod.ignore));
