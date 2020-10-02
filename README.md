@@ -1,5 +1,17 @@
 # jscodemod
-Codemod runner
+JSCodemod is a codemod runner. Its codemods are written in JS/TS, but you can operate on any type of file.
+
+## What's a codemod?
+Codemods are automated code transformations – for instance, changing `a && a.b && a.b.c` to `a?.b?.c`. Codemods are useful for large codebases, where doing such a change by hand would put you at risk for making mistakes or developing repetitive stress injuries. (Additionally, automating the change allows you to more easily resolve merge conflicts with PR branches.)
+
+## Don't we already have [jscodeshift](https://github.com/facebook/jscodeshift) for this?
+Yes. I've used jscodeshift, which was created in 2015, in the past. However, I was inspired to make a new tool to address some gaps that I saw:
+
+* jscodeshift performance and [usability](https://github.com/facebook/jscodeshift/issues/335) suffers on large codebases (jscodemod is 30x-50x faster than jscodeshift on codebases of 10,000+ files).
+* jscodeshift has no support for [async](https://github.com/facebook/jscodeshift/issues/254) or TS transforms.
+* When writing a complex transform with jscodeshift, you end up wrapping it in a bash script, which becomes painful.
+
+For more detail, see [Comparison with JSCodeshift](docs/comparison-with-jscodeshift.md).
 
 ## CLI Usage
 To specify which files to run on, pass a set of [globby](https://www.npmjs.com/package/globby) patterns. Depending on your shell, you may need to wrap the patterns in single quotes to prevent shell expansion:
@@ -11,29 +23,6 @@ $ jscodemod --codemod codemod.js src/**/*.js
 # Will not be shell expanded
 $ jscodemod --codemod codemod.js 'src/**/*.js'
 ```
-
-## Comparison with jscodeshift
-Piscina v. `child_process.fork`.
-Yargs v. custom arg parser. Yargs throws errors on unrecognized flags (e.g. `--typo-flag --codmod`), whereas the JSCodeshift custom parser does not.
-
-### Performance
-I've observed jscodemod being 30x-50x faster than jscodeshift, on a comparison that simply does a string concatenation. (This removes any difference due to using different code parsers.)
-
-Use the included `./benchmark/index.js` script to run your own benchmarks. Here's a result of mine, running against [Nodejs](https://github.com/nodejs/node):
-
-```
-$ λ ./benchmark/index.js ~/code/node/
-┌─────────────┬───────────┬─────────────────────────┬──────────────────────────────┬──────────────┐
-│ Runner      │ Transform │ Mean Duration (seconds) │ Standard Deviation (seconds) │ Sample count │
-├─────────────┼───────────┼─────────────────────────┼──────────────────────────────┼──────────────┤
-│ jscodemod   │ string    │ 1.92                    │ 0.0542                       │ 6            │
-├─────────────┼───────────┼─────────────────────────┼──────────────────────────────┼──────────────┤
-│ jscodeshift │ string    │ 47.1                    │ 1.62                         │ 5            │
-└─────────────┴───────────┴─────────────────────────┴──────────────────────────────┴──────────────┘
-```
-
-### Issues
-https://github.com/facebook/jscodeshift/issues/307
 
 ## How to write a codemod
 ### Babel Plugin
@@ -84,7 +73,5 @@ core_1.default.transformSync()
 
 If this is supposed to work and I messed it up, please let me know. :)
 
-TODO: maybe this has to do with `esModuleInterop`.
+<!-- TODO: maybe this has to do with `esModuleInterop`. -->
 
-# Misc
-Piscina caveat https://github.com/piscinajs/piscina#multiple-thread-pools-and-embedding-piscina-as-a-dependency
