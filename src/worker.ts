@@ -30,12 +30,13 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
   });
   const codeModified = Boolean(transformedCode && transformedCode !== originalFileContents);
 
-  if (codeModified) {
+  const {writeFiles} = piscina.workerData; 
+  if (codeModified && writeFiles) {
     // This non-null assertion is safe because `codeModified` includes a check on `transformedCode`.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await pFs.writeFile(sourceCodeFile, transformedCode!);
   }
-  log.debug({action: codeModified ? 'modified' : 'skipped'});
+  log.debug({action: codeModified ? 'modified' : 'skipped', writeFiles});
   return {
     codeModified, 
     fileContents: transformedCode ? transformedCode : originalFileContents,

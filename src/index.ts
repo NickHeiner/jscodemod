@@ -29,6 +29,7 @@ export type TSOptions = {
 
 export type Options = TSOptions & {
   dry?: boolean;
+  writeFiles?: boolean;
   porcelain?: boolean;
   codemodArgs?: string;
   resetDirtyInputFiles?: boolean;
@@ -45,11 +46,11 @@ async function getCodemodPath(pathToCodemod: string, {log, ...options}: TSOption
   return path.resolve(pathToCodemod);
 }
 
-function transformCode(codemodPath: string, inputFiles: string[], codemodArgs?: string) {
+function transformCode(codemodPath: string, inputFiles: string[], writeFiles: boolean, codemodArgs?: string) {
   const piscina = new Piscina({
     filename: require.resolve('./worker'),
     argv: [codemodPath],
-    workerData: {codemodPath, codemodArgs}
+    workerData: {codemodPath, codemodArgs, writeFiles}
   });
 
   const progressBar = new ProgressBar(':bar (:current/:total, :percent%)', {total: inputFiles.length});
@@ -91,7 +92,7 @@ async function resetDirtyInputFiles(gitRoot: string | null, filesToModify: strin
 async function codemod(
   pathToCodemod: string, 
   inputFilesPatterns: string[], 
-  {log = noOpLogger, doPostProcess = true, ...options}: Options = {}
+  {log = noOpLogger, doPostProcess = true, writeFiles = true, ...options}: Options = {}
 ): Promise<CodemodMetaResult[] | string[]> { // TODO: encode that this return type depends on whether 'dry' is passed.
   const codemodPath = await getCodemodPath(pathToCodemod, _.pick(options, 'tsconfig', 'tsOutDir', 'tsc', 'log'));
   
@@ -136,7 +137,7 @@ async function codemod(
     await resetDirtyInputFiles(gitRoot, filesToModify, log);
   }
   
-  const codemodMetaResults = await transformCode(codemodPath, filesToModify, options.codemodArgs);
+  const codemodMetaResults = await transformCode(codemodPath, filesToModify, writeFiles, options.codemodArgs);
   if (typeof codemod.postProcess === 'function' && doPostProcess) {
     const modifiedFiles = _(codemodMetaResults).filter('codeModified').map('filePath').value();
     await log.logPhase({
