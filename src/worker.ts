@@ -24,6 +24,11 @@ export default async function main(sourceCodeFile: string): Promise<boolean> {
     commandLineArgs: piscina.workerData.codemodArgs
   });
   const codeModified = Boolean(transformedCode && transformedCode !== fileContents);
+
+  // log.warn({
+  //   codeModified, transformedCode, fileContents
+  // })
+
   if (codeModified) {
     // This non-null assertion is safe because `codeModified` includes a check on `transformedCode`.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

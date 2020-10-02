@@ -47,7 +47,10 @@ async function transformCode(codemodPath: string, inputFiles: string[], codemodA
 
   const progressBar = new ProgressBar(':bar (:current/:total, :percent%)', {total: inputFiles.length});
   return _.compact(await Promise.all(inputFiles.map(async inputFile => {
+    console.log('start piscina');
     const fileModified = await piscina.runTask(inputFile);
+    console.log('end piscina', fileModified);
+
     progressBar.tick();
     return fileModified ? inputFile : null;
   })));
@@ -124,7 +127,7 @@ async function codemod(
   log.debug({gitRoot});
 
   if (options.resetDirtyInputFiles) {
-    resetDirtyInputFiles(gitRoot, filesToModify, log);
+    await resetDirtyInputFiles(gitRoot, filesToModify, log);
   }
   
   const modifiedFiles = await transformCode(codemodPath, filesToModify, options.codemodArgs);
