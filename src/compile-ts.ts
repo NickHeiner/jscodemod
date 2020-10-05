@@ -2,11 +2,10 @@ import tempy from 'tempy';
 import findUpDetailed from './find-up-detailed';
 import loadJsonFile from 'load-json-file';
 import path from 'path';
-import type {Options} from './';
+import type {TSOptions} from './';
 import {cyan} from 'ansi-colors';
 import execa from 'execa';
 import findUp from 'find-up';
-import {TODO} from './types';
 
 type PackageJson = {name: string};
 const packageJson = loadJsonFile.sync(path.resolve(__dirname, '..', 'package.json')) as PackageJson;
@@ -45,7 +44,7 @@ async function getTSOutDir(specifiedTSOutDir?: string): Promise<string> {
     return specifiedTSOutDir;
   }
 
-  return tempy.directory({prefix: `${packageJson.name}-ts-out-dir`});
+  return tempy.directory({prefix: `${packageJson.name.replace('/', '-')}-ts-out-dir`});
 }
 
 async function getTSConfigPath(pathToCodemod: string, specifiedTSConfig?: string) {
@@ -69,8 +68,8 @@ async function getTSConfigPath(pathToCodemod: string, specifiedTSConfig?: string
 }
 
 async function compileTS(
-  pathToCodemod: string, {tsconfig: specifiedTSConfig, tsOutDir: specifiedTSOutDir, tsc: specifiedTSC}: Options,
-  log: TODO
+  pathToCodemod: string, 
+  {tsconfig: specifiedTSConfig, tsOutDir: specifiedTSOutDir, tsc: specifiedTSC, log}: TSOptions
 ): Promise<string> {
   const tscConfigPath = await getTSConfigPath(pathToCodemod, specifiedTSConfig);
   const tsc = await getTSCPath(specifiedTSC);

@@ -10,6 +10,7 @@ import parseJson from 'parse-json';
 import stripAnsi from 'strip-ansi';
 import resolveBin from 'resolve-bin';
 import sanitizeFilename from 'sanitize-filename';
+import {getTransformedContentsOfSingleFile} from '../build';
 
 const log = createLog({name: 'test'});
 
@@ -45,7 +46,8 @@ function createTest({
   const testNameWithDefault = testName || fixtureName;
   testMethod(testNameWithDefault, async () => {
     const testDirSuffix = replaceAll(sanitizeFilename(testNameWithDefault), ' ', '-').toLowerCase();
-    const testDir = await tempy.directory({prefix: `${packageJson.name}-test-${testDirSuffix}`});
+    const testDirPrefix = `${packageJson.name.replace('/', '-')}-test-${testDirSuffix}`;
+    const testDir = await tempy.directory({prefix: testDirPrefix});
     log.debug({testDir});
 
     const repoRoot = path.resolve(__dirname, '..');
@@ -64,7 +66,9 @@ function createTest({
 
     if (setUpNodeModules) {
       await execa('yarn', {cwd: testDir});
-      await execa('ln', ['-s', repoRoot, path.join('node_modules', packageJson.name)], {cwd: testDir});
+      const symlinkLocation = path.join('node_modules', packageJson.name);
+      await execa('mkdir', ['-p', path.dirname(symlinkLocation)], {cwd: testDir});
+      await execa('ln', ['-s', repoRoot, symlinkLocation], {cwd: testDir});
     }
     
     const binPath = path.resolve(repoRoot, packageJson.bin);
@@ -263,3 +267,33 @@ describe('git', () => {
   });
 });
 
+describe('getTransformedContentsOfSingleFile', () => {
+  const log = createLog({name: 'test'});
+  it('returns the contents of a single file', async () => {
+    /* eslint-disable no-console */
+    console.log = jest.fn().mockImplementation(console.log.bind(console));
+
+    const inputFilePath = path.resolve(__dirname, '../fixtures/prepend-string/source/b.js');
+    const originalFilesContents = await fs.readFile(inputFilePath, 'utf-8');
+    expect(await getTransformedContentsOfSingleFile(
+      require.resolve('../fixtures/prepend-string/codemod/codemod.js'),
+
+      // If we use require.resolve here, then Jest will detect it as a test dependency. When the codemod modifies the
+      // file, and we're in watch mode, Jest will kick off another run, continuing ad infinitum.
+      inputFilePath,
+      {log}
+    )).toMatchSnapshot();
+    expect(originalFilesContents).toEqual(
+      await fs.readFile(inputFilePath, 'utf-8') 
+    );
+
+    // @ts-ignore
+    const codemodCall = _.find(console.log.mock.calls, {0: 'codemod post process'});
+    expect(codemodCall).toBeFalsy();
+    
+    // @ts-ignore
+    console.log.mockReset();
+
+    /* eslint-enable no-console */
+  });
+});
