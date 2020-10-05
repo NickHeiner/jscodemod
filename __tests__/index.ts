@@ -270,6 +270,9 @@ describe('git', () => {
 describe('getTransformedContentsOfSingleFile', () => {
   const log = createLog({name: 'test'});
   it('returns the contents of a single file', async () => {
+    /* eslint-disable no-console */
+    console.log = jest.fn().mockImplementation(console.log.bind(console));
+
     const inputFilePath = path.resolve(__dirname, '../fixtures/prepend-string/source/b.js');
     const originalFilesContents = await fs.readFile(inputFilePath, 'utf-8');
     expect(await getTransformedContentsOfSingleFile(
@@ -283,5 +286,14 @@ describe('getTransformedContentsOfSingleFile', () => {
     expect(originalFilesContents).toEqual(
       await fs.readFile(inputFilePath, 'utf-8') 
     );
+
+    // @ts-ignore
+    const codemodCall = _.find(console.log.mock.calls, {0: 'codemod post process'});
+    expect(codemodCall).toBeFalsy();
+    
+    // @ts-ignore
+    console.log.mockReset();
+
+    /* eslint-enable no-console */
   });
 });
