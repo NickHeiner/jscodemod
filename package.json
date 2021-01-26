@@ -13,7 +13,7 @@
     "build-api-docs": "yarn build && api-extractor run",
     "demo": "yarn build && yarn jscodemod --codemod fixtures/prepend-string/codemod.js fixtures/prepend-string/source",
     "unit": "jest",
-    "test": "yarn lint && yarn build && yarn unit",
+    "test": "yarn lint && yarn build-api-docs && yarn unit",
     "lint": "eslint __tests__ src benchmark --max-warnings 0 --cache",
     "lint:fix": "yarn lint --fix",
     "prepublish": "yarn build"
