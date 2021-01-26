@@ -20,13 +20,31 @@ export {default as getTransformedContentsOfSingleFile} from './get-transformed-c
 
 const noOpLogger = createLog({name: 'no-op', stream: fs.createWriteStream('/dev/null')});
 
+/**
+ * Options for how to compile your project's TS.
+ * 
+ * @internal
+ */
 export type TSOptions = {
+  /** Path to your tsconfig. By default, this tool performs a findup from the directory in which the codemod lives. */
   tsconfig?: string;
+
+  /** 
+   * Directory in which to output compiled JS. Defaults to a temp directory. You probably would only need this for 
+   * debugging purposes.
+   */
   tsOutDir?: string
+
+  /**
+   * Path to the tsc executable to use. Defaults to looking in your project's node_modules/typescript. 
+   */
   tsc?: string;
   log: ReturnType<typeof createLog>;
 }
 
+/**
+ * @internal
+ */
 export type NonTSOptions = {
   dry?: boolean;
   writeFiles?: boolean;
@@ -36,10 +54,15 @@ export type NonTSOptions = {
   doPostProcess?: boolean;
 }
 
+/**
+ * Options for how to perform the codemod.
+ * 
+ * @public
+ */
 export type Options = Omit<TSOptions, 'log'> & Partial<Pick<TSOptions, 'log'>> & NonTSOptions;
 
 type FalseyDefaultOptions = 'dry' | 'porcelain' | 'codemodArgs' | 'resetDirtyInputFiles';
-export type InternalOptions = TSOptions 
+type InternalOptions = TSOptions 
   & Pick<NonTSOptions, FalseyDefaultOptions> 
   & Required<Omit<NonTSOptions, FalseyDefaultOptions>>;
 
@@ -96,6 +119,15 @@ async function resetDirtyInputFiles(gitRoot: string | null, filesToModify: strin
   }
 }
 
+/**
+ * Perform a codemod on a set of files.
+ * 
+ * @param pathToCodemod - file path to the codemod to run. This file's export must match the Codemod type.
+ * @param inputFilesPatterns - files to transform
+ * @param passedOptions - options for the codemod
+ * 
+ * @public
+ */
 async function codemod(
   pathToCodemod: string, 
   inputFilesPatterns: string[], 

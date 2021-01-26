@@ -10,10 +10,11 @@
   "scripts": {
     "jscodemod": "./build/bin.js",
     "build": "rm -rf build && tsc && chmod a+x ./build/bin.js",
-    "build-api-docs": "yarn build && api-extractor run",
+    "build-api-docs": "yarn build && api-extractor run --local",
+    "verify-api-docs": "yarn build && api-extractor run",
     "demo": "yarn build && yarn jscodemod --codemod fixtures/prepend-string/codemod.js fixtures/prepend-string/source",
     "unit": "jest",
-    "test": "yarn lint && yarn build-api-docs && yarn unit",
+    "test": "yarn lint && yarn verify-api-docs && yarn unit",
     "lint": "eslint __tests__ src benchmark --max-warnings 0 --cache",
     "lint:fix": "yarn lint --fix",
     "prepublish": "yarn build"

@@ -8,7 +8,7 @@ import createLog from 'nth-log';
 
 // Warning: (ae-forgotten-export) The symbol "CodemodMetaResult" needs to be exported by the entry point index.d.ts
 //
-// @public (undocumented)
+// @public
 function codemod(pathToCodemod: string, inputFilesPatterns: string[], passedOptions?: Options): Promise<CodemodMetaResult[] | string[]>;
 
 export default codemod;
@@ -16,12 +16,7 @@ export default codemod;
 // @public (undocumented)
 export function getTransformedContentsOfSingleFile(pathToCodemod: string, inputFile: string, codemodOptions?: Options): Promise<string>;
 
-// Warning: (ae-forgotten-export) The symbol "FalseyDefaultOptions" needs to be exported by the entry point index.d.ts
-//
-// @public (undocumented)
-export type InternalOptions = TSOptions & Pick<NonTSOptions, FalseyDefaultOptions> & Required<Omit<NonTSOptions, FalseyDefaultOptions>>;
-
-// @public (undocumented)
+// @internal (undocumented)
 export type NonTSOptions = {
     dry?: boolean;
     writeFiles?: boolean;
@@ -31,10 +26,13 @@ export type NonTSOptions = {
     doPostProcess?: boolean;
 };
 
-// @public (undocumented)
+// Warning: (ae-incompatible-release-tags) The symbol "Options" is marked as @public, but its signature references "TSOptions" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "Options" is marked as @public, but its signature references "NonTSOptions" which is marked as @internal
+//
+// @public
 export type Options = Omit<TSOptions, 'log'> & Partial<Pick<TSOptions, 'log'>> & NonTSOptions;
 
-// @public (undocumented)
+// @internal
 export type TSOptions = {
     tsconfig?: string;
     tsOutDir?: string;

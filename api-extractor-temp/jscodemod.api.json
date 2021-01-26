@@ -18,7 +18,7 @@
         {
           "kind": "Function",
           "canonicalReference": "@nth/jscodemod!codemod:function(1)",
-          "docComment": "",
+          "docComment": "/**\n * Perform a codemod on a set of files.\n *\n * @param pathToCodemod - file path to the codemod to run. This file's export must match the Codemod type.\n *\n * @param inputFilesPatterns - files to transform\n *\n * @param passedOptions - options for the codemod\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -106,7 +106,7 @@
         {
           "kind": "Function",
           "canonicalReference": "@nth/jscodemod!getTransformedContentsOfSingleFile:function(1)",
-          "docComment": "",
+          "docComment": "/**\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -184,126 +184,8 @@
         },
         {
           "kind": "TypeAlias",
-          "canonicalReference": "@nth/jscodemod!InternalOptions:type",
-          "docComment": "",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "export declare type InternalOptions = "
-            },
-            {
-              "kind": "Reference",
-              "text": "TSOptions",
-              "canonicalReference": "@nth/jscodemod!TSOptions:type"
-            },
-            {
-              "kind": "Content",
-              "text": " & "
-            },
-            {
-              "kind": "Reference",
-              "text": "Pick",
-              "canonicalReference": "!Pick:type"
-            },
-            {
-              "kind": "Content",
-              "text": "<"
-            },
-            {
-              "kind": "Reference",
-              "text": "NonTSOptions",
-              "canonicalReference": "@nth/jscodemod!NonTSOptions:type"
-            },
-            {
-              "kind": "Content",
-              "text": ", "
-            },
-            {
-              "kind": "Reference",
-              "text": "FalseyDefaultOptions",
-              "canonicalReference": "@nth/jscodemod!~FalseyDefaultOptions:type"
-            },
-            {
-              "kind": "Content",
-              "text": "> & "
-            },
-            {
-              "kind": "Reference",
-              "text": "Required",
-              "canonicalReference": "!Required:type"
-            },
-            {
-              "kind": "Content",
-              "text": "<"
-            },
-            {
-              "kind": "Reference",
-              "text": "Omit",
-              "canonicalReference": "!Omit:type"
-            },
-            {
-              "kind": "Content",
-              "text": "<"
-            },
-            {
-              "kind": "Reference",
-              "text": "NonTSOptions",
-              "canonicalReference": "@nth/jscodemod!NonTSOptions:type"
-            },
-            {
-              "kind": "Content",
-              "text": ", "
-            },
-            {
-              "kind": "Reference",
-              "text": "FalseyDefaultOptions",
-              "canonicalReference": "@nth/jscodemod!~FalseyDefaultOptions:type"
-            },
-            {
-              "kind": "Content",
-              "text": ">>"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "releaseTag": "Public",
-          "name": "InternalOptions",
-          "typeTokenRange": {
-            "startIndex": 1,
-            "endIndex": 17
-          }
-        },
-        {
-          "kind": "TypeAlias",
-          "canonicalReference": "@nth/jscodemod!NonTSOptions:type",
-          "docComment": "",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "export declare type NonTSOptions = "
-            },
-            {
-              "kind": "Content",
-              "text": "{\n    dry?: boolean;\n    writeFiles?: boolean;\n    porcelain?: boolean;\n    codemodArgs?: string;\n    resetDirtyInputFiles?: boolean;\n    doPostProcess?: boolean;\n}"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "releaseTag": "Public",
-          "name": "NonTSOptions",
-          "typeTokenRange": {
-            "startIndex": 1,
-            "endIndex": 2
-          }
-        },
-        {
-          "kind": "TypeAlias",
           "canonicalReference": "@nth/jscodemod!Options:type",
-          "docComment": "",
+          "docComment": "/**\n * Options for how to perform the codemod.\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -369,49 +251,6 @@
           "typeTokenRange": {
             "startIndex": 1,
             "endIndex": 12
-          }
-        },
-        {
-          "kind": "TypeAlias",
-          "canonicalReference": "@nth/jscodemod!TSOptions:type",
-          "docComment": "",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "export declare type TSOptions = "
-            },
-            {
-              "kind": "Content",
-              "text": "{\n    tsconfig?: string;\n    tsOutDir?: string;\n    tsc?: string;\n    log: "
-            },
-            {
-              "kind": "Reference",
-              "text": "ReturnType",
-              "canonicalReference": "!ReturnType:type"
-            },
-            {
-              "kind": "Content",
-              "text": "<typeof "
-            },
-            {
-              "kind": "Reference",
-              "text": "createLog",
-              "canonicalReference": "nth-log!default:function"
-            },
-            {
-              "kind": "Content",
-              "text": ">;\n}"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "releaseTag": "Public",
-          "name": "TSOptions",
-          "typeTokenRange": {
-            "startIndex": 1,
-            "endIndex": 6
           }
         }
       ]
