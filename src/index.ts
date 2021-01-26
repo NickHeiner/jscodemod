@@ -17,6 +17,7 @@ import loadCodemod from './load-codemod';
 import {CodemodMetaResult} from './worker';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
+export type {Codemod} from './types';
 
 const noOpLogger = createLog({name: 'no-op', stream: fs.createWriteStream('/dev/null')});
 

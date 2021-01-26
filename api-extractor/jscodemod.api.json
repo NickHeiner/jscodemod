@@ -104,6 +104,85 @@
           "name": "codemod"
         },
         {
+          "kind": "TypeAlias",
+          "canonicalReference": "@nth/jscodemod!Codemod:type",
+          "docComment": "/**\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare type Codemod = "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n    ignore?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RegExp",
+              "canonicalReference": "!RegExp:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "[] | "
+            },
+            {
+              "kind": "Reference",
+              "text": "RegExp",
+              "canonicalReference": "!RegExp:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n    postProcess?: (modifiedFiles: string[]) => "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<unknown>;\n    transform(opts: {\n        source: string;\n        filePath: string;\n        commandLineArgs?: string;\n    }): "
+            },
+            {
+              "kind": "Reference",
+              "text": "CodemodResult",
+              "canonicalReference": "@nth/jscodemod!~CodemodResult:type"
+            },
+            {
+              "kind": "Content",
+              "text": " | "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "CodemodResult",
+              "canonicalReference": "@nth/jscodemod!~CodemodResult:type"
+            },
+            {
+              "kind": "Content",
+              "text": ">;\n}"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "releaseTag": "Public",
+          "name": "Codemod",
+          "typeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 14
+          }
+        },
+        {
           "kind": "Function",
           "canonicalReference": "@nth/jscodemod!getTransformedContentsOfSingleFile:function(1)",
           "docComment": "/**\n * @public\n */\n",

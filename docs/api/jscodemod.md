@@ -15,5 +15,6 @@
 
 |  Type Alias | Description |
 |  --- | --- |
+|  [Codemod](./jscodemod.codemod.md) |  |
 |  [Options](./jscodemod.options.md) | Options for how to perform the codemod. |
 

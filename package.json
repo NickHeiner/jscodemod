@@ -3,6 +3,7 @@
   "version": "1.0.0-2",
   "description": "JS codemod runner",
   "main": "build/index.js",
+  "types": "build/index.d.ts",
   "repository": "git@github.com:NickHeiner/jscodemod.git",
   "author": "Nick Heiner <nth23@cornell.edu>",
   "license": "MIT",

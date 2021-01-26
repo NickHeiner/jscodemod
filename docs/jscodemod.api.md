@@ -6,6 +6,17 @@
 
 import createLog from 'nth-log';
 
+// @public (undocumented)
+export type Codemod = {
+    ignore?: RegExp[] | RegExp;
+    postProcess?: (modifiedFiles: string[]) => Promise<unknown>;
+    transform(opts: {
+        source: string;
+        filePath: string;
+        commandLineArgs?: string;
+    }): CodemodResult | Promise<CodemodResult>;
+};
+
 // Warning: (ae-forgotten-export) The symbol "CodemodMetaResult" needs to be exported by the entry point index.d.ts
 //
 // @public
@@ -40,6 +51,10 @@ export type TSOptions = {
     log: ReturnType<typeof createLog>;
 };
 
+
+// Warnings were encountered during analysis:
+//
+// src/types.ts:25:3 - (ae-forgotten-export) The symbol "CodemodResult" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 
