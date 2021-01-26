@@ -10,7 +10,7 @@
   "scripts": {
     "jscodemod": "./build/bin.js",
     "build": "rm -rf build && tsc && chmod a+x ./build/bin.js",
-    "build-api-docs": "yarn build && api-extractor run --local",
+    "build-api-docs": "yarn build && api-extractor run --local && api-documenter markdown --input-folder api-extractor --output-folder docs/api",
     "verify-api-docs": "yarn build && api-extractor run",
     "demo": "yarn build && yarn jscodemod --codemod fixtures/prepend-string/codemod.js fixtures/prepend-string/source",
     "unit": "jest",
