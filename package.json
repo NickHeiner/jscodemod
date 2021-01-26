@@ -23,6 +23,7 @@
     "@babel/plugin-transform-typescript": "7.11.0",
     "@babel/preset-env": "7.11.5",
     "@babel/preset-typescript": "7.10.4",
+    "@microsoft/api-extractor": "7.13.0",
     "@types/jest": "26.0.14",
     "@types/lodash": "4.14.161",
     "@types/progress": "2.0.3",

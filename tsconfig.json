@@ -20,6 +20,9 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
 
+    "declaration": true,
+    "declarationMap": true,
+
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   }
