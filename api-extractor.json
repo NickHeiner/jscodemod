@@ -150,8 +150,7 @@
      * SUPPORTED TOKENS: <projectFolder>, <packageName>, <unscopedPackageName>
      * DEFAULT VALUE: "<projectFolder>/temp/"
      */
-     // I'm not sure if this is actually helpful.
-    "reportTempFolder": "<projectFolder>/api-extractor-temp/"
+    "reportTempFolder": "<projectFolder>/api-extractor/"
   },
 
   /**
@@ -172,7 +171,7 @@
      * SUPPORTED TOKENS: <projectFolder>, <packageName>, <unscopedPackageName>
      * DEFAULT VALUE: "<projectFolder>/temp/<unscopedPackageName>.api.json"
      */
-    "apiJsonFilePath": "<projectFolder>/api-extractor-temp/<unscopedPackageName>.api.json"
+    "apiJsonFilePath": "<projectFolder>/api-extractor/<unscopedPackageName>.api.json"
   },
 
   /**

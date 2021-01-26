@@ -1141,6 +1141,19 @@
     "@types/yargs" "^15.0.0"
     chalk "^4.0.0"
 
+"@microsoft/api-documenter@7.12.6":
+  version "7.12.6"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/@microsoft/api-documenter/-/api-documenter-7.12.6.tgz#a7aec65d16cac9009dea38230aea77fb85089fd7"
+  integrity sha1-p67GXRbKyQCd6jgjCup3+4UIn9c=
+  dependencies:
+    "@microsoft/api-extractor-model" "7.12.1"
+    "@microsoft/tsdoc" "0.12.24"
+    "@rushstack/node-core-library" "3.35.2"
+    "@rushstack/ts-command-line" "4.7.8"
+    colors "~1.2.1"
+    js-yaml "~3.13.1"
+    resolve "~1.17.0"
+
 "@microsoft/api-extractor-model@7.12.1":
   version "7.12.1"
   resolved "https://artifacts.netflix.net/api/npm/npm-netflix/@microsoft/api-extractor-model/-/api-extractor-model-7.12.1.tgz#1f10915c434048da34e1c07845ba2623d5f23f66"
@@ -4085,6 +4098,14 @@ js-yaml@^3.13.1:
   version "3.14.0"
   resolved "https://registry.yarnpkg.com/js-yaml/-/js-yaml-3.14.0.tgz#a7a34170f26a21bb162424d8adacb4113a69e482"
   integrity sha512-/4IbIeHcD9VMHFqDR/gQ7EdZdLimOvW2DdcxFjdyyZ9NsbS+ccrXqVWDtab/lRl5AlUqmpBx8EhPaWR+OtY17A==
+  dependencies:
+    argparse "^1.0.7"
+    esprima "^4.0.0"
+
+js-yaml@~3.13.1:
+  version "3.13.1"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/js-yaml/-/js-yaml-3.13.1.tgz#aff151b30bfdfa8e49e05da22e7415e9dfa37847"
+  integrity sha1-r/FRswv9+o5J4F2iLnQV6d+jeEc=
   dependencies:
     argparse "^1.0.7"
     esprima "^4.0.0"
