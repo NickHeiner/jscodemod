@@ -126,6 +126,10 @@ const sanitizeLogLine = (logEntry: {msg: string} & Record<string, unknown>) => (
 
 const getJsonLogs = (stdout: string) => stdout.split('\n').map(line => sanitizeLogLine(parseJson(line)));
 
+// I don't think extracting this to a var would help readability.
+// eslint-disable-next-line no-magic-numbers
+jest.setTimeout(15 * 1000);
+
 describe('happy path', () => {
   createTest({
     fixtureName: 'prepend-string',
