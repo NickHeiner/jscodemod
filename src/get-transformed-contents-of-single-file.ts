@@ -1,6 +1,9 @@
 import jscodemod, {Options} from '.';
 import {CodemodMetaResult} from './worker';
 
+/**
+ * @public
+ */
 async function getTransformedContentsOfSingleFile(
   pathToCodemod: string,
   inputFile: string,

@@ -1,8 +1,9 @@
 {
   "name": "@nth/jscodemod",
-  "version": "1.0.0-1",
+  "version": "1.0.0-2",
   "description": "JS codemod runner",
   "main": "build/index.js",
+  "types": "build/index.d.ts",
   "repository": "git@github.com:NickHeiner/jscodemod.git",
   "author": "Nick Heiner <nth23@cornell.edu>",
   "license": "MIT",
@@ -10,9 +11,11 @@
   "scripts": {
     "jscodemod": "./build/bin.js",
     "build": "rm -rf build && tsc && chmod a+x ./build/bin.js",
+    "build-api-docs": "yarn build && api-extractor run --local && api-documenter markdown --input-folder api-extractor --output-folder docs/api",
+    "verify-api-docs": "yarn build && api-extractor run",
     "demo": "yarn build && yarn jscodemod --codemod fixtures/prepend-string/codemod.js fixtures/prepend-string/source",
     "unit": "jest",
-    "test": "yarn lint && yarn build && yarn unit",
+    "test": "yarn lint && yarn verify-api-docs && yarn unit",
     "lint": "eslint __tests__ src benchmark --max-warnings 0 --cache",
     "lint:fix": "yarn lint --fix",
     "prepublish": "yarn build"
@@ -23,6 +26,8 @@
     "@babel/plugin-transform-typescript": "7.11.0",
     "@babel/preset-env": "7.11.5",
     "@babel/preset-typescript": "7.10.4",
+    "@microsoft/api-documenter": "7.12.6",
+    "@microsoft/api-extractor": "7.13.0",
     "@types/jest": "26.0.14",
     "@types/lodash": "4.14.161",
     "@types/progress": "2.0.3",
