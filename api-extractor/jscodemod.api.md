@@ -25,6 +25,11 @@ function codemod(pathToCodemod: string, inputFilesPatterns: string[], passedOpti
 export default codemod;
 
 // @public (undocumented)
+export function docTest({ a }: {
+    a: string;
+}): string;
+
+// @public (undocumented)
 export function getTransformedContentsOfSingleFile(pathToCodemod: string, inputFile: string, codemodOptions?: Options): Promise<string>;
 
 // @internal (undocumented)

@@ -9,6 +9,7 @@
 |  Function | Description |
 |  --- | --- |
 |  [codemod(pathToCodemod, inputFilesPatterns, passedOptions)](./jscodemod.codemod.md) | Perform a codemod on a set of files. |
+|  [docTest({ a })](./jscodemod.doctest.md) |  |
 |  [getTransformedContentsOfSingleFile(pathToCodemod, inputFile, codemodOptions)](./jscodemod.gettransformedcontentsofsinglefile.md) |  |
 
 ## Type Aliases

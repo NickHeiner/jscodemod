@@ -22,6 +22,22 @@ export type {Codemod} from './types';
 const noOpLogger = createLog({name: 'no-op', stream: fs.createWriteStream('/dev/null')});
 
 /**
+ * @public
+ */
+export function docTest({
+  a
+}: {
+  // https://rushstack.zulipchat.com/#narrow/stream/262521-api-extractor/topic/Functions.20that.20take.20object.20arguments
+  // https://github.com/microsoft/tsdoc/issues/19
+  /**
+   * Doc comment for param 'a'.
+   */
+  a: string
+}): string {
+  return a;
+}
+
+/**
  * Options for how to compile your project's TS.
  * 
  * @internal
