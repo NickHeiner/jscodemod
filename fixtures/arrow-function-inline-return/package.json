@@ -8,6 +8,7 @@
     "@babel/plugin-syntax-typescript": "7.12.13",
     "@types/babel__core": "7.1.10",
     "@types/babel__traverse": "7.0.15",
+    "recast": "0.20.4",
     "typescript": "4.0.3"
   }
 }
