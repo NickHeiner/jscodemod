@@ -135,7 +135,7 @@ const codemod: Codemod = {
   transform({source, filePath}) {
     return transformSync(source, {
       filename: filePath,
-      plugins: ['@babel/plugin-syntax-optional-chaining', babelPlugin],
+      plugins: ['@babel/plugin-syntax-optional-chaining', '@babel/plugin-syntax-typescript', babelPlugin],
       ast: true
     })?.code;
   }
@@ -143,7 +143,11 @@ const codemod: Codemod = {
 
 export default codemod;",
   "source/optional-chaining.js": "const g = a => a?.b?.c?.d;",
-  "source/ts.ts": "const f = () => 1;",
+  "source/ts.ts": "function g(a: string, b: number, c: boolean) {
+  return 0;
+}
+
+const f = () => 1;",
 }
 `;
 

@@ -6,7 +6,7 @@ const codemod: Codemod = {
   transform({source, filePath}) {
     return transformSync(source, {
       filename: filePath,
-      plugins: ['@babel/plugin-syntax-optional-chaining', babelPlugin],
+      plugins: ['@babel/plugin-syntax-optional-chaining', '@babel/plugin-syntax-typescript', babelPlugin],
       ast: true
     })?.code;
   }
