@@ -178,7 +178,7 @@ describe('happy path', () => {
   createTest({
     testName: 'TS without manually specifying any of the args determining how to compile',
     fixtureName: 'arrow-function-inline-return',
-    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), 'source', '*.ts'],
+    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), 'source'],
     snapshot: true
   });
 });
