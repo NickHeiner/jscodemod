@@ -38,10 +38,10 @@ const codemod: Codemod = {
     require('fs').writeFileSync(`/Users/nheiner/code/jscodemod/recast-${fileName}.json`, JSON.stringify(ast, null, 2));
     require('fs').writeFileSync(`/Users/nheiner/code/jscodemod/transformed-${fileName}.json`, JSON.stringify(result.ast, null, 2));
 
-    // // @ts-ignore
-    // return print(result.ast).code;
+    // @ts-ignore
+    return print(result.ast).code;
 
-    return print(ast).code;
+    // return print(ast).code;
   }
 };
 
