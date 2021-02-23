@@ -5,7 +5,7 @@ module.exports = ({types: t}) =>
         if (t.isBlockStatement(path.node.body) && path.node.body.body.length === 1 &&
               t.isReturnStatement(path.node.body.body[0])) {
 
-          path.get('body').replaceWith(path.node.body.body[0].argument!);  
+          path.get('body').replaceWith(path.node.body.body[0].argument);  
         }
       }
     }
