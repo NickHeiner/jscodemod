@@ -119,11 +119,12 @@ async function codemod(
   });
   
   const codemod = loadCodemod(codemodPath);
-  log.debug({codemodPath, codemod});
+  log.debug({codemodPath, codemodKeys: Object.keys(codemod)});
   
   // The next line is a bit gnarly to make TS happy.
   const codemodIgnores = _.compact(([] as (RegExp | undefined)[]).concat(codemod.ignore));
 
+  log.debug({inputFilesPatterns}, 'Globbing input file patterns.');
   const filesToModify = _((await globby(inputFilesPatterns, {dot: true, gitignore: true})))
     .map(filePath => path.resolve(filePath))
     .reject(filePath => _.some(codemodIgnores, ignorePattern => ignorePattern.test(filePath)))
