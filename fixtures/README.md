@@ -1,0 +1,1 @@
+If you run these fixtures directly, you must comment out the repo's root-level babel config. The fixtures are supposed to be independent projects, but when you run them, Babel finds the root-level config and applies it, which distorts the codemod result.
