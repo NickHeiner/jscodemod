@@ -107,11 +107,11 @@ const x = 'starting state';",
 exports[`happy path TS without manually specifying any of the args determining how to compile 1`] = `
 Object {
   "codemod/babel-plugin.ts": "import * as BabelTypes from '@babel/types';
-import {Visitor} from '@babel/traverse';
+import type {Visitor} from '@babel/traverse';
 
 // TODO is our intentional any type.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type TODO = any;
+export type TODO = any;
 
 export default ({types: t}: {types: typeof BabelTypes}): {visitor: Visitor<TODO>} => 
   ({
@@ -127,26 +127,60 @@ export default ({types: t}: {types: typeof BabelTypes}): {visitor: Visitor<TODO>
       }
     }
   });",
-  "codemod/index.ts": "// To run this codemod from the jscodemod repo while developing locally, change this import to:
-// import {Codemod} from '../../..';
-import {Codemod} from '@nth/jscodemod';
-
-import babelPlugin from './babel-plugin';
-import {transformSync} from '@babel/core';
+  "codemod/index.ts": "import {Codemod} from '@nth/jscodemod';
+import babelPlugin, {TODO} from './babel-plugin';
+import {parse as babelParse, TransformOptions, transformSync} from '@babel/core';
+import {parse, print} from 'recast';
+import _ from 'lodash';
+import type {Visitor} from '@babel/traverse';
 
 const codemod: Codemod = {
-  transform({source, filePath}) {
-    return transformSync(source, {
+  transform({source, filePath}: {source: string, filePath: string}) {
+    const getBabelOpts = (plugins: Exclude<TransformOptions['plugins'], null> = []): TransformOptions => ({
       filename: filePath,
-      plugins: ['@babel/plugin-syntax-optional-chaining', '@babel/plugin-syntax-typescript', babelPlugin],
+      plugins: [...plugins, '@babel/plugin-syntax-optional-chaining', '@babel/plugin-syntax-typescript', babelPlugin],
       ast: true
-    })?.code;
+    });
+    
+    const parser = {
+      parse(source: string, opts: Record<string, unknown>) {
+        return babelParse(source, {
+          ...getBabelOpts(),
+          ..._.omit(
+            opts, 
+            'jsx', 'loc', 'locations', 'range', 'comment', 'onComment', 'tolerant', 'ecmaVersion'
+          )
+        });
+      }
+    };
+    
+    const ast = parse(source, {parser});
+
+    const setAst = (): {visitor: Visitor<TODO>} => ({
+      visitor: {
+        Program(path) {
+          path.replaceWith(ast.program);
+        }
+      }
+    });
+
+    const result = transformSync('', getBabelOpts([setAst]));
+    if (!result) {
+      throw new Error(\`Transforming \\"\${filePath}\\" resulted in a null babel result.\`);
+    }
+
+    // @ts-ignore
+    return print(result.ast).code;
   }
 };
 
 export default codemod;",
   "source/optional-chaining.js": "const g = a => a?.b?.c?.d;",
-  "source/ts.ts": "function g(a: string, b: number, c: boolean) {
+  "source/ts.ts": "function g(
+  a: string,
+  b: number,
+  c: boolean
+) {
   return 0;
 }
 
