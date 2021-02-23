@@ -5,10 +5,7 @@ import codemod from './';
 import _ from 'lodash';
 import 'loud-rejection/register';
 import createLogger from 'nth-log';
-import PrettyError from 'pretty-error';
 import fs from 'fs';
-
-PrettyError.start();
 
 const tsOnlyNote = '(Only applicable if your codemod is written in TypeScript)';
 
@@ -109,7 +106,7 @@ async function main() {
     if (!argv.jsonOutput) {
       // This is intentional.
       // eslint-disable-next-line no-console
-      console.log(new PrettyError().render(err));
+      console.log(err);
     }
     log.info("If you need help, please see this project's README, or the --help output. " + 
       "If you're filing a bug report, please re-run this command with env var 'loglevel=debug', and provide the " + 
