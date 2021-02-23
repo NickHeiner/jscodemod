@@ -5,3 +5,7 @@ function g(
 ) {
   return 0;
 }
+
+const f = () => {
+  return 1
+};
