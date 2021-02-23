@@ -32,6 +32,39 @@ $ jscodemod --codemod codemod.js 'src/**/*.js'
 If your codebase has syntax that Babel doesn't recognize out of the box, you'll want need to handle it. (TypeScript, babel-plugin-proposal-pipeline-operator vs. babel-plugin-syntax-pipeline-operator).
 
 ### Gotchas
+#### Side Effects
+Your codemod will be loaded many times by the worker poll threads, so be careful about side effects. For example:
+
+```js
+// This line will be executed many times, depending on how many threads are in the worker pool.
+fs.writeFile(path, contents);
+
+const codemod = /* ... */
+
+export default codemod;
+```
+
+Additionally, unlike with a codemod framework that does everything in one process, you can't share context between worker pool threads:
+
+```js
+// This will not be shared globally. Because each worker pool thread loads the codemod separately, this closure variable
+// will only be visible to the thread that loaded it.
+let totalFilesTransformed = 0;
+
+const codemod = {
+  transform({source}) {
+    const newSource = transform(source);
+    if (newSource !== source) {
+      totalFilesTransformed++;
+    }
+    return newSource;
+  }
+}
+
+export default codemod;
+```
+
+#### Importing Babel
 TypeScript lets you write the following:
 
 ```ts
