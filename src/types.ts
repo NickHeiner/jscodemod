@@ -1,6 +1,7 @@
 type CodemodResult = string | undefined | null;
 
-type ScalarOrPromise<T> = T | Promise<T>
+type ScalarOrPromise<T> = T | Promise<T>;
+type ParsedArgs = Record<string, unknown> | undefined;
 
 export type Codemod = {
   /**
@@ -11,7 +12,7 @@ export type Codemod = {
   /**
    * 
    */
-  parseArgs?: (rawCommandLineArgs: string) => ScalarOrPromise<Record<string, unknown> | void>
+  parseArgs?: (rawCommandLineArgs: string) => ScalarOrPromise<ParsedArgs>
   // TODO: Can we make the type of returned args flow through to transform better?
 
   /**
@@ -25,12 +26,12 @@ export type Codemod = {
    * @param opts
    * @param opts.source the contents of the file to transform.
    * @param opts.filePath the path to the file to transform.
-   * @param opts.commandLineArgs arguments passed by the user in the `jscodemod` command line invocation. 
+   * @param opts.commandLineArgs parsed arguments returned by `yourCodemod.parseArgs()`, if any.
    */
   transform(opts: {
     source: string;
     filePath: string;
-    commandLineArgs?: string;
+    commandLineArgs?: ParsedArgs;
   }): CodemodResult | Promise<CodemodResult>;
 }
 
