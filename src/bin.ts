@@ -9,6 +9,9 @@ import fs from 'fs';
 
 const tsOnlyNote = '(Only applicable if your codemod is written in TypeScript)';
 
+// Passing paths as file globs that start with `.` doesn't work.
+// https://github.com/sindresorhus/globby/issues/168
+
 const argv = yargs
   .usage('$0 [options] <file globs>')
   // TODO: Some of these options should be hidden.
