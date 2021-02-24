@@ -1,10 +1,18 @@
 type CodemodResult = string | undefined | null;
 
+type ScalarOrPromise<T> = T | Promise<T>
+
 export type Codemod = {
   /**
    * Any file matching these patterns will not be processed.
    */
   ignore?: RegExp[] | RegExp;
+
+  /**
+   * 
+   */
+  parseArgs?: (rawCommandLineArgs: string) => ScalarOrPromise<Record<string, unknown> | void>
+  // TODO: Can we make the type of returned args flow through to transform better?
 
   /**
    * After all transforms have been run, this function will be invoked with an array of files there were modified.
