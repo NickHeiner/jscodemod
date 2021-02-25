@@ -12,9 +12,21 @@ const tsOnlyNote = '(Only applicable if your codemod is written in TypeScript)';
 // Passing paths as file globs that start with `.` doesn't work.
 // https://github.com/sindresorhus/globby/issues/168
 
-const argv = yargs
-  .usage('$0 [options] <file globs>')
+const {argv} = yargs
   // TODO: Some of these options should be hidden.
+  .command(
+    '$0 [options] <fileGlobs...>', 
+    'Run the codemod. Any arguments after "--" will be passed through to the codemod.', 
+    yargs => {
+      yargs.positional('fileGlobs', {
+        required: true,
+        type: 'string'
+      });
+    })
+  .middleware(argv => {
+    argv.codemodArgs = argv['--'];
+    return argv;
+  }, true)
   .options({
     codemod: {
       alias: 'c',
@@ -50,8 +62,8 @@ const argv = yargs
     },
     codemodArgs: {
       type: 'string',
-      describe: 'Pass an argument directly through to the codemod, which it can parse on its own. For instance, ' +
-        'if you want to rename all instances of a variable, you could pass that variable name here.'
+      hidden: true,
+      describe: 'Do not pass this argument. This is only here to make yargs happy.'
     },
     resetDirtyInputFiles: {
       alias: 'r',
@@ -67,8 +79,11 @@ const argv = yargs
         ' of this tool from another tool, or process the logs using your own Bunyan log processor/formatter.'
     }
   })
+  .group(['tsconfig', 'tsOutDir', 'tsc'], 'TypeScript')
+  .group(['jsonOutput', 'porcelain'], 'Rarely Useful')
   .check(argv => {
-    if (!argv._.length) {
+    // @ts-expect-error
+    if (!argv.fileGlobs.length) {
       throw new Error('You must pass at least one globby pattern of files to transform.');
     }
     if (argv.porcelain && !argv.dry) {
@@ -77,8 +92,7 @@ const argv = yargs
     return true;
   })
   .strict()
-  .help()
-  .argv;
+  .help();
 
 async function main() {
   // This type is not flowing properly from createLogger.
@@ -91,16 +105,23 @@ async function main() {
   }
   const log = createLogger(logOpts);
 
+  log.debug({argv});
+
   // This is not an exhaustive error wrapper, but I think it's ok for now. Making it catch more cases would introduce
   // complexity without adding much safety.
   try {
+    const opts = {
+      ..._.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'resetDirtyInputFiles', 'porcelain'),
+      log
+    };
+
+    Object.assign(opts, _.pick(argv, 'codemodArgs'));
+
     await codemod(
       argv.codemod, 
-      argv._, 
-      {
-        ..._.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'resetDirtyInputFiles', 'porcelain', 'codemodArgs'),
-        log
-      }
+      // @ts-expect-error
+      argv.fileGlobs, 
+      opts
     );
   } catch (err) {
     // TODO: Maybe known errors should be marked with a flag, since showing a stack trace for them probably

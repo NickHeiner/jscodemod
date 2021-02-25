@@ -142,6 +142,19 @@ async function codemod(
     'Found files to modify.'
   );
 
+  // TODO: I don't like setting an expectation that codemods should call process.exit themselves, but it's convenient
+  // because it's what yargs does by default. The codemod could also stop the process by throwing an exception, which
+  // I also don't love.
+  const handleExit = () => 
+    // I think bunyan is too verbose here.
+    // eslint-disable-next-line no-console
+    console.log("The codemod's parseArgs method called process.exit(). " +
+      "This probably means the arguments you passed to it didn't validate. To pass arguments to a codemod, " +
+      "put them at the end of the whole command, like 'jscodemod -c codemod.js fileGlob -- -a b'.");
+  process.on('exit', handleExit);
+  await codemod.parseArgs?.(options.codemodArgs);
+  process.off('exit', handleExit);
+
   if (options.dry) {
     if (options.porcelain) {
       // We want undecorated output for porcelain.

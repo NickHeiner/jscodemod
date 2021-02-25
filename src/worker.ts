@@ -25,6 +25,7 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
   const originalFileContents = await pFs.readFile(sourceCodeFile, 'utf-8');
   const parsedArgs = await codemod.parseArgs?.(piscina.workerData.codemodArgs);
 
+  // TODO: Handle the codemod throwing an error?
   const transformedCode = await codemod.transform({
     source: originalFileContents, 
     filePath: sourceCodeFile, 

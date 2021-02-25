@@ -12,7 +12,7 @@ export type Codemod = {
   /**
    * 
    */
-  parseArgs?: (rawCommandLineArgs: string) => ScalarOrPromise<ParsedArgs>
+  parseArgs?: (rawCommandLineArgs?: string) => ScalarOrPromise<ParsedArgs>
   // TODO: Can we make the type of returned args flow through to transform better?
 
   /**
