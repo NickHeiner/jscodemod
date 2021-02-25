@@ -14,8 +14,7 @@ const codemod: Codemod = {
       .help()
       .parse(rawCommandLineArgs);
   },
-  transform({commandLineArgs}) {
-    console.log({commandLineArgs});
+  transform() {
     return null;
   }
 };
