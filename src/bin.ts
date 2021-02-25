@@ -79,9 +79,11 @@ const {argv} = yargs
         ' of this tool from another tool, or process the logs using your own Bunyan log processor/formatter.'
     }
   })
+  .group(['codemod', 'dry', 'resetDirtyInputFiles'], 'Primary')
   .group(['tsconfig', 'tsOutDir', 'tsc'], 'TypeScript')
   .group(['jsonOutput', 'porcelain'], 'Rarely Useful')
   .check(argv => {
+    // Yarg's types are messed up.
     // @ts-expect-error
     if (!argv.fileGlobs.length) {
       throw new Error('You must pass at least one globby pattern of files to transform.');
@@ -115,10 +117,12 @@ async function main() {
       log
     };
 
+    // Yarg's types are messed up.
     Object.assign(opts, _.pick(argv, 'codemodArgs'));
 
     await codemod(
       argv.codemod, 
+      // Yarg's types are messed up.
       // @ts-expect-error
       argv.fileGlobs, 
       opts

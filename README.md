@@ -25,6 +25,7 @@ $ jscodemod --codemod codemod.js 'src/**/*.js'
 ```
 
 ## How to write a codemod
+The argument you pass to `--codemod` is a file that exports a `Codemod`. Look in [Types](src/types.ts) for the semantics of that object.
 ### Babel Plugin
 1. Use [ASTExplorer](https://astexplorer.net/) with the "transform" option enabled for an interactive environment for developing your plugin.
 1. Read the [Babel Plugin Handbook](https://github.com/jamiebuilds/babel-handbook/) to learn how to write a Babel plugin.
