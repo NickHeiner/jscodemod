@@ -199,7 +199,6 @@ describe('error handling', () => {
   });
 
   createTest({
-    modifier: 'only',
     testName: 'missing required argument to codemod',
     fixtureName: 'parse-args',
     spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), '*.js'],
