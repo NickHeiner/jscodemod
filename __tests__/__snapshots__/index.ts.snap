@@ -63,6 +63,16 @@ const file = 'asdf';",
 }
 `;
 
+exports[`error handling missing required argument to codemod 1`] = `
+"Options:
+      --version       Show version number                              [boolean]
+  -r, --requiredFlag  This arg is required                   [string] [required]
+      --help          Show help                                        [boolean]
+
+Missing required argument: requiredFlag
+The codemod's parseArgs method called process.exit(). This probably means the arguments you passed to it didn't validate. To pass arguments to a codemod, put them at the end of the whole command, like 'jscodemod -c codemod.js fileGlob -- -a b'."
+`;
+
 exports[`getTransformedContentsOfSingleFile returns the contents of a single file 1`] = `
 "/* prefix prepend string */
 function b() {}"

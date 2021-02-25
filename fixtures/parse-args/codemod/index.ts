@@ -1,8 +1,8 @@
-import {Codemod} from '../../..';
+import {Codemod} from '@nth/jscodemod';
 import yargs from 'yargs';
 
 const codemod: Codemod = {
-  parseArgs(rawCommandLineArgs) {
+  parseArgs(rawCommandLineArgs = '') {
     return yargs.options({
       requiredFlag: {
         alias: 'r',
