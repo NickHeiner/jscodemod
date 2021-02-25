@@ -263,4 +263,4 @@ function b() {}",
 
 exports[`happy path prepend-string 2`] = `"codemod post process [\\"<test-dir>/source/.dotfile.js\\",\\"<test-dir>/source/a.js\\",\\"<test-dir>/source/b.js\\",\\"<test-dir>/source/blank.js\\"]"`;
 
-exports[`happy path prepend-string 3`] = `"commandLineArgs {\\"rawCommandLineArgs\\":\\"a b c\\"}"`;
+exports[`happy path prepend-string 3`] = `"commandLineArgs {}"`;
