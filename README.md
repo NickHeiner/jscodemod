@@ -34,10 +34,10 @@ If your codebase has syntax that Babel doesn't recognize out of the box, you'll 
 
 ### Gotchas
 #### Side Effects
-Your codemod will be loaded many times by the worker poll threads, so be careful about side effects. For example:
+Your codemod will be loaded many times by the worker pool threads, so be careful about side effects. For example:
 
 ```js
-// This line will be executed many times, depending on how many threads are in the worker pool.
+// This line will be executed many times, depending on how the worker pool is managed.
 fs.writeFile(path, contents);
 
 const codemod = /* ... */
