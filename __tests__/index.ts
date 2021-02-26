@@ -197,6 +197,16 @@ describe('error handling', () => {
     spawnArgs: ['source'],
     expectedExitCode: 1
   });
+
+  createTest({
+    testName: 'missing required argument to codemod',
+    fixtureName: 'parse-args',
+    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), '*.js'],
+    expectedExitCode: 1,
+    assert({stderr}) {
+      expect(stderr).toMatchSnapshot();
+    }
+  });
 });
 
 describe('TS compilation flags', () => {

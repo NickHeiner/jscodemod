@@ -23,10 +23,13 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
   log.debug({action: 'start'});
 
   const originalFileContents = await pFs.readFile(sourceCodeFile, 'utf-8');
+  const parsedArgs = await codemod.parseArgs?.(piscina.workerData.codemodArgs);
+
+  // TODO: Handle the codemod throwing an error?
   const transformedCode = await codemod.transform({
     source: originalFileContents, 
     filePath: sourceCodeFile, 
-    commandLineArgs: piscina.workerData.codemodArgs
+    commandLineArgs: parsedArgs
   });
   const codeModified = Boolean(transformedCode && transformedCode !== originalFileContents);
 

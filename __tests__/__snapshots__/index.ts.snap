@@ -63,6 +63,16 @@ const file = 'asdf';",
 }
 `;
 
+exports[`error handling missing required argument to codemod 1`] = `
+"Options:
+      --version       Show version number                              [boolean]
+  -r, --requiredFlag  This arg is required                   [string] [required]
+      --help          Show help                                        [boolean]
+
+Missing required argument: requiredFlag
+The codemod's parseArgs method called process.exit(). This probably means the arguments you passed to it didn't validate. To pass arguments to a codemod, put them at the end of the whole command, like 'jscodemod -c codemod.js fileGlob -- -a b'."
+`;
+
 exports[`getTransformedContentsOfSingleFile returns the contents of a single file 1`] = `
 "/* prefix prepend string */
 function b() {}"
@@ -195,6 +205,7 @@ Object {
   postProcess: modifiedFiles => {
     console.log('codemod post process', JSON.stringify(modifiedFiles));
   },
+  parseArgs: rawCommandLineArgs => ({rawCommandLineArgs}),
   transform({source, commandLineArgs}) {
     console.log('commandLineArgs', JSON.stringify(commandLineArgs));
     return \`/* prefix prepend string */\\\\n\${source}\`;
@@ -215,6 +226,7 @@ Object {
   postProcess: modifiedFiles => {
     console.log('codemod post process', JSON.stringify(modifiedFiles));
   },
+  parseArgs: rawCommandLineArgs => ({rawCommandLineArgs}),
   transform({source, commandLineArgs}) {
     console.log('commandLineArgs', JSON.stringify(commandLineArgs));
     return \`/* prefix prepend string */\\\\n\${source}\`;
@@ -242,6 +254,7 @@ Object {
   postProcess: modifiedFiles => {
     console.log('codemod post process', JSON.stringify(modifiedFiles));
   },
+  parseArgs: rawCommandLineArgs => ({rawCommandLineArgs}),
   transform({source, commandLineArgs}) {
     console.log('commandLineArgs', JSON.stringify(commandLineArgs));
     return \`/* prefix prepend string */\\\\n\${source}\`;
@@ -260,4 +273,4 @@ function b() {}",
 
 exports[`happy path prepend-string 2`] = `"codemod post process [\\"<test-dir>/source/.dotfile.js\\",\\"<test-dir>/source/a.js\\",\\"<test-dir>/source/b.js\\",\\"<test-dir>/source/blank.js\\"]"`;
 
-exports[`happy path prepend-string 3`] = `"commandLineArgs \\"a b c\\""`;
+exports[`happy path prepend-string 3`] = `"commandLineArgs {}"`;

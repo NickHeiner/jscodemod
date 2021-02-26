@@ -1,0 +1,8 @@
+{
+  "name": "arrow-function-inline-return",
+  "dependencies": {
+    "@types/yargs": "11.0.0",
+    "typescript": "4.1.5",
+    "yargs": "16.2.0"
+  }
+}
