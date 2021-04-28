@@ -25,7 +25,7 @@ export type Transform = {
      }): ScalarOrPromise<CodemodResult>;
 }
 
-export type DetectLabel = string | undefined;
+export type DetectLabel = boolean | undefined;
 export type Detect = {
   detect(opts: {
     source: string;

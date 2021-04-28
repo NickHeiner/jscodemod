@@ -33,6 +33,48 @@ The argument you pass to `--codemod` is a file that exports a `Codemod`. Look in
 If your codebase has syntax that Babel doesn't recognize out of the box, you'll want need to handle it. (TypeScript, babel-plugin-proposal-pipeline-operator vs. babel-plugin-syntax-pipeline-operator).
 
 ### Gotchas
+#### TypeScript codemods in TypeScript projects may be slow by default
+If your big project is in TypeScript, and you write your codemod in TypeScript, your build time may be very slow. For example, consider this file struture:
+
+```
+tsconfig.json
+src/
+codemods/
+  index.ts
+```
+
+By default, if you run:
+
+```
+$ @nth/jscodemod --codemod codemods/index.ts src
+```
+
+Then `@nth/jscodemod` will compile your entire project's TS. This may be too slow. To fix this, create a `tsconfig` just for your codemod:
+
+```
+tsconfig.json
+src/
+codemods/
+  index.ts
+  tsconfig.json
+```
+
+Then, pass it as an argument:
+
+```
+$ @nth/jscodemod --codemod codemods/index.ts src --tsconfig codemods/tsconfig.json
+```
+
+Your new `tsconfig` will probably look something like:
+
+```json
+{
+  "extends": "../tsconfig.json",
+  "files": ["index.ts"]
+  // You may need to override other base settings, like "includes".
+}
+```
+
 #### Side Effects
 Your codemod will be loaded many times by the worker pool threads, so be careful about side effects. For example:
 
