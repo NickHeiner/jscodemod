@@ -54,6 +54,7 @@ const {argv} = yargs
       type: 'boolean',
       describe: 'Print a list of files to modify, then stop.'
     },
+    // Does this really need to exist when we have jsonOutput?
     porcelain: {
       alias: 'p',
       default: false,
@@ -77,11 +78,15 @@ const {argv} = yargs
       default: false,
       describe: 'Output logs as JSON, instead of human-readable formatting. Useful if you want to consume the output ' +
         ' of this tool from another tool, or process the logs using your own Bunyan log processor/formatter.'
+    },
+    watch: {
+      type: 'boolean',
+      describe: 'Interactive watch mode. Defaults to "true" for detectors and "false" for transformers.'
     }
   })
   .group(['codemod', 'dry', 'resetDirtyInputFiles'], 'Primary')
   .group(['tsconfig', 'tsOutDir', 'tsc'], 'TypeScript')
-  .group(['jsonOutput', 'porcelain'], 'Rarely Useful')
+  .group(['jsonOutput', 'porcelain', 'watch'], 'Rarely Useful')
   .check(argv => {
     // Yarg's types are messed up.
     // @ts-expect-error
@@ -113,7 +118,7 @@ async function main() {
   // complexity without adding much safety.
   try {
     const opts = {
-      ..._.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'resetDirtyInputFiles', 'porcelain'),
+      ..._.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'resetDirtyInputFiles', 'porcelain', 'watch'),
       log
     };
 

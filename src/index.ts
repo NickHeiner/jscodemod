@@ -10,7 +10,7 @@ import ora from 'ora';
 import createLog from 'nth-log';
 import fs from 'fs';
 import compileTS from './compile-ts';
-import {TODO} from './types';
+import {CodemodKind, TODO} from './types';
 import execBigCommand from './exec-big-command';
 import getGitRoot from './get-git-root';
 import loadCodemod from './load-codemod';
@@ -18,7 +18,8 @@ import {CodemodMetaResult} from './worker';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
 
-const noOpLogger = createLog({name: 'no-op', stream: fs.createWriteStream('/dev/null')});
+const devNull = fs.createWriteStream('/dev/null');
+const noOpLogger = createLog({name: 'no-op', stream: devNull});
 
 export type TSOptions = {
   tsconfig?: string;
@@ -31,6 +32,7 @@ export type NonTSOptions = {
   dry?: boolean;
   writeFiles?: boolean;
   porcelain?: boolean;
+  watch?: boolean | undefined;
   codemodArgs?: string;
   resetDirtyInputFiles?: boolean;
   doPostProcess?: boolean;
@@ -38,7 +40,7 @@ export type NonTSOptions = {
 
 export type Options = Omit<TSOptions, 'log'> & Partial<Pick<TSOptions, 'log'>> & NonTSOptions;
 
-type FalseyDefaultOptions = 'dry' | 'porcelain' | 'codemodArgs' | 'resetDirtyInputFiles';
+type FalseyDefaultOptions = 'dry' | 'porcelain' | 'codemodArgs' | 'resetDirtyInputFiles' | 'watch';
 export type InternalOptions = TSOptions 
   & Pick<NonTSOptions, FalseyDefaultOptions> 
   & Required<Omit<NonTSOptions, FalseyDefaultOptions>>;
@@ -53,19 +55,47 @@ async function getCodemodPath(pathToCodemod: string, options: TSOptions) {
   return path.resolve(pathToCodemod);
 }
 
-function transformCode(codemodPath: string, inputFiles: string[], writeFiles: boolean, codemodArgs?: string) {
+async function runCodemod({codemodPath, inputFiles, writeFiles, codemodArgs, watch, codemodKind, log}: {
+  codemodPath: string,
+  inputFiles: string[], 
+  writeFiles: boolean, 
+  codemodArgs?: string, 
+  watch?: NonTSOptions['watch'],
+  codemodKind: CodemodKind,
+  log: TODO
+}) {
+  const isTransformCodemod = codemodKind === 'transform';
+  if (isTransformCodemod && watch) {
+    throw new Error('Watch mode is not supported for transform codemods.');
+  }
+
   const piscina = new Piscina({
     filename: require.resolve('./worker'),
     argv: [codemodPath],
     workerData: {codemodPath, codemodArgs, writeFiles}
   });
 
-  const progressBar = new ProgressBar(':bar (:current/:total, :percent%)', {total: inputFiles.length});
-  return Promise.all(inputFiles.map(async inputFile => {
+  const progressBar = new ProgressBar(':bar (:current/:total, :percent%)', {
+    total: inputFiles.length,
+    stream: isTransformCodemod ? undefined : devNull
+  });
+
+  const codemodResults = await Promise.all(inputFiles.map(async inputFile => {
     const codemodMetaResult: CodemodMetaResult = await piscina.runTask(inputFile);
     progressBar.tick();
     return codemodMetaResult;
   }));
+
+  if (!isTransformCodemod) {
+    const resultsByLabel = _(codemodResults).groupBy('label');
+    const summary = resultsByLabel.mapValues(codemodResults => _.map(codemodResults, 'filePath')).value();
+
+    const counts = resultsByLabel.mapValues('length').value();
+      
+    log.info({summary, counts});
+  }
+
+  return codemodResults;
 }
 
 function execGit(gitRoot: string, args: string[]): Promise<execa.ExecaReturnValue> {
@@ -173,7 +203,14 @@ async function codemod(
     await resetDirtyInputFiles(gitRoot, filesToModify, log);
   }
 
-  const codemodMetaResults = await transformCode(codemodPath, filesToModify, writeFiles, options.codemodArgs);
+  const codemodMetaResults = await runCodemod({
+    codemodPath, 
+    inputFiles: filesToModify, 
+    writeFiles,
+    codemodKind: 'transform' in codemod ? 'transform' : 'detect',
+    log,
+    ..._.pick(options, 'codemodArgs', 'watch')
+  });
   if ('postProcess' in codemod && doPostProcess) {
     const modifiedFiles = _(codemodMetaResults).filter('codeModified').map('filePath').value();
     await log.logPhase({

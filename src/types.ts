@@ -3,6 +3,8 @@ type CodemodResult = string | undefined | null;
 type ScalarOrPromise<T> = T | Promise<T>;
 type ParsedArgs = Record<string, unknown> | undefined;
 
+export type CodemodKind = 'transform' | 'detect';
+
 export type Transform = {
   /**
    * After all transforms have been run, this function will be invoked with an array of files there were modified.
