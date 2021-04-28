@@ -66,9 +66,6 @@ async function runCodemod({codemodPath, inputFiles, writeFiles, codemodArgs, wat
   log: TODO
 }) {
   const isTransformCodemod = codemodKind === 'transform';
-  if (isTransformCodemod && watch) {
-    throw new Error('Watch mode is not supported for transform codemods.');
-  }
 
   const piscina = new Piscina({
     filename: require.resolve('./worker'),
@@ -129,6 +126,15 @@ async function resetDirtyInputFiles(gitRoot: string | null, filesToModify: strin
     await execBigCommand(['restore'], dirtyInputFiles, (args: string[]) => execGit(gitRoot, args), log);
     spinner.succeed();
   }
+}
+
+export function getWatch(codemodKind: CodemodKind, watch: NonTSOptions['watch']): boolean {
+  const isTransformCodemod = codemodKind === 'transform';
+  if (isTransformCodemod && watch) {
+    throw new Error('Watch mode is not supported for transform codemods.');
+  }
+  
+  return isTransformCodemod ? false : !(watch === false);
 }
 
 async function codemod(

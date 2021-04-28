@@ -10,7 +10,7 @@ import parseJson from 'parse-json';
 import stripAnsi from 'strip-ansi';
 import resolveBin from 'resolve-bin';
 import sanitizeFilename from 'sanitize-filename';
-import {getTransformedContentsOfSingleFile} from '../build';
+import {getTransformedContentsOfSingleFile, getWatch} from '../build';
 
 const log = createLog({name: 'test'});
 
@@ -311,3 +311,20 @@ describe('getTransformedContentsOfSingleFile', () => {
     /* eslint-enable no-console */
   });
 });
+
+describe('getWatch', () => {
+  test.each([
+    ['transform', true, new Error('Watch mode is not supported for transform codemods.')],
+    ['transform', false, false],
+    ['transform', undefined, false],
+    ['detect', true, true],
+    ['detect', false, false],
+    ['detect', undefined, true],
+  ])('getWatch(%p, %p)', (codemodKind, watch, expected) => {
+    if (_.isError(expected)) {
+      expect(() => getWatch(codemodKind, watch)).toThrowError(expected);
+    } else {
+      expect(getWatch(codemodKind, watch)).toBe(expected);
+    }
+  })
+})
