@@ -16,6 +16,7 @@ import getGitRoot from './get-git-root';
 import loadCodemod from './load-codemod';
 import {CodemodMetaResult} from './worker';
 import interactiveDetect from './interactive-detect';
+import chokidar from 'chokidar';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
 
@@ -154,6 +155,24 @@ async function codemod(
     ...passedOptions
   };
 
+  function watchFileOrDoOnce<T>(
+    filePath: string, watch: boolean, onChange: () => Promise<T>
+  ): Promise<T> {
+    if (watch) {
+      log.debug({filePath}, 'watching');
+      chokidar.watch(filePath)
+        .on('ready', () => {
+          log.debug({filePath}, 'watcher ready');
+          onChange();
+        })
+        .on('change', onChange);
+
+      return new Promise(() => {});
+    }
+
+    return onChange();
+  }
+
   const codemodPath = await getCodemodPath(pathToCodemod, {
     ..._.pick(options, 'tsconfig', 'tsOutDir', 'tsc'),
     log
@@ -161,79 +180,85 @@ async function codemod(
   
   const codemod = loadCodemod(codemodPath);
   log.debug({codemodPath, codemodKeys: Object.keys(codemod)});
-  
-  // The next line is a bit gnarly to make TS happy.
-  const codemodIgnores = _.compact(([] as (RegExp | undefined)[]).concat(codemod.ignore));
 
-  log.debug({inputFilesPatterns}, 'Globbing input file patterns.');
-  const filesToModify = _((await globby(inputFilesPatterns, {dot: true, gitignore: true})))
-    .map(filePath => path.resolve(filePath))
-    .reject(filePath => _.some(codemodIgnores, ignorePattern => ignorePattern.test(filePath)))
-    .value();
+  const codemodKind = 'transform' in codemod ? 'transform' : 'detect';
+  const watch = getWatch(codemodKind, options.watch);
 
-  if (!filesToModify.length) {
-    const err = new Error('No files were found to transform.');
-    Object.assign(err, {inputFilesPatterns});
-    throw err;
-  }
+  return watchFileOrDoOnce(pathToCodemod, watch, async () => {
+    // The next line is a bit gnarly to make TS happy.
+    const codemodIgnores = _.compact(([] as (RegExp | undefined)[]).concat(codemod.ignore));
 
-  const logMethod = options.dry ? 'info' : 'debug';
-  log[logMethod](
-    {filesToModify, count: filesToModify.length, inputFilesPatterns}, 
-    'Found files to modify.'
-  );
+    log.debug({inputFilesPatterns}, 'Globbing input file patterns.');
+    const filesToModify = _((await globby(inputFilesPatterns, {dot: true, gitignore: true})))
+      .map(filePath => path.resolve(filePath))
+      .reject(filePath => _.some(codemodIgnores, ignorePattern => ignorePattern.test(filePath)))
+      .value();
 
-  // TODO: I don't like setting an expectation that codemods should call process.exit themselves, but it's convenient
-  // because it's what yargs does by default. The codemod could also stop the process by throwing an exception, which
-  // I also don't love.
-  const handleExit = () => 
-    // I think bunyan is too verbose here.
-    // eslint-disable-next-line no-console
-    console.error("The codemod's parseArgs method called process.exit(). " +
-      "This probably means the arguments you passed to it didn't validate. To pass arguments to a codemod, " +
-      "put them at the end of the whole command, like 'jscodemod -c codemod.js fileGlob -- -a b'.");
-  process.on('exit', handleExit);
-  await codemod.parseArgs?.(options.codemodArgs);
-  process.off('exit', handleExit);
-
-  if (options.dry) {
-    if (options.porcelain) {
-      // We want undecorated output for porcelain.
-      // eslint-disable-next-line no-console
-      filesToModify.forEach(filePath => console.log(filePath));
-    } else {
-      log.info('Exiting early because "dry" was set.');
+    if (!filesToModify.length) {
+      const err = new Error('No files were found to transform.');
+      Object.assign(err, {inputFilesPatterns});
+      throw err;
     }
-    return filesToModify;
-  }
 
-  const gitRoot = await getGitRoot(filesToModify);
-  log.debug({gitRoot});
+    const logMethod = options.dry ? 'info' : 'debug';
+    log[logMethod](
+      {filesToModify, count: filesToModify.length, inputFilesPatterns}, 
+      'Found files to modify.'
+    );
 
-  if (options.resetDirtyInputFiles) {
-    await resetDirtyInputFiles(gitRoot, filesToModify, log);
-  }
+    // TODO: I don't like setting an expectation that codemods should call process.exit themselves, but it's convenient
+    // because it's what yargs does by default. The codemod could also stop the process by throwing an exception, which
+    // I also don't love.
+    const handleExit = () => 
+      // I think bunyan is too verbose here.
+      // eslint-disable-next-line no-console
+      console.error("The codemod's parseArgs method called process.exit(). " +
+        "This probably means the arguments you passed to it didn't validate. To pass arguments to a codemod, " +
+        "put them at the end of the whole command, like 'jscodemod -c codemod.js fileGlob -- -a b'.");
+    process.on('exit', handleExit);
+    await codemod.parseArgs?.(options.codemodArgs);
+    process.off('exit', handleExit);
 
-  const codemodMetaResults = await runCodemod({
-    codemodPath, 
-    inputFiles: filesToModify, 
-    writeFiles,
-    codemodKind: 'transform' in codemod ? 'transform' : 'detect',
-    log,
-    ..._.pick(options, 'codemodArgs', 'watch')
-  });
-  if ('postProcess' in codemod && doPostProcess) {
-    const modifiedFiles = _(codemodMetaResults).filter('codeModified').map('filePath').value();
-    await log.logPhase({
-      phase: 'postProcess',
-      modifiedFiles,
-      loglevel: 'debug'
-      // This non-null assertion is safe because if we verififed above that `postProcess` is defined, it will not
-      // have been undefined by the time this executes.
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    }, () => codemod.postProcess!(modifiedFiles));
-  }
-  return codemodMetaResults;
+    if (options.dry) {
+      if (options.porcelain) {
+        // We want undecorated output for porcelain.
+        // eslint-disable-next-line no-console
+        filesToModify.forEach(filePath => console.log(filePath));
+      } else {
+        log.info('Exiting early because "dry" was set.');
+      }
+      return filesToModify;
+    }
+
+    const gitRoot = await getGitRoot(filesToModify);
+    log.debug({gitRoot});
+
+    if (options.resetDirtyInputFiles) {
+      await resetDirtyInputFiles(gitRoot, filesToModify, log);
+    }
+
+    const codemodMetaResults = await runCodemod({
+      codemodPath, 
+      inputFiles: filesToModify, 
+      writeFiles,
+      codemodKind: 'transform' in codemod ? 'transform' : 'detect',
+      log,
+      ..._.pick(options, 'codemodArgs', 'watch')
+    });
+    if ('postProcess' in codemod && doPostProcess) {
+      const modifiedFiles = _(codemodMetaResults).filter('codeModified').map('filePath').value();
+      await log.logPhase({
+        phase: 'postProcess',
+        modifiedFiles,
+        loglevel: 'debug'
+        // This non-null assertion is safe because if we verififed above that `postProcess` is defined, it will not
+        // have been undefined by the time this executes.
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      }, () => codemod.postProcess!(modifiedFiles));
+    }
+    return codemodMetaResults;
+  })
+
 }
 
 export default codemod;

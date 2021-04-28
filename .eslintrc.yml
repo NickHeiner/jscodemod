@@ -17,6 +17,9 @@ rules:
   # I don't use @ts comments frivolously.
   '@typescript-eslint/ban-ts-comment': off
 
+  # I don't mistakenly write empty functions.
+  '@typescript-eslint/no-empty-function': off
+
 env:
   es6: true
   node: true

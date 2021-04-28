@@ -80,6 +80,7 @@ const {argv} = yargs
         ' of this tool from another tool, or process the logs using your own Bunyan log processor/formatter.'
     },
     watch: {
+      alias: 'w',
       type: 'boolean',
       describe: 'Interactive watch mode. Defaults to "true" for detectors and "false" for transformers.'
     }
