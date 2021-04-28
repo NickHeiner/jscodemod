@@ -71,7 +71,7 @@ Your new `tsconfig` will probably look something like:
 {
   "extends": "../tsconfig.json",
   "files": ["index.ts"]
-  // You may need to override other base settings, like "includes".
+  // You may need to override other base settings, like "includes", or "compilerOptions.noEmit".
 }
 ```
 
