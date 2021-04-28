@@ -70,8 +70,18 @@ Your new `tsconfig` will probably look something like:
 ```json
 {
   "extends": "../tsconfig.json",
-  "files": ["index.ts"]
-  // You may need to override other base settings, like "includes", or "compilerOptions.noEmit".
+  "files": ["index.ts"],
+  "compilerOptions": {
+      // In this example, @nth/jscodemod will look for tsc to emit "codemods/index.js", since you passed flag "--codemod codemods/index.ts".
+      // By default, with this custom tsconfig, tsc will emit "index.js" instead of "codemods/index.js".
+      // Pass this rootDir option to fix it.
+      "rootDir": "..",
+
+      // This may be necessary if your root tsconfig sets it.
+      "noEmit": false,
+  },
+  // This may be necessary if your root tsconfig sets it.
+  "include": []
 }
 ```
 
