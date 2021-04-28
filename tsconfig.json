@@ -1,5 +1,5 @@
 {
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "src/interactive-detect.tsx"],
   "exclude": ["__tests__", "fixtures"],
 
   "compilerOptions": {
@@ -9,6 +9,8 @@
     "checkJs": true,                       
 
     "strict": true,
+
+    "jsx": "react",
 
     "outDir": "build",
     

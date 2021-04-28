@@ -26,6 +26,7 @@
     "@types/jest": "26.0.14",
     "@types/lodash": "4.14.161",
     "@types/progress": "2.0.3",
+    "@types/react": "17.0.4",
     "@typescript-eslint/eslint-plugin": "4.15.2",
     "@typescript-eslint/parser": "4.15.2",
     "babel-jest": "26.3.0",
@@ -47,6 +48,7 @@
     "ansi-colors": "4.1.1",
     "find-up": "5.0.0",
     "globby": "11.0.1",
+    "ink": "3.0.8",
     "load-json-file": "6.2.0",
     "lodash": "4.17.20",
     "loud-rejection": "2.2.0",
@@ -54,6 +56,7 @@
     "ora": "5.1.0",
     "piscina": "1.6.3",
     "progress": "2.0.3",
+    "react": "17.0.2",
     "tempy": "0.7.1"
   }
 }

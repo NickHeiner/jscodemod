@@ -15,6 +15,7 @@ import execBigCommand from './exec-big-command';
 import getGitRoot from './get-git-root';
 import loadCodemod from './load-codemod';
 import {CodemodMetaResult} from './worker';
+import interactiveDetect from './interactive-detect';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
 
@@ -87,12 +88,16 @@ async function runCodemod({codemodPath, inputFiles, writeFiles, codemodArgs, wat
   }));
 
   if (!isTransformCodemod) {
-    const resultsByLabel = _(codemodResults).groupBy('label');
-    const summary = resultsByLabel.mapValues(codemodResults => _.map(codemodResults, 'filePath')).value();
-
-    const counts = resultsByLabel.mapValues('length').value();
-      
-    log.info({summary, counts});
+    if (watch === false) {
+      const resultsByLabel = _(codemodResults).groupBy('label');
+      const summary = resultsByLabel.mapValues(codemodResults => _.map(codemodResults, 'filePath')).value();
+  
+      const counts = resultsByLabel.mapValues('length').value();
+        
+      log.info({summary, counts});
+    } else {
+      interactiveDetect();
+    }
   }
 
   return codemodResults;
