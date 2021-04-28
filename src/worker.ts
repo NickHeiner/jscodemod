@@ -2,6 +2,7 @@ import createLog from 'nth-log';
 import piscina from 'piscina';
 import fs from 'fs';
 import loadCodemod from './load-codemod';
+import type {DetectLabel} from './types';
 
 const baseLog = createLog({name: 'jscodemod-worker'});
 
@@ -13,11 +14,19 @@ const pFs = fs.promises;
  */
 const codemod = loadCodemod(piscina.workerData.codemodPath);
 
+export type TransformMeta = {
+  codeModified: boolean;
+}
+
+export type DetectMeta = {
+  label: DetectLabel;
+}
+
 export type CodemodMetaResult = {
   filePath: string;
-  codeModified: boolean;
   fileContents: string;
-}
+} & (TransformMeta | DetectMeta)
+
 export default async function main(sourceCodeFile: string): Promise<CodemodMetaResult> {
   const log = baseLog.child({sourceCodeFile});
   log.debug({action: 'start'});
@@ -25,24 +34,36 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
   const originalFileContents = await pFs.readFile(sourceCodeFile, 'utf-8');
   const parsedArgs = await codemod.parseArgs?.(piscina.workerData.codemodArgs);
 
-  // TODO: Handle the codemod throwing an error?
-  const transformedCode = await codemod.transform({
+  const codemodOpts = {
     source: originalFileContents, 
     filePath: sourceCodeFile, 
     commandLineArgs: parsedArgs
-  });
-  const codeModified = Boolean(transformedCode && transformedCode !== originalFileContents);
+  };
 
-  const {writeFiles} = piscina.workerData; 
-  if (codeModified && writeFiles) {
-    // This non-null assertion is safe because `codeModified` includes a check on `transformedCode`.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    await pFs.writeFile(sourceCodeFile, transformedCode!);
+  // TODO: Handle the codemod throwing an error?
+  if ('transform' in codemod) {
+    const transformedCode = await codemod.transform(codemodOpts);
+    const codeModified = Boolean(transformedCode && transformedCode !== originalFileContents);
+    const {writeFiles} = piscina.workerData; 
+    if (codeModified && writeFiles) {
+      // This non-null assertion is safe because `codeModified` includes a check on `transformedCode`.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      await pFs.writeFile(sourceCodeFile, transformedCode!);
+    }
+    log.debug({action: codeModified ? 'modified' : 'skipped', writeFiles});
+
+    return {
+      codeModified, 
+      fileContents: transformedCode ? transformedCode : originalFileContents,
+      filePath: sourceCodeFile
+    };
   }
-  log.debug({action: codeModified ? 'modified' : 'skipped', writeFiles});
+  const label = await codemod.detect(codemodOpts);
+  log.debug({action: 'detect', result: label});
+
   return {
-    codeModified, 
-    fileContents: transformedCode ? transformedCode : originalFileContents,
+    label, 
+    fileContents: originalFileContents,
     filePath: sourceCodeFile
   };
 }

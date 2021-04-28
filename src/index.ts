@@ -172,9 +172,9 @@ async function codemod(
   if (options.resetDirtyInputFiles) {
     await resetDirtyInputFiles(gitRoot, filesToModify, log);
   }
-  
+
   const codemodMetaResults = await transformCode(codemodPath, filesToModify, writeFiles, options.codemodArgs);
-  if (typeof codemod.postProcess === 'function' && doPostProcess) {
+  if ('postProcess' in codemod && doPostProcess) {
     const modifiedFiles = _(codemodMetaResults).filter('codeModified').map('filePath').value();
     await log.logPhase({
       phase: 'postProcess',

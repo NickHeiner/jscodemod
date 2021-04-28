@@ -3,6 +3,38 @@ type CodemodResult = string | undefined | null;
 type ScalarOrPromise<T> = T | Promise<T>;
 type ParsedArgs = Record<string, unknown> | undefined;
 
+export type Transform = {
+  /**
+   * After all transforms have been run, this function will be invoked with an array of files there were modified.
+   */
+     postProcess?: (modifiedFiles: string[]) => Promise<unknown>;
+
+     /**
+      * Transform a single file. Return null or undefined to indicate that the file should not be modified.
+      * 
+      * @param opts
+      * @param opts.source the contents of the file to transform.
+      * @param opts.filePath the path to the file to transform.
+      * @param opts.commandLineArgs parsed arguments returned by `yourCodemod.parseArgs()`, if any.
+      */
+     transform(opts: {
+       source: string;
+       filePath: string;
+       // TODO: only specify this as an option to transform if parseArgs is present.
+       commandLineArgs?: ParsedArgs;
+     }): ScalarOrPromise<CodemodResult>;
+}
+
+export type DetectLabel = string | undefined;
+export type Detect = {
+  detect(opts: {
+    source: string;
+    filePath: string;
+    // TODO: only specify this as an option to transform if parseArgs is present.
+    commandLineArgs?: ParsedArgs;
+  }): ScalarOrPromise<DetectLabel>
+}
+
 export type Codemod = {
   /**
    * Any file matching these patterns will not be processed.
@@ -29,27 +61,7 @@ export type Codemod = {
    */
   parseArgs?: (rawCommandLineArgs?: string) => ScalarOrPromise<ParsedArgs>
   // TODO: Can we make the type of returned args flow through to transform better?
-
-  /**
-   * After all transforms have been run, this function will be invoked with an array of files there were modified.
-   */
-  postProcess?: (modifiedFiles: string[]) => Promise<unknown>;
-
-  /**
-   * Transform a single file. Return null or undefined to indicate that the file should not be modified.
-   * 
-   * @param opts
-   * @param opts.source the contents of the file to transform.
-   * @param opts.filePath the path to the file to transform.
-   * @param opts.commandLineArgs parsed arguments returned by `yourCodemod.parseArgs()`, if any.
-   */
-  transform(opts: {
-    source: string;
-    filePath: string;
-    // TODO: only specify this as an option to transform if parseArgs is present.
-    commandLineArgs?: ParsedArgs;
-  }): CodemodResult | Promise<CodemodResult>;
-}
+} & (Transform | Detect)
 
 // The `any` here is intentional.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
