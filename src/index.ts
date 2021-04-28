@@ -173,18 +173,26 @@ async function codemod(
     return onChange();
   }
 
-  const codemodPath = await getCodemodPath(pathToCodemod, {
-    ..._.pick(options, 'tsconfig', 'tsOutDir', 'tsc'),
-    log
-  });
-  
-  const codemod = loadCodemod(codemodPath);
-  log.debug({codemodPath, codemodKeys: Object.keys(codemod)});
+  async function compileAndLoadCodemod() {
+    const codemodPath = await getCodemodPath(pathToCodemod, {
+      ..._.pick(options, 'tsconfig', 'tsOutDir', 'tsc'),
+      log
+    });
+    
+    const codemod = loadCodemod(codemodPath);
+    log.debug({codemodPath, codemodKeys: Object.keys(codemod)});
+
+    return {codemod, codemodPath};
+  }
+
+  const {codemod} = await compileAndLoadCodemod();
 
   const codemodKind = 'transform' in codemod ? 'transform' : 'detect';
   const watch = getWatch(codemodKind, options.watch);
 
   return watchFileOrDoOnce(pathToCodemod, watch, async () => {
+    const {codemodPath, codemod} = await compileAndLoadCodemod();
+
     // The next line is a bit gnarly to make TS happy.
     const codemodIgnores = _.compact(([] as (RegExp | undefined)[]).concat(codemod.ignore));
 
