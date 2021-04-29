@@ -79,6 +79,22 @@ async function compileTS(
   log.debug({tsc, tscArgs}, 'exec');
   await execa(tsc, tscArgs);
 
+  /* TODO Bug: This will not always work. In a monorepo, you could have:
+
+      root/
+        node_modules/
+        packages/
+          package-a/
+            node_modules/
+            pathToCodemod.ts
+
+      In this case, pathToCodemod expects to have access to both root/node_modules and 
+      root/packages/package-a/node_modules. However, the current logic will only link the 
+      root/packages/package-a/node_modules.
+
+      Is this a category of issues that will prove tricky with compiling TS? Should I be using something like ts-node
+      instead?
+  */
   const originalNodeModules = await findUp(
     'node_modules',
     {cwd: path.dirname(pathToCodemod), type: 'directory'}
