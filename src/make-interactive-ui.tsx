@@ -16,8 +16,15 @@ const FileList = (props: FileListProps) => {
 };
 
 export type DetectResults = {
+  /**
+   * Map of {label: filesMatchingThisLabel[]}
+   */
   byLabel: Record<string, string[]>;
-  errored: string[];
+
+  /**
+   * Map of {filePath: error}
+   */
+  errored: Record<string, string>;
 }
 export type Phase = 'reacting' | 'showing-results'
 type Props = {

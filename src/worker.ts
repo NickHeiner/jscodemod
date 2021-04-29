@@ -3,6 +3,7 @@ import piscina from 'piscina';
 import fs from 'fs';
 import loadCodemod from './load-codemod';
 import type {DetectLabel} from './types';
+import {serializeError} from 'serialize-error';
 
 const baseLog = createLog({name: 'jscodemod-worker'});
 
@@ -27,7 +28,11 @@ export type DetectMeta = {
   label: DetectLabel;
 } & BaseCodemodMeta;
 
-export type CodemodMetaResult = TransformMeta | DetectMeta;
+export type ErrorMeta = {
+  error: Error
+} & BaseCodemodMeta;
+
+export type CodemodMetaResult = TransformMeta | DetectMeta | ErrorMeta;
 
 export default async function main(sourceCodeFile: string): Promise<CodemodMetaResult> {
   const log = baseLog.child({sourceCodeFile});
@@ -60,7 +65,18 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
       filePath: sourceCodeFile
     };
   }
-  const label = await codemod.detect(codemodOpts);
+  let label;
+  try {
+    label = await codemod.detect(codemodOpts);
+  } catch (e) {
+    log.debug({e}, 'Codemod threw an error');
+    return {
+      error: serializeError(e),
+      fileContents: originalFileContents,
+      filePath: sourceCodeFile
+    }
+  }
+
   log.debug({action: 'detect', result: label});
 
   return {

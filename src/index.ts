@@ -14,7 +14,7 @@ import {CodemodKind, TODO} from './types';
 import execBigCommand from './exec-big-command';
 import getGitRoot from './get-git-root';
 import loadCodemod from './load-codemod';
-import {CodemodMetaResult, DetectMeta} from './worker';
+import {CodemodMetaResult, DetectMeta, ErrorMeta} from './worker';
 import makeInteractiveUI, {DetectResults} from './make-interactive-ui';
 import chokidar from 'chokidar';
 
@@ -55,35 +55,6 @@ async function getCodemodPath(pathToCodemod: string, options: TSOptions) {
   }
 
   return path.resolve(pathToCodemod);
-}
-
-async function runCodemod({codemodPath, inputFiles, writeFiles, codemodArgs, codemodKind}: {
-  codemodPath: string,
-  inputFiles: string[], 
-  writeFiles: boolean, 
-  codemodArgs?: string, 
-  codemodKind: CodemodKind,
-}) {
-  const isTransformCodemod = codemodKind === 'transform';
-
-  const piscina = new Piscina({
-    filename: require.resolve('./worker'),
-    argv: [codemodPath],
-    workerData: {codemodPath, codemodArgs, writeFiles}
-  });
-
-  const progressBar = new ProgressBar(':bar (:current/:total, :percent%)', {
-    total: inputFiles.length,
-    stream: isTransformCodemod ? undefined : devNull
-  });
-
-  const codemodResults = await Promise.all(inputFiles.map(async inputFile => {
-    const codemodMetaResult: CodemodMetaResult = await piscina.runTask(inputFile);
-    progressBar.tick();
-    return codemodMetaResult;
-  }));
-
-  return codemodResults;
 }
 
 function execGit(gitRoot: string, args: string[]): Promise<execa.ExecaReturnValue> {
@@ -139,6 +110,39 @@ async function codemod(
     writeFiles: true, 
     ...passedOptions
   };
+
+  async function runCodemod({codemodPath, inputFiles, writeFiles, codemodArgs, codemodKind}: {
+    codemodPath: string,
+    inputFiles: string[], 
+    writeFiles: boolean, 
+    codemodArgs?: string, 
+    codemodKind: CodemodKind,
+  }) {
+    const isTransformCodemod = codemodKind === 'transform';
+  
+    const piscina = new Piscina({
+      filename: require.resolve('./worker'),
+      argv: [codemodPath],
+      workerData: {codemodPath, codemodArgs, writeFiles}
+    });
+  
+    const progressBar = new ProgressBar(':bar (:current/:total, :percent%)', {
+      total: inputFiles.length,
+      stream: isTransformCodemod ? undefined : devNull
+    });
+  
+    const codemodResults = await Promise.all(inputFiles.map(async inputFile => {
+      const codemodMetaResult: CodemodMetaResult = await piscina.runTask(inputFile);
+      log.debug({
+        ...codemodMetaResult,
+        fileContents: '<truncated file contents>'
+      })
+      progressBar.tick();
+      return codemodMetaResult;
+    }));
+  
+    return codemodResults;
+  }
 
   function watchFileOrDoOnce<T>(
     filePath: string, watch: boolean, onChange: () => Promise<T>
@@ -259,14 +263,17 @@ async function codemod(
     }
 
     if (codemodKind === 'detect') {
-      const byLabel = _(codemodMetaResults as DetectMeta[])
+      const [errored, labelled] = _.partition(codemodMetaResults as (DetectMeta | ErrorMeta)[], 'error');
+      const getFilePaths = (files: (DetectMeta | ErrorMeta)[]) => _.map(files, 'filePath');
+
+      const byLabel = _(labelled)
         .groupBy('label')
-        .mapValues(files => _.map(files, 'filePath'))
+        .mapValues(getFilePaths)
         .value();
 
       ui.showDetectResults({
         byLabel,
-        errored: []
+        errored: _(errored).keyBy('filePath').mapValues('error').value()
       });
     }
 
