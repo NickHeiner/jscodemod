@@ -20,6 +20,8 @@ rules:
   # I don't mistakenly write empty functions.
   '@typescript-eslint/no-empty-function': off
 
+  jsx-quotes: ['warn', 'prefer-single']
+
 env:
   es6: true
   node: true

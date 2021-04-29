@@ -66,6 +66,7 @@ const {argv} = yargs
       hidden: true,
       describe: 'Do not pass this argument. This is only here to make yargs happy.'
     },
+    // If the input files glob points to the codemod, will this reset the codemod?
     resetDirtyInputFiles: {
       alias: 'r',
       type: 'boolean',
@@ -79,6 +80,8 @@ const {argv} = yargs
       describe: 'Output logs as JSON, instead of human-readable formatting. Useful if you want to consume the output ' +
         ' of this tool from another tool, or process the logs using your own Bunyan log processor/formatter.'
     },
+    // If the input files glob points to the codemod, and the codemod modifies itself, 
+    // could it trigger an infinite loop?
     watch: {
       alias: 'w',
       type: 'boolean',

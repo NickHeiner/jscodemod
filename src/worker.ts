@@ -14,18 +14,20 @@ const pFs = fs.promises;
  */
 const codemod = loadCodemod(piscina.workerData.codemodPath);
 
+export type BaseCodemodMeta = {
+  filePath: string;
+  fileContents: string;
+};
+
 export type TransformMeta = {
   codeModified: boolean;
-}
+} & BaseCodemodMeta;
 
 export type DetectMeta = {
   label: DetectLabel;
-}
+} & BaseCodemodMeta;
 
-export type CodemodMetaResult = {
-  filePath: string;
-  fileContents: string;
-} & (TransformMeta | DetectMeta)
+export type CodemodMetaResult = TransformMeta | DetectMeta;
 
 export default async function main(sourceCodeFile: string): Promise<CodemodMetaResult> {
   const log = baseLog.child({sourceCodeFile});

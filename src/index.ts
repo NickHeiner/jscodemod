@@ -14,8 +14,8 @@ import {CodemodKind, TODO} from './types';
 import execBigCommand from './exec-big-command';
 import getGitRoot from './get-git-root';
 import loadCodemod from './load-codemod';
-import {CodemodMetaResult} from './worker';
-import interactiveDetect from './interactive-detect';
+import {CodemodMetaResult, DetectMeta} from './worker';
+import makeInteractiveUI, {DetectResults} from './make-interactive-ui';
 import chokidar from 'chokidar';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
@@ -57,14 +57,12 @@ async function getCodemodPath(pathToCodemod: string, options: TSOptions) {
   return path.resolve(pathToCodemod);
 }
 
-async function runCodemod({codemodPath, inputFiles, writeFiles, codemodArgs, watch, codemodKind, log}: {
+async function runCodemod({codemodPath, inputFiles, writeFiles, codemodArgs, codemodKind}: {
   codemodPath: string,
   inputFiles: string[], 
   writeFiles: boolean, 
   codemodArgs?: string, 
-  watch?: NonTSOptions['watch'],
   codemodKind: CodemodKind,
-  log: TODO
 }) {
   const isTransformCodemod = codemodKind === 'transform';
 
@@ -84,19 +82,6 @@ async function runCodemod({codemodPath, inputFiles, writeFiles, codemodArgs, wat
     progressBar.tick();
     return codemodMetaResult;
   }));
-
-  if (!isTransformCodemod) {
-    if (watch === false) {
-      const resultsByLabel = _(codemodResults).groupBy('label');
-      const summary = resultsByLabel.mapValues(codemodResults => _.map(codemodResults, 'filePath')).value();
-  
-      const counts = resultsByLabel.mapValues('length').value();
-        
-      log.info({summary, counts});
-    } else {
-      interactiveDetect();
-    }
-  }
 
   return codemodResults;
 }
@@ -190,7 +175,15 @@ async function codemod(
   const codemodKind = 'transform' in codemod ? 'transform' : 'detect';
   const watch = getWatch(codemodKind, options.watch);
 
+  const ui = watch ? makeInteractiveUI() : {
+    showReacting: () => {},
+    showDetectResults: (detectResults: DetectResults) => {
+      log.info({detectResults, counts: _.mapValues(detectResults, 'length')});
+    }
+  };
+  
   return watchFileOrDoOnce(pathToCodemod, watch, async () => {
+    ui.showReacting();
     const {codemodPath, codemod} = await compileAndLoadCodemod();
 
     // The next line is a bit gnarly to make TS happy.
@@ -250,8 +243,7 @@ async function codemod(
       inputFiles: filesToModify, 
       writeFiles,
       codemodKind: 'transform' in codemod ? 'transform' : 'detect',
-      log,
-      ..._.pick(options, 'codemodArgs', 'watch')
+      ..._.pick(options, 'codemodArgs')
     });
     if ('postProcess' in codemod && doPostProcess) {
       const modifiedFiles = _(codemodMetaResults).filter('codeModified').map('filePath').value();
@@ -264,8 +256,21 @@ async function codemod(
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       }, () => codemod.postProcess!(modifiedFiles));
     }
+
+    if (codemodKind === 'detect') {
+      const [matching, notMatching] = _.partition(codemodMetaResults as DetectMeta[], ({label}) => label === true);
+
+      const getFilePaths = (fileObjs: CodemodMetaResult[]) => _.map(fileObjs, 'filePath');
+
+      ui.showDetectResults({
+        matching: getFilePaths(matching),
+        notMatching: getFilePaths(notMatching),
+        errored: []
+      });
+    }
+
     return codemodMetaResults;
-  })
+  });
 
 }
 

@@ -319,12 +319,12 @@ describe('getWatch', () => {
     ['transform', undefined, false],
     ['detect', true, true],
     ['detect', false, false],
-    ['detect', undefined, true],
+    ['detect', undefined, true]
   ])('getWatch(%p, %p)', (codemodKind, watch, expected) => {
     if (_.isError(expected)) {
       expect(() => getWatch(codemodKind, watch)).toThrowError(expected);
     } else {
       expect(getWatch(codemodKind, watch)).toBe(expected);
     }
-  })
-})
+  });
+});

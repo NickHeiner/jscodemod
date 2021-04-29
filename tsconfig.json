@@ -1,5 +1,5 @@
 {
-  "include": ["src/**/*.ts", "src/interactive-detect.tsx"],
+  "include": ["src/**/*.ts", "src/make-interactive-detect.tsx"],
   "exclude": ["__tests__", "fixtures"],
 
   "compilerOptions": {
