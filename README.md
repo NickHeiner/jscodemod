@@ -32,6 +32,8 @@ The argument you pass to `--codemod` is a file that exports a `Codemod`. Look in
 
 If your codebase has syntax that Babel doesn't recognize out of the box, you'll want need to handle it. (TypeScript, babel-plugin-proposal-pipeline-operator vs. babel-plugin-syntax-pipeline-operator).
 
+[Egghead Guide](https://egghead.io/blog/codemods-with-babel-plugins)
+
 ### Gotchas
 #### TypeScript codemods in TypeScript projects may be slow by default
 If your big project is in TypeScript, and you write your codemod in TypeScript, your build time may be very slow. For example, consider this file struture:
