@@ -176,6 +176,7 @@ async function codemod(
   const watch = getWatch(codemodKind, options.watch);
 
   const ui = watch ? makeInteractiveUI() : {
+    setGitRoot: () => {},
     showReacting: () => {},
     showDetectResults: (detectResults: DetectResults) => {
       log.info({detectResults, counts: _.mapValues(detectResults, 'length')});

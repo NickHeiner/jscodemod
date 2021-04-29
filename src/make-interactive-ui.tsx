@@ -4,6 +4,16 @@ import React from 'react';
 
 import {render, Text, Box, Spacer} from 'ink';
 
+type FileListProps = {files: string[]};
+const FileList = (props: FileListProps) => {
+  const fileLimit = 10;
+  const extraFiles = props.files.length - 10;
+  return <Box flexDirection='column'>
+    {props.files.slice(0, fileLimit).map(file => <Text key={file}>{file}</Text>)}
+    {extraFiles > 0 && <Text>({extraFiles} files not shown.)</Text>}
+  </Box>;
+};
+
 export type DetectResults = {
   matching: string[],
   notMatching: string[],
@@ -23,9 +33,11 @@ const App = (props: Props) => {
   }
 
   return <Box flexDirection='column'>
-    <Text>{props.detectResults.matching.length} matching files.</Text>
+    <Text>Matching files:</Text>
+    <FileList files={props.detectResults.matching} />
     <Spacer />
-    <Text>{props.detectResults.notMatching.length} not matching files.</Text>
+    <Text>Not matching files:</Text>
+    <FileList files={props.detectResults.notMatching} />
   </Box>;
 };
 
