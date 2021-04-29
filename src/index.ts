@@ -136,7 +136,7 @@ async function codemod(
       log.debug({
         ...codemodMetaResult,
         fileContents: '<truncated file contents>'
-      })
+      });
       progressBar.tick();
       return codemodMetaResult;
     }));

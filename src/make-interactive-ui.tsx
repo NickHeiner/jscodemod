@@ -15,6 +15,8 @@ const FileList = (props: FileListProps) => {
   </Box>;
 };
 
+export type ArbitraryError = Error & Record<string, unknown>;
+
 export type DetectResults = {
   /**
    * Map of {label: filesMatchingThisLabel[]}
@@ -24,7 +26,7 @@ export type DetectResults = {
   /**
    * Map of {filePath: error}
    */
-  errored: Record<string, string>;
+  errored: Record<string, ArbitraryError>;
 }
 export type Phase = 'reacting' | 'showing-results'
 type Props = {
@@ -41,12 +43,17 @@ const App = (props: Props) => {
 
   return <Box>
     {
-      _.map(props.detectResults.byLabel, (files, label) => 
-        <Box flexDirection='column' key={label} paddingRight={5}>
-          <Text>{label}</Text>
-          <FileList files={files} />
+      props.detectResults.errored 
+        ? <Box flexDirection='column'>
+          <Text>At least one error occurred. Here's one:</Text>
+          <Text>{Object.values(props.detectResults.errored)[0].message}</Text>
         </Box>
-      )
+        : _.map(props.detectResults.byLabel, (files, label) => 
+          <Box flexDirection='column' key={label} paddingRight={5}>
+            <Text>{label}</Text>
+            <FileList files={files} />
+          </Box>
+        )
     }
   </Box>;
 };

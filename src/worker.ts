@@ -74,7 +74,7 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
       error: serializeError(e),
       fileContents: originalFileContents,
       filePath: sourceCodeFile
-    }
+    };
   }
 
   log.debug({action: 'detect', result: label});
