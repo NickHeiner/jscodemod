@@ -24,6 +24,8 @@ $ jscodemod --codemod codemod.js src/**/*.js
 $ jscodemod --codemod codemod.js 'src/**/*.js'
 ```
 
+This project must be run in the version of Node specified in the [`.nvmrc`](.nvmrc).
+
 ## How to write a codemod
 The argument you pass to `--codemod` is a file that exports a `Codemod`. Look in [Types](src/types.ts) for the semantics of that object.
 ### Babel Plugin
