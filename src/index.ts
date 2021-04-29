@@ -168,7 +168,7 @@ async function codemod(
         abortController.abort();
         abortController = new AbortController();
         onChange(abortController.signal);
-      }
+      };
 
       chokidar.watch(filePath)
         .on('ready', () => {

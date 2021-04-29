@@ -4,6 +4,9 @@ import fs from 'fs';
 import loadCodemod from './load-codemod';
 import type {DetectLabel} from './types';
 import {serializeError} from 'serialize-error';
+import _ from 'lodash';
+
+// I wonder if we could measure perf gains by trimming this import list.
 
 const baseLog = createLog({name: 'jscodemod-worker'});
 
@@ -33,6 +36,21 @@ export type ErrorMeta = {
 } & BaseCodemodMeta;
 
 export type CodemodMetaResult = TransformMeta | DetectMeta | ErrorMeta;
+
+const makeLabeller = () => {
+  let currentLabel: string, currentLabelPriority = -Infinity;
+
+  function applyLabel(priority: number, label: string) {
+    if (priority >= currentLabelPriority) {
+      currentLabelPriority = priority;
+      currentLabel = label;
+    }
+  }
+
+  const getLabel = () => currentLabel === undefined ? undefined : `${currentLabelPriority} ${currentLabel}`;
+
+  return {applyLabel, getLabel};
+};
 
 export default async function main(sourceCodeFile: string): Promise<CodemodMetaResult> {
   const log = baseLog.child({sourceCodeFile});
@@ -65,9 +83,10 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
       filePath: sourceCodeFile
     };
   }
-  let label;
+  const labeller = makeLabeller();
+
   try {
-    label = await codemod.detect(codemodOpts);
+    await codemod.detect({...codemodOpts, ..._.pick(labeller, 'applyLabel')});
   } catch (e) {
     log.debug({e}, 'Codemod threw an error');
     return {
@@ -77,10 +96,10 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
     };
   }
 
-  log.debug({action: 'detect', result: label});
+  log.debug({action: 'detect', result: labeller.getLabel()});
 
   return {
-    label, 
+    label: labeller.getLabel(),  
     fileContents: originalFileContents,
     filePath: sourceCodeFile
   };
