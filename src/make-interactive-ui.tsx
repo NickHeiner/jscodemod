@@ -53,12 +53,16 @@ const App = (props: Props) => {
           <Text>At least one error occurred. Here's one:</Text>
           <Text>{Object.values(props.detectResults.errored)[0].message}</Text>
         </Box>
-        : _.map(props.detectResults.byLabel, (files, label) => 
-          <Box flexDirection='column' key={label} paddingRight={5}>
-            <Text>{label}</Text>
-            <FileList files={files} />
-          </Box>
-        )
+        : _(props.detectResults.byLabel)
+          .toPairs()
+          .sortBy(0)
+          .map(([label, files]) => 
+            <Box flexDirection='column' key={label} paddingRight={5}>
+              <Text>{label}</Text>
+              <FileList files={files} />
+            </Box>
+          )
+          .value()
     }
   </Box>;
 };
