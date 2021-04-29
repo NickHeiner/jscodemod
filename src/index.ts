@@ -315,7 +315,8 @@ async function codemod(
 
     if (codemodKind === 'detect') {
       const [errored, labelled] = _.partition(codemodMetaResults as (DetectMeta | ErrorMeta)[], 'error');
-      const getFilePaths = (files: (DetectMeta | ErrorMeta)[]) => _.map(files, 'filePath');
+      const getFilePaths = (files: (DetectMeta | ErrorMeta)[]) => 
+        _.map(files, ({filePath}) => gitRoot ? path.relative(gitRoot, filePath) : filePath);
 
       const byLabel = _(labelled)
         .groupBy('label')
