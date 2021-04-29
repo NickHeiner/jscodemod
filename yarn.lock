@@ -2081,6 +2081,11 @@ binary-extensions@^2.0.0:
   resolved "https://artifacts.netflix.net/api/npm/npm-netflix/binary-extensions/-/binary-extensions-2.2.0.tgz#75f502eeaf9ffde42fc98829645be4ea76bd9e2d"
   integrity sha1-dfUC7q+f/eQvyYgpZFvk6na9ni0=
 
+blacklist@^1.1.4:
+  version "1.1.4"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/blacklist/-/blacklist-1.1.4.tgz#b2dd09d6177625b2caa69835a37b28995fa9a2f2"
+  integrity sha1-st0J1hd2JbLKppg1o3somV+povI=
+
 brace-expansion@^1.1.7:
   version "1.1.11"
   resolved "https://registry.yarnpkg.com/brace-expansion/-/brace-expansion-1.1.11.tgz#3c7fcbf529d87226f3d2f52b966ff5271eb441dd"
@@ -3619,6 +3624,14 @@ inherits@2:
   version "2.0.4"
   resolved "https://registry.yarnpkg.com/inherits/-/inherits-2.0.4.tgz#0fa2c64f932917c3433a0ded55363aae37416b7c"
   integrity sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==
+
+ink-progress-bar@3.0.0:
+  version "3.0.0"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/ink-progress-bar/-/ink-progress-bar-3.0.0.tgz#e1cb86955355054e194361b8cb80f57124a9b203"
+  integrity sha1-4cuGlVNVBU4ZQ2G4y4D1cSSpsgM=
+  dependencies:
+    blacklist "^1.1.4"
+    prop-types "^15.7.2"
 
 ink@3.0.8:
   version "3.0.8"

@@ -111,12 +111,15 @@ async function codemod(
     ...passedOptions
   };
 
-  async function runCodemod({codemodPath, inputFiles, writeFiles, codemodArgs, codemodKind}: {
-    codemodPath: string,
-    inputFiles: string[], 
-    writeFiles: boolean, 
-    codemodArgs?: string, 
-    codemodKind: CodemodKind,
+  async function runCodemod({
+    codemodPath, inputFiles, writeFiles, codemodArgs, codemodKind, onProgress
+  }: {
+    codemodPath: string;
+    inputFiles: string[]; 
+    writeFiles: boolean; 
+    codemodArgs?: string;
+    codemodKind: CodemodKind;
+    onProgress?: (filesScanned: number) => void;
   }) {
     const isTransformCodemod = codemodKind === 'transform';
   
@@ -131,6 +134,7 @@ async function codemod(
       stream: isTransformCodemod ? undefined : devNull
     });
   
+    let filesScanned = 0;
     const codemodResults = await Promise.all(inputFiles.map(async inputFile => {
       const codemodMetaResult: CodemodMetaResult = await piscina.runTask(inputFile);
       log.debug({
@@ -138,6 +142,7 @@ async function codemod(
         fileContents: '<truncated file contents>'
       });
       progressBar.tick();
+      onProgress?.(++filesScanned);
       return codemodMetaResult;
     }));
   
@@ -188,7 +193,7 @@ async function codemod(
   };
   
   return watchFileOrDoOnce(pathToCodemod, watch, async () => {
-    ui.showReacting();
+    ui.showReacting(0, 0);
     const {codemodPath, codemod} = await compileAndLoadCodemod();
 
     // The next line is a bit gnarly to make TS happy.
@@ -211,6 +216,7 @@ async function codemod(
       {filesToModify, count: filesToModify.length, inputFilesPatterns}, 
       'Found files to modify.'
     );
+    ui.showReacting(0, filesToModify.length);
 
     // TODO: I don't like setting an expectation that codemods should call process.exit themselves, but it's convenient
     // because it's what yargs does by default. The codemod could also stop the process by throwing an exception, which
@@ -248,7 +254,10 @@ async function codemod(
       inputFiles: filesToModify, 
       writeFiles,
       codemodKind: 'transform' in codemod ? 'transform' : 'detect',
-      ..._.pick(options, 'codemodArgs')
+      ..._.pick(options, 'codemodArgs'),
+      onProgress(filesScanned) {
+        ui.showReacting(filesScanned, filesToModify.length);
+      }
     });
     if ('postProcess' in codemod && doPostProcess) {
       const modifiedFiles = _(codemodMetaResults).filter('codeModified').map('filePath').value();
