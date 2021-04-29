@@ -98,7 +98,8 @@ async function codemod(
   pathToCodemod: string, 
   inputFilesPatterns: string[], 
   passedOptions: Options = {}
-): Promise<CodemodMetaResult[] | string[]> { // TODO: encode that this return type depends on whether 'dry' is passed.
+): Promise<CodemodMetaResult[] | string[] | undefined> { 
+  // TODO: encode that this return type depends on whether 'dry' is passed.
   const {
     log,
     doPostProcess,
@@ -112,13 +113,14 @@ async function codemod(
   };
 
   async function runCodemod({
-    codemodPath, inputFiles, writeFiles, codemodArgs, codemodKind, onProgress
+    codemodPath, inputFiles, writeFiles, codemodArgs, codemodKind, abortSignal, onProgress
   }: {
     codemodPath: string;
     inputFiles: string[]; 
     writeFiles: boolean; 
     codemodArgs?: string;
     codemodKind: CodemodKind;
+    abortSignal: AbortSignal;
     onProgress?: (filesScanned: number) => void;
   }) {
     const isTransformCodemod = codemodKind === 'transform';
@@ -136,6 +138,9 @@ async function codemod(
   
     let filesScanned = 0;
     const codemodResults = await Promise.all(inputFiles.map(async inputFile => {
+      if (abortSignal.aborted) {
+        return 'aborted';
+      }
       const codemodMetaResult: CodemodMetaResult = await piscina.runTask(inputFile);
       log.debug({
         ...codemodMetaResult,
@@ -145,26 +150,37 @@ async function codemod(
       onProgress?.(++filesScanned);
       return codemodMetaResult;
     }));
+    if (abortSignal.aborted || codemodResults.some(value => value === 'aborted')) {
+      return 'aborted';
+    }
   
-    return codemodResults;
+    return codemodResults as CodemodMetaResult[];
   }
 
   function watchFileOrDoOnce<T>(
-    filePath: string, watch: boolean, onChange: () => Promise<T>
-  ): Promise<T> {
+    filePath: string, watch: boolean, onChange: (abortSignal: AbortSignal) => Promise<T | undefined>
+  ): Promise<T | undefined> {
     if (watch) {
       log.debug({filePath}, 'watching');
+
+      let abortController = new AbortController();
+      const onWatcherChange = () => {
+        abortController.abort();
+        abortController = new AbortController();
+        onChange(abortController.signal);
+      }
+
       chokidar.watch(filePath)
         .on('ready', () => {
           log.debug({filePath}, 'watcher ready');
-          onChange();
+          onWatcherChange();
         })
-        .on('change', onChange);
+        .on('change', onWatcherChange);
 
       return new Promise(() => {});
     }
 
-    return onChange();
+    return onChange(new AbortController().signal);
   }
 
   async function compileAndLoadCodemod() {
@@ -192,9 +208,15 @@ async function codemod(
     }
   };
   
-  return watchFileOrDoOnce(pathToCodemod, watch, async () => {
+  return watchFileOrDoOnce(pathToCodemod, watch, async (abortSignal: AbortSignal) => {
+    if (abortSignal.aborted) { 
+      return; 
+    }
     ui.showReacting(0, 0);
     const {codemodPath, codemod} = await compileAndLoadCodemod();
+    if (abortSignal.aborted) { 
+      return; 
+    }
 
     // The next line is a bit gnarly to make TS happy.
     const codemodIgnores = _.compact(([] as (RegExp | undefined)[]).concat(codemod.ignore));
@@ -204,6 +226,10 @@ async function codemod(
       .map(filePath => path.resolve(filePath))
       .reject(filePath => _.some(codemodIgnores, ignorePattern => ignorePattern.test(filePath)))
       .value();
+    
+    if (abortSignal.aborted) { 
+      return; 
+    }
 
     if (!filesToModify.length) {
       const err = new Error('No files were found to transform.');
@@ -230,6 +256,9 @@ async function codemod(
     process.on('exit', handleExit);
     await codemod.parseArgs?.(options.codemodArgs);
     process.off('exit', handleExit);
+    if (abortSignal.aborted) { 
+      return; 
+    }
 
     if (options.dry) {
       if (options.porcelain) {
@@ -243,10 +272,16 @@ async function codemod(
     }
 
     const gitRoot = await getGitRoot(filesToModify);
+    if (abortSignal.aborted) { 
+      return; 
+    }
     log.debug({gitRoot});
 
     if (options.resetDirtyInputFiles) {
       await resetDirtyInputFiles(gitRoot, filesToModify, log);
+      if (abortSignal.aborted) { 
+        return; 
+      }
     }
 
     const codemodMetaResults = await runCodemod({
@@ -255,10 +290,14 @@ async function codemod(
       writeFiles,
       codemodKind: 'transform' in codemod ? 'transform' : 'detect',
       ..._.pick(options, 'codemodArgs'),
+      abortSignal,
       onProgress(filesScanned) {
         ui.showReacting(filesScanned, filesToModify.length);
       }
     });
+    if (codemodMetaResults === 'aborted' || abortSignal.aborted) { 
+      return; 
+    }
     if ('postProcess' in codemod && doPostProcess) {
       const modifiedFiles = _(codemodMetaResults).filter('codeModified').map('filePath').value();
       await log.logPhase({
@@ -269,6 +308,9 @@ async function codemod(
         // have been undefined by the time this executes.
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       }, () => codemod.postProcess!(modifiedFiles));
+      if (abortSignal.aborted) { 
+        return; 
+      }
     }
 
     if (codemodKind === 'detect') {
