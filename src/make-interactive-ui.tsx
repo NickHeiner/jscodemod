@@ -43,7 +43,7 @@ const App = (props: Props) => {
 
   return <Box>
     {
-      props.detectResults.errored 
+      props.detectResults.errored.length
         ? <Box flexDirection='column'>
           <Text>At least one error occurred. Here's one:</Text>
           <Text>{Object.values(props.detectResults.errored)[0].message}</Text>
