@@ -179,7 +179,7 @@ async function codemod(
     setGitRoot: () => {},
     showReacting: () => {},
     showDetectResults: (detectResults: DetectResults) => {
-      log.info({detectResults, counts: _.mapValues(detectResults, 'length')});
+      log.info({detectResults, counts: _.mapValues(detectResults.byLabel, 'length')});
     }
   };
   
@@ -259,13 +259,13 @@ async function codemod(
     }
 
     if (codemodKind === 'detect') {
-      const [matching, notMatching] = _.partition(codemodMetaResults as DetectMeta[], ({label}) => label === true);
-
-      const getFilePaths = (fileObjs: CodemodMetaResult[]) => _.map(fileObjs, 'filePath');
+      const byLabel = _(codemodMetaResults as DetectMeta[])
+        .groupBy('label')
+        .mapValues(files => _.map(files, 'filePath'))
+        .value();
 
       ui.showDetectResults({
-        matching: getFilePaths(matching),
-        notMatching: getFilePaths(notMatching),
+        byLabel,
         errored: []
       });
     }

@@ -2,12 +2,13 @@
 // eslint-disable-next-line no-use-before-define
 import React from 'react';
 
-import {render, Text, Box, Spacer} from 'ink';
+import {render, Text, Box} from 'ink';
+import _ from 'lodash';
 
 type FileListProps = {files: string[]};
 const FileList = (props: FileListProps) => {
   const fileLimit = 10;
-  const extraFiles = props.files.length - 10;
+  const extraFiles = props.files.length - fileLimit;
   return <Box flexDirection='column'>
     {props.files.slice(0, fileLimit).map(file => <Text key={file}>{file}</Text>)}
     {extraFiles > 0 && <Text>({extraFiles} files not shown.)</Text>}
@@ -15,9 +16,8 @@ const FileList = (props: FileListProps) => {
 };
 
 export type DetectResults = {
-  matching: string[],
-  notMatching: string[],
-  errored: string[]
+  byLabel: Record<string, string[]>;
+  errored: string[];
 }
 export type Phase = 'reacting' | 'showing-results'
 type Props = {
@@ -32,12 +32,15 @@ const App = (props: Props) => {
     return <Text>Compiling and scanning...</Text>;
   }
 
-  return <Box flexDirection='column'>
-    <Text>Matching files:</Text>
-    <FileList files={props.detectResults.matching} />
-    <Spacer />
-    <Text>Not matching files:</Text>
-    <FileList files={props.detectResults.notMatching} />
+  return <Box>
+    {
+      _.map(props.detectResults.byLabel, (files, label) => 
+        <Box flexDirection='column' key={label} paddingRight={5}>
+          <Text>{label}</Text>
+          <FileList files={files} />
+        </Box>
+      )
+    }
   </Box>;
 };
 
