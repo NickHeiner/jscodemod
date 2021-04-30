@@ -14,7 +14,7 @@ import {CodemodKind, TODO} from './types';
 import execBigCommand from './exec-big-command';
 import getGitRoot from './get-git-root';
 import loadCodemod from './load-codemod';
-import {CodemodMetaResult, DetectMeta, ErrorMeta} from './worker';
+import type {CodemodMetaResult, DebugMeta, DetectMeta, ErrorMeta} from './worker';
 import makeInteractiveUI, {DetectResults} from './make-interactive-ui';
 import chokidar from 'chokidar';
 
@@ -22,6 +22,12 @@ export {default as getTransformedContentsOfSingleFile} from './get-transformed-c
 
 const devNull = fs.createWriteStream('/dev/null');
 const noOpLogger = createLog({name: 'no-op', stream: devNull});
+
+export type CliUi = {
+  showReacting: (filesToScan: number, filesScanned: number) => void;
+  showDetectResults: (detectResults: DetectResults) => void;
+  showDebug: (debugEntriesPerFile: Record<string, unknown[]>) => void;
+}
 
 export type TSOptions = {
   tsconfig?: string;
@@ -200,13 +206,18 @@ async function codemod(
   const codemodKind = 'transform' in codemod ? 'transform' : 'detect';
   const watch = getWatch(codemodKind, options.watch);
 
-  const ui = watch ? makeInteractiveUI() : {
-    setGitRoot: () => {},
-    showReacting: () => {},
-    showDetectResults: (detectResults: DetectResults) => {
+  const staticUI: CliUi = {
+    showReacting() {},
+    showDetectResults(detectResults: DetectResults) {
       log.info({detectResults, counts: _.mapValues(detectResults.byLabel, 'length')});
+    },
+    showDebug(debugEntriesPerFile) {
+      _.forEach(debugEntriesPerFile, (debugEntries, file) => {
+        log.info({file, debugEntries});
+      });
     }
   };
+  const ui = watch ? makeInteractiveUI() : staticUI;
   
   return watchFileOrDoOnce(pathToCodemod, watch, async (abortSignal: AbortSignal) => {
     if (abortSignal.aborted) { 
@@ -314,19 +325,33 @@ async function codemod(
     }
 
     if (codemodKind === 'detect') {
-      const [errored, labelled] = _.partition(codemodMetaResults as (DetectMeta | ErrorMeta)[], 'error');
-      const getFilePaths = (files: (DetectMeta | ErrorMeta)[]) => 
-        _.map(files, ({filePath}) => gitRoot ? path.relative(gitRoot, filePath) : filePath);
+      const getRelativeFilePath = (absoluteFilePath: string) => 
+        gitRoot ? path.relative(gitRoot, absoluteFilePath) : absoluteFilePath;
 
-      const byLabel = _(labelled)
-        .groupBy('label')
-        .mapValues(getFilePaths)
-        .value();
-
-      ui.showDetectResults({
-        byLabel,
-        errored: _(errored).keyBy('filePath').mapValues('error').value()
-      });
+      const debug = _.filter(codemodMetaResults, 'debugEntries');
+      if (debug.length) {
+        ui.showDebug(
+          _((debug as DebugMeta[]))
+            .keyBy('filePath')
+            .mapKeys((_val, filePath) => getRelativeFilePath(filePath))
+            .mapValues('debugEntries')
+            .value()
+        );
+      } else {
+        const [errored, labelled] = _.partition(codemodMetaResults as (DetectMeta | ErrorMeta)[], 'error');
+        const getFilePaths = (files: (DetectMeta | ErrorMeta)[]) => 
+          _.map(files, ({filePath}) => getRelativeFilePath(filePath));
+  
+        const byLabel = _(labelled)
+          .groupBy('label')
+          .mapValues(getFilePaths)
+          .value();
+  
+        ui.showDetectResults({
+          byLabel,
+          errored: _(errored).keyBy('filePath').mapValues('error').value()
+        });
+      }
     }
 
     return codemodMetaResults;

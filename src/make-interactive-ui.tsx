@@ -4,7 +4,9 @@ import React from 'react';
 
 import {render, Text, Box} from 'ink';
 import ProgressBar from 'ink-progress-bar';
+import SyntaxHighlight from 'ink-syntax-highlight';
 import _ from 'lodash';
+import type {CliUi} from '.';
 
 type FileListProps = {files: string[]};
 const FileList = (props: FileListProps) => {
@@ -34,12 +36,47 @@ type Props = {
   filesToScan: number;
   filesScanned: number;
 } | {
-  phase: 'showing-results';
   detectResults: DetectResults
+} | {
+  debugEntries: Record<string, unknown[]>
 }
 
+const ShowDetectResults = (props: {detectResults: DetectResults}) => {
+  if (props.detectResults.errored.length) {
+    return <Box flexDirection='column'>
+      <Text>At least one error occurred. Here's one:</Text>
+      <Text>{Object.values(props.detectResults.errored)[0].message}</Text>
+    </Box>;
+  }
+
+  return <>{
+    _(props.detectResults.byLabel)
+      .toPairs()
+      .sortBy(0)
+      .map(([label, files]) => 
+        <Box flexDirection='column' key={label} paddingRight={5}>
+          <Text>{label}</Text>
+          <FileList files={files} />
+        </Box>
+      )
+      .value()
+  }</>;
+};
+
+const ShowDebugEntries = (props: {debugEntries: Record<string, unknown[]>}) => {
+  const [file, logLines] = Object.entries(props.debugEntries)[0];
+  return <Box flexDirection='column'>
+    <Text>debugLog() was called for at least one file. Here's one:</Text>
+    <Text>{file}</Text>
+    {
+      // It's ok to do key={index} here because perf isn't a concern.
+      logLines.map((logEntry, index) => <SyntaxHighlight key={index} code={JSON.stringify(logEntry, null, 2)} />)
+    }
+  </Box>;
+};
+
 const App = (props: Props) => {
-  if (props.phase === 'reacting') {
+  if ('phase' in props) {
     return <Box flexDirection='column'>
       <Text>Compiling and scanning... ({props.filesScanned} / {props.filesToScan})</Text>
       <ProgressBar percent={props.filesScanned / props.filesToScan} />
@@ -48,31 +85,15 @@ const App = (props: Props) => {
 
   return <Box>
     {
-      props.detectResults.errored.length
-        ? <Box flexDirection='column'>
-          <Text>At least one error occurred. Here's one:</Text>
-          <Text>{Object.values(props.detectResults.errored)[0].message}</Text>
-        </Box>
-        : _(props.detectResults.byLabel)
-          .toPairs()
-          .sortBy(0)
-          .map(([label, files]) => 
-            <Box flexDirection='column' key={label} paddingRight={5}>
-              <Text>{label}</Text>
-              <FileList files={files} />
-            </Box>
-          )
-          .value()
+      'detectResults' in props 
+        ? <ShowDetectResults {..._.pick(props, 'detectResults')} />
+        : <ShowDebugEntries {..._.pick(props, 'debugEntries')} />
+
     }
   </Box>;
 };
 
-type InteractiveUI = {
-  showReacting: (filesToScan: number, filesScanned: number) => void;
-  showDetectResults: (detectResults: DetectResults) => void;
-}
-
-const makeInteractiveUI = (): InteractiveUI => {
+const makeInteractiveUI = (): CliUi => {
   const {rerender} = render(<App phase='reacting' filesScanned={0} filesToScan={0} />);
 
   const showReacting = (filesScanned: number, filesToScan: number) => {
@@ -80,11 +101,15 @@ const makeInteractiveUI = (): InteractiveUI => {
   };
 
   const showDetectResults = (detectResults: DetectResults) => {
-    rerender(<App phase='showing-results' detectResults={detectResults} />);
+    rerender(<App detectResults={detectResults} />);
+  };
+
+  const showDebug = (debugEntries: Record<string, unknown[]>) => {
+    rerender(<App debugEntries={debugEntries} />); 
   };
 
   return {
-    showReacting, showDetectResults
+    showReacting, showDetectResults, showDebug
   };
 };
 

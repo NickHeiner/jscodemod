@@ -35,7 +35,11 @@ export type ErrorMeta = {
   error: Error
 } & BaseCodemodMeta;
 
-export type CodemodMetaResult = TransformMeta | DetectMeta | ErrorMeta;
+export type DebugMeta = {
+  debugEntries: unknown[]
+} & BaseCodemodMeta;
+
+export type CodemodMetaResult = TransformMeta | DetectMeta | ErrorMeta | DebugMeta;
 
 const makeLabeller = () => {
   let currentLabel: string, currentLabelPriority = -Infinity;
@@ -59,10 +63,19 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
   const originalFileContents = await pFs.readFile(sourceCodeFile, 'utf-8');
   const parsedArgs = await codemod.parseArgs?.(piscina.workerData.codemodArgs);
 
+  const debugEntries: DebugMeta['debugEntries'] = [];
+  const debugLog = (entry: unknown) => debugEntries.push(entry);
+
+  const baseMeta = {
+    fileContents: originalFileContents,
+    filePath: sourceCodeFile
+  };
+
   const codemodOpts = {
     source: originalFileContents, 
     filePath: sourceCodeFile, 
-    commandLineArgs: parsedArgs
+    commandLineArgs: parsedArgs,
+    debugLog
   };
 
   // TODO: Handle the codemod throwing an error?
@@ -77,10 +90,17 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
     }
     log.debug({action: codeModified ? 'modified' : 'skipped', writeFiles});
 
+    if (debugEntries.length) {
+      return {
+        debugEntries,
+        ...baseMeta
+      };
+    }
+
     return {
+      ...baseMeta,
       codeModified, 
-      fileContents: transformedCode ? transformedCode : originalFileContents,
-      filePath: sourceCodeFile
+      fileContents: transformedCode ? transformedCode : originalFileContents
     };
   }
   const labeller = makeLabeller();
@@ -91,8 +111,14 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
     log.debug({e}, 'Codemod threw an error');
     return {
       error: serializeError(e),
-      fileContents: originalFileContents,
-      filePath: sourceCodeFile
+      ...baseMeta
+    };
+  }
+
+  if (debugEntries.length) {
+    return {
+      debugEntries,
+      ...baseMeta
     };
   }
 
@@ -100,7 +126,6 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
 
   return {
     label: labeller.getLabel(),  
-    fileContents: originalFileContents,
-    filePath: sourceCodeFile
+    ...baseMeta
   };
 }

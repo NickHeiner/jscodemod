@@ -5,6 +5,8 @@ type ParsedArgs = Record<string, unknown> | undefined;
 
 export type CodemodKind = 'transform' | 'detect';
 
+export type DebugLog = (entry: unknown) => void;
+
 export type Transform = {
   /**
    * After all transforms have been run, this function will be invoked with an array of files there were modified.
@@ -24,6 +26,7 @@ export type Transform = {
        filePath: string;
        // TODO: only specify this as an option to transform if parseArgs is present.
        commandLineArgs?: ParsedArgs;
+       debugLog: DebugLog;
      }): ScalarOrPromise<CodemodResult>;
 }
 
@@ -35,6 +38,7 @@ export type Detect = {
     // TODO: only specify this as an option to transform if parseArgs is present.
     commandLineArgs?: ParsedArgs;
     applyLabel: (priority: number, label: string) => void;
+    debugLog: DebugLog;
   }): ScalarOrPromise<void>
 }
 
