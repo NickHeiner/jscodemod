@@ -35,7 +35,7 @@ export type Detect = {
     // TODO: only specify this as an option to transform if parseArgs is present.
     commandLineArgs?: ParsedArgs;
     applyLabel: (priority: number, label: string) => void;
-  }): ScalarOrPromise<DetectLabel>
+  }): ScalarOrPromise<void>
 }
 
 export type Codemod = {
