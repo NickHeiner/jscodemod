@@ -17,6 +17,7 @@ import loadCodemod from './load-codemod';
 import type {CodemodMetaResult, DebugMeta, DetectMeta, ErrorMeta} from './worker';
 import makeInteractiveUI, {DetectResults} from './make-interactive-ui';
 import chokidar from 'chokidar';
+import {AbortController} from 'abortcontroller-polyfill/dist/abortcontroller';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
 

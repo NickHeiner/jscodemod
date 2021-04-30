@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "@babel/core": "7.13.1",
+    "abortcontroller-polyfill": "1.7.1",
     "ansi-colors": "4.1.1",
     "find-up": "5.0.0",
     "globby": "11.0.1",
