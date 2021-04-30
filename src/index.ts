@@ -203,7 +203,7 @@ async function codemod(
 
   const {codemod} = await compileAndLoadCodemod();
 
-  const codemodKind = 'transform' in codemod ? 'transform' : 'detect';
+  const codemodKind = codemod.detect ? 'detect' : 'transform';
   const watch = getWatch(codemodKind, options.watch);
 
   const staticUI: CliUi = {
@@ -299,7 +299,7 @@ async function codemod(
       codemodPath, 
       inputFiles: filesToModify, 
       writeFiles,
-      codemodKind: 'transform' in codemod ? 'transform' : 'detect',
+      codemodKind: codemod.detect ? 'detect' : 'transform',
       ..._.pick(options, 'codemodArgs'),
       abortSignal,
       onProgress(filesScanned) {
@@ -309,6 +309,21 @@ async function codemod(
     if (codemodMetaResults === 'aborted' || abortSignal.aborted) { 
       return; 
     }
+
+    const getRelativeFilePath = (absoluteFilePath: string) => 
+      gitRoot ? path.relative(gitRoot, absoluteFilePath) : absoluteFilePath;
+
+    const debug = _.filter(codemodMetaResults, 'debugEntries');
+    if (debug.length) {
+      ui.showDebug(
+        _((debug as DebugMeta[]))
+          .keyBy('filePath')
+          .mapKeys((_val, filePath) => getRelativeFilePath(filePath))
+          .mapValues('debugEntries')
+          .value()
+      );
+    }
+
     if ('postProcess' in codemod && doPostProcess) {
       const modifiedFiles = _(codemodMetaResults).filter('codeModified').map('filePath').value();
       await log.logPhase({
@@ -324,34 +339,20 @@ async function codemod(
       }
     }
 
-    if (codemodKind === 'detect') {
-      const getRelativeFilePath = (absoluteFilePath: string) => 
-        gitRoot ? path.relative(gitRoot, absoluteFilePath) : absoluteFilePath;
+    if (codemodKind === 'detect' && !debug.length) {
+      const [errored, labelled] = _.partition(codemodMetaResults as (DetectMeta | ErrorMeta)[], 'error');
+      const getFilePaths = (files: (DetectMeta | ErrorMeta)[]) => 
+        _.map(files, ({filePath}) => getRelativeFilePath(filePath));
 
-      const debug = _.filter(codemodMetaResults, 'debugEntries');
-      if (debug.length) {
-        ui.showDebug(
-          _((debug as DebugMeta[]))
-            .keyBy('filePath')
-            .mapKeys((_val, filePath) => getRelativeFilePath(filePath))
-            .mapValues('debugEntries')
-            .value()
-        );
-      } else {
-        const [errored, labelled] = _.partition(codemodMetaResults as (DetectMeta | ErrorMeta)[], 'error');
-        const getFilePaths = (files: (DetectMeta | ErrorMeta)[]) => 
-          _.map(files, ({filePath}) => getRelativeFilePath(filePath));
-  
-        const byLabel = _(labelled)
-          .groupBy('label')
-          .mapValues(getFilePaths)
-          .value();
-  
-        ui.showDetectResults({
-          byLabel,
-          errored: _(errored).keyBy('filePath').mapValues('error').value()
-        });
-      }
+      const byLabel = _(labelled)
+        .groupBy('label')
+        .mapValues(getFilePaths)
+        .value();
+
+      ui.showDetectResults({
+        byLabel,
+        errored: _(errored).keyBy('filePath').mapValues('error').value()
+      });
     }
 
     return codemodMetaResults;

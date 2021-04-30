@@ -88,7 +88,6 @@ const App = (props: Props) => {
       'detectResults' in props 
         ? <ShowDetectResults {..._.pick(props, 'detectResults')} />
         : <ShowDebugEntries {..._.pick(props, 'debugEntries')} />
-
     }
   </Box>;
 };

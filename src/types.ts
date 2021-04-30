@@ -1,4 +1,4 @@
-type CodemodResult = string | undefined | null;
+export type CodemodResult = string | undefined | null;
 
 type ScalarOrPromise<T> = T | Promise<T>;
 type ParsedArgs = Record<string, unknown> | undefined;
@@ -6,47 +6,10 @@ type ParsedArgs = Record<string, unknown> | undefined;
 export type CodemodKind = 'transform' | 'detect';
 
 export type DebugLog = (entry: unknown) => void;
-
-export type Transform = {
-  /**
-   * After all transforms have been run, this function will be invoked with an array of files there were modified.
-   */
-     postProcess?: (modifiedFiles: string[]) => Promise<unknown>;
-
-     /**
-      * Transform a single file. Return null or undefined to indicate that the file should not be modified.
-      * 
-      * @param opts
-      * @param opts.source the contents of the file to transform.
-      * @param opts.filePath the path to the file to transform.
-      * @param opts.commandLineArgs parsed arguments returned by `yourCodemod.parseArgs()`, if any.
-      * @param opts.debugLog Utility function to make debug output show up in the codemod CLI output.
-      */
-     transform(opts: {
-       source: string;
-       filePath: string;
-       // TODO: only specify this as an option to transform if parseArgs is present.
-       commandLineArgs?: ParsedArgs;
-       debugLog: DebugLog;
-     }): ScalarOrPromise<CodemodResult>;
-}
-
-export type DetectLabel = string | boolean | undefined;
-export type Detect = {
-  /**
-   * @param opts.debugLog Utility function to make debug output show up in the codemod CLI output.
-   */
-  detect(opts: {
-    source: string;
-    filePath: string;
-    // TODO: only specify this as an option to transform if parseArgs is present.
-    commandLineArgs?: ParsedArgs;
-    applyLabel: (priority: number, label: string) => void;
-    debugLog: DebugLog;
-  }): ScalarOrPromise<void>
-}
+export type DetectLabel = string | boolean;
 
 export type Codemod = {
+  detect?: true;
   /**
    * Any file matching these patterns will not be processed.
    */
@@ -72,7 +35,30 @@ export type Codemod = {
    */
   parseArgs?: (rawCommandLineArgs?: string) => ScalarOrPromise<ParsedArgs>
   // TODO: Can we make the type of returned args flow through to transform better?
-} & (Transform | Detect)
+
+  /**
+   * After all transforms have been run, this function will be invoked with an array of files there were modified.
+   */
+  postProcess?: (modifiedFiles: string[]) => Promise<unknown>;
+
+  /**
+  * Transform a single file. Return null or undefined to indicate that the file should not be modified.
+  * 
+  * @param opts
+  * @param opts.source the contents of the file to transform.
+  * @param opts.filePath the path to the file to transform.
+  * @param opts.commandLineArgs parsed arguments returned by `yourCodemod.parseArgs()`, if any.
+  * @param opts.debugLog Utility function to make debug output show up in the codemod CLI output.
+  */
+  transform(opts: {
+    source: string;
+    filePath: string;
+    // TODO: only specify this as an option to transform if parseArgs is present.
+    commandLineArgs?: ParsedArgs;
+    debugLog: DebugLog;
+    applyLabel: (priority: number, label: DetectLabel) => void;
+  }): ScalarOrPromise<CodemodResult | void> /* TODO make this void if detect = true */;
+}
 
 // The `any` here is intentional.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

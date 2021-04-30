@@ -2,7 +2,7 @@ import createLog from 'nth-log';
 import piscina from 'piscina';
 import fs from 'fs';
 import loadCodemod from './load-codemod';
-import type {DetectLabel} from './types';
+import type {CodemodResult, DetectLabel} from './types';
 import {serializeError} from 'serialize-error';
 import _ from 'lodash';
 
@@ -28,7 +28,7 @@ export type TransformMeta = {
 } & BaseCodemodMeta;
 
 export type DetectMeta = {
-  label: DetectLabel;
+  label?: DetectLabel;
 } & BaseCodemodMeta;
 
 export type ErrorMeta = {
@@ -42,9 +42,9 @@ export type DebugMeta = {
 export type CodemodMetaResult = TransformMeta | DetectMeta | ErrorMeta | DebugMeta;
 
 const makeLabeller = () => {
-  let currentLabel: string, currentLabelPriority = -Infinity;
+  let currentLabel: DetectLabel, currentLabelPriority = -Infinity;
 
-  function applyLabel(priority: number, label: string) {
+  function applyLabel(priority: number, label: DetectLabel) {
     if (priority >= currentLabelPriority) {
       currentLabelPriority = priority;
       currentLabel = label;
@@ -71,42 +71,19 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
     filePath: sourceCodeFile
   };
 
+  const labeller = makeLabeller();
+
   const codemodOpts = {
     source: originalFileContents, 
     filePath: sourceCodeFile, 
     commandLineArgs: parsedArgs,
-    debugLog
+    debugLog,
+    ..._.pick(labeller, 'applyLabel')
   };
 
-  // TODO: Handle the codemod throwing an error?
-  if ('transform' in codemod) {
-    const transformedCode = await codemod.transform(codemodOpts);
-    const codeModified = Boolean(transformedCode && transformedCode !== originalFileContents);
-    const {writeFiles} = piscina.workerData; 
-    if (codeModified && writeFiles) {
-      // This non-null assertion is safe because `codeModified` includes a check on `transformedCode`.
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      await pFs.writeFile(sourceCodeFile, transformedCode!);
-    }
-    log.debug({action: codeModified ? 'modified' : 'skipped', writeFiles});
-
-    if (debugEntries.length) {
-      return {
-        debugEntries,
-        ...baseMeta
-      };
-    }
-
-    return {
-      ...baseMeta,
-      codeModified, 
-      fileContents: transformedCode ? transformedCode : originalFileContents
-    };
-  }
-  const labeller = makeLabeller();
-
+  let transformedCode = await codemod.transform(codemodOpts);
   try {
-    await codemod.detect({...codemodOpts, ..._.pick(labeller, 'applyLabel')});
+    transformedCode = await codemod.transform(codemodOpts);
   } catch (e) {
     log.debug({e}, 'Codemod threw an error');
     return {
@@ -122,10 +99,36 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
     };
   }
 
-  log.debug({action: 'detect', result: labeller.getLabel()});
+  if (codemod.detect) {
+    log.debug({action: 'detect', result: labeller.getLabel()});
+    return {
+      label: labeller.getLabel(),  
+      ...baseMeta
+    };
+  }
+
+  const codeModified = Boolean(transformedCode && transformedCode !== originalFileContents);
+  const {writeFiles} = piscina.workerData; 
+  if (codeModified && writeFiles) {
+    // I originally had this cast inline but TS didn't recognize it.
+    const truthyCodemodResult = transformedCode as CodemodResult;
+
+    // This non-null assertion is safe because `codeModified` includes a check on `transformedCode`.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    await pFs.writeFile(sourceCodeFile, truthyCodemodResult!);
+  }
+  log.debug({action: codeModified ? 'modified' : 'skipped', writeFiles});
+
+  if (debugEntries.length) {
+    return {
+      debugEntries,
+      ...baseMeta
+    };
+  }
 
   return {
-    label: labeller.getLabel(),  
-    ...baseMeta
+    ...baseMeta,
+    codeModified, 
+    fileContents: transformedCode ? transformedCode : originalFileContents
   };
 }
