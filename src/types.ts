@@ -20,6 +20,7 @@ export type Transform = {
       * @param opts.source the contents of the file to transform.
       * @param opts.filePath the path to the file to transform.
       * @param opts.commandLineArgs parsed arguments returned by `yourCodemod.parseArgs()`, if any.
+      * @param opts.debugLog Utility function to make debug output show up in the codemod CLI output.
       */
      transform(opts: {
        source: string;
@@ -32,6 +33,9 @@ export type Transform = {
 
 export type DetectLabel = string | boolean | undefined;
 export type Detect = {
+  /**
+   * @param opts.debugLog Utility function to make debug output show up in the codemod CLI output.
+   */
   detect(opts: {
     source: string;
     filePath: string;
