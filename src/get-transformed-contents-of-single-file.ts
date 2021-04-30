@@ -1,4 +1,5 @@
-import jscodemod, {Options} from '.';
+import jscodemod from '.';
+import {Options} from './types';
 import {CodemodMetaResult} from './worker';
 
 async function getTransformedContentsOfSingleFile(

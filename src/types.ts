@@ -1,4 +1,28 @@
 import {PluginTarget, TransformOptions} from '@babel/core';
+import {TSOptions} from './compile-ts';
+import {DetectResults} from './make-interactive-ui';
+
+export type NonTSOptions = {
+  dry?: boolean;
+  writeFiles?: boolean;
+  porcelain?: boolean;
+  watch?: boolean | undefined;
+  codemodArgs?: string;
+  resetDirtyInputFiles?: boolean;
+  doPostProcess?: boolean;
+}
+
+export type CliUi = {
+  showReacting: (filesToScan: number, filesScanned: number) => void;
+  showDetectResults: (detectResults: DetectResults) => void;
+  showDebug: (debugEntriesPerFile: Record<string, unknown[]>) => void;
+}
+
+export type Options = Omit<TSOptions, 'log'> & Partial<Pick<TSOptions, 'log'>> & NonTSOptions;
+type FalseyDefaultOptions = 'dry' | 'porcelain' | 'codemodArgs' | 'resetDirtyInputFiles' | 'watch';
+export type InternalOptions = TSOptions 
+  & Pick<NonTSOptions, FalseyDefaultOptions> 
+  & Required<Omit<NonTSOptions, FalseyDefaultOptions>>;
 
 export type CodemodResult = string | undefined | null;
 

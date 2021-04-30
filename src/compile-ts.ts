@@ -2,10 +2,17 @@ import tempy from 'tempy';
 import findUpDetailed from './find-up-detailed';
 import loadJsonFile from 'load-json-file';
 import path from 'path';
-import type {TSOptions} from './';
+import createLog from 'nth-log';
 import {cyan} from 'ansi-colors';
 import execa from 'execa';
 import findUp from 'find-up';
+
+export type TSOptions = {
+  tsconfig?: string;
+  tsOutDir?: string
+  tsc?: string;
+  log: ReturnType<typeof createLog>;
+}
 
 type PackageJson = {name: string};
 const packageJson = loadJsonFile.sync(path.resolve(__dirname, '..', 'package.json')) as PackageJson;

@@ -13,6 +13,8 @@
     "jsx": "react",
 
     "outDir": "build",
+    "declaration": true,
+    "declarationMap": true,
     
     "noUnusedLocals": true,
     "noUnusedParameters": true,

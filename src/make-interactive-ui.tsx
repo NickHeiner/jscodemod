@@ -6,7 +6,7 @@ import {render, Text, Box} from 'ink';
 import ProgressBar from 'ink-progress-bar';
 import SyntaxHighlight from 'ink-syntax-highlight';
 import _ from 'lodash';
-import type {CliUi} from '.';
+import {CliUi} from './types';
 
 type FileListProps = {files: string[]};
 const FileList = (props: FileListProps) => {

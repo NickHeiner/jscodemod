@@ -9,8 +9,8 @@ import {cyan} from 'ansi-colors';
 import ora from 'ora';
 import createLog from 'nth-log';
 import fs from 'fs';
-import compileTS from './compile-ts';
-import {CodemodKind, TODO} from './types';
+import compileTS, {TSOptions} from './compile-ts';
+import {CliUi, CodemodKind, InternalOptions, NonTSOptions, Options, TODO} from './types';
 import execBigCommand from './exec-big-command';
 import getGitRoot from './get-git-root';
 import loadCodemod from './load-codemod';
@@ -20,38 +20,10 @@ import chokidar from 'chokidar';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
 
+export {Codemod} from './types';
+
 const devNull = fs.createWriteStream('/dev/null');
 const noOpLogger = createLog({name: 'no-op', stream: devNull});
-
-export type CliUi = {
-  showReacting: (filesToScan: number, filesScanned: number) => void;
-  showDetectResults: (detectResults: DetectResults) => void;
-  showDebug: (debugEntriesPerFile: Record<string, unknown[]>) => void;
-}
-
-export type TSOptions = {
-  tsconfig?: string;
-  tsOutDir?: string
-  tsc?: string;
-  log: ReturnType<typeof createLog>;
-}
-
-export type NonTSOptions = {
-  dry?: boolean;
-  writeFiles?: boolean;
-  porcelain?: boolean;
-  watch?: boolean | undefined;
-  codemodArgs?: string;
-  resetDirtyInputFiles?: boolean;
-  doPostProcess?: boolean;
-}
-
-export type Options = Omit<TSOptions, 'log'> & Partial<Pick<TSOptions, 'log'>> & NonTSOptions;
-
-type FalseyDefaultOptions = 'dry' | 'porcelain' | 'codemodArgs' | 'resetDirtyInputFiles' | 'watch';
-export type InternalOptions = TSOptions 
-  & Pick<NonTSOptions, FalseyDefaultOptions> 
-  & Required<Omit<NonTSOptions, FalseyDefaultOptions>>;
 
 // The rule is too broad.
 // eslint-disable-next-line require-await
@@ -91,6 +63,8 @@ async function resetDirtyInputFiles(gitRoot: string | null, filesToModify: strin
   }
 }
 
+// TODO: Export this as test-only, or put it in its own file, so it is not being exported
+// from the main export.
 export function getWatch(codemodKind: CodemodKind, watch: NonTSOptions['watch']): boolean {
   const isTransformCodemod = codemodKind === 'transform';
   if (isTransformCodemod && watch) {
