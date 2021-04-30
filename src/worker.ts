@@ -5,6 +5,7 @@ import loadCodemod from './load-codemod';
 import type {CodemodResult, DetectLabel} from './types';
 import {serializeError} from 'serialize-error';
 import _ from 'lodash';
+import {parseSync, transformFromAstSync} from '@babel/core';
 
 // I wonder if we could measure perf gains by trimming this import list.
 
@@ -81,9 +82,28 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
     ..._.pick(labeller, 'applyLabel')
   };
 
-  let transformedCode = await codemod.transform(codemodOpts);
+  let transformedCode;
   try {
-    transformedCode = await codemod.transform(codemodOpts);
+    if ('presets' in codemod) {
+      const parseResult = parseSync(originalFileContents, {
+        filename: sourceCodeFile,
+        ast: true,
+        ..._.pick(codemod, 'presets')
+      });
+
+      if (!parseResult) {
+        throw new Error(
+          "Bug in jscodemod: Babel.parseSync returned a falsey parseResult. I don't know when this would happen."
+        );
+      }
+
+      const plugin = await codemod.getPlugin(codemodOpts);
+      transformedCode = transformFromAstSync(parseResult, originalFileContents, {
+        plugins: [plugin]
+      })?.code;
+    } else {
+      transformedCode = await codemod.transform(codemodOpts);
+    }
   } catch (e) {
     log.debug({e}, 'Codemod threw an error');
     return {
