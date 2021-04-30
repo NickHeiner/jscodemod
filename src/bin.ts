@@ -6,6 +6,7 @@ import _ from 'lodash';
 import 'loud-rejection/register';
 import createLogger from 'nth-log';
 import fs from 'fs';
+import { TODO } from './types';
 
 const tsOnlyNote = '(Only applicable if your codemod is written in TypeScript)';
 
@@ -106,8 +107,7 @@ const {argv} = yargs
   .help();
 
 async function main() {
-  // This type is not flowing properly from createLogger.
-  const logOpts: {name: string; stream?: unknown} = {name: 'jscodemod-coordinator'};
+  const logOpts: {name: string; stream?: TODO} = {name: 'jscodemod-coordinator'};
   if (argv.jsonOutput) {
     logOpts.stream = process.stdout;
   }

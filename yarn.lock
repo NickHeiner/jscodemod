@@ -1436,6 +1436,13 @@
   dependencies:
     "@babel/types" "^7.3.0"
 
+"@types/bunyan@^1.8.6":
+  version "1.8.6"
+  resolved "https://registry.yarnpkg.com/@types/bunyan/-/bunyan-1.8.6.tgz#6527641cca30bedec5feb9ab527b7803b8000582"
+  integrity sha512-YiozPOOsS6bIuz31ilYqR5SlLif4TBWsousN2aCWLi5233nZSX19tFbcQUPdR7xJ8ypPyxkCGNxg0CIV5n9qxQ==
+  dependencies:
+    "@types/node" "*"
+
 "@types/chokidar@2.1.3":
   version "2.1.3"
   resolved "https://artifacts.netflix.net/api/npm/npm-netflix/@types/chokidar/-/chokidar-2.1.3.tgz#123ab795dba6d89be04bf076e6aecaf8620db674"
@@ -4974,11 +4981,12 @@ npm-run-path@^4.0.0:
   dependencies:
     path-key "^3.0.0"
 
-nth-log@2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/nth-log/-/nth-log-2.0.0.tgz#1ab7b9c3af8693b5e0af1bcfd60c760cb2fe5559"
-  integrity sha512-TTZPvLTl6pc7TbCJm4BMsJwpPxKOZB7/T3MSPPvzWIwewsBdWWVK6xtZnOSCmEbpTpSyS6ExMyGrpSFCzawD8g==
+nth-log@2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/nth-log/-/nth-log-2.0.1.tgz#c980fa320996f6a6a48cb41bb985aa960094e984"
+  integrity sha512-IU5mIIMFhgunZ+kYXCo7j2FajTwMQCZbPErDNdfs5E/wPhU1QrwN+xysZXPWCxsw2jt4SpSB6nm7kyAoy3PzJw==
   dependencies:
+    "@types/bunyan" "^1.8.6"
     bunyan "^1.8.12"
     bunyan-format "^0.2.1"
     lodash "^4.17.20"
