@@ -134,7 +134,7 @@ export default async function runCodemodOnFile(
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await pFs.writeFile(sourceCodeFile, truthyCodemodResult!);
   }
-  log.debug({action: codeModified ? 'modified' : 'skipped', writeFiles});
+  log.debug({action: codeModified ? 'modified' : 'skipped-write', writeFiles});
 
   if (debugEntries.length) {
     return {
