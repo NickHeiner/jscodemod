@@ -1,7 +1,7 @@
 import globby from 'globby';
 import _ from 'lodash';
 import execa from 'execa';
-import pathIsTS from './path-is-ts';
+// import pathIsTS from './path-is-ts';
 import path from 'path';
 import Piscina from 'piscina';
 import ProgressBar from 'progress';
@@ -9,7 +9,7 @@ import {cyan} from 'ansi-colors';
 import ora from 'ora';
 import createLog from 'nth-log';
 import fs from 'fs';
-import compileTS, {TSOptions} from './compile-ts';
+import {TSOptions} from './compile-ts';
 import {CliUi, CodemodKind, InternalOptions, NonTSOptions, Options, TODO} from './types';
 import execBigCommand from './exec-big-command';
 import getGitRoot from './get-git-root';
@@ -29,9 +29,10 @@ const noOpLogger = createLog({name: 'no-op', stream: devNull});
 // The rule is too broad.
 // eslint-disable-next-line require-await
 async function getCodemodPath(pathToCodemod: string, options: TSOptions) {
-  if (pathIsTS(pathToCodemod)) {
-    return compileTS(pathToCodemod, options);
-  }
+  // if (pathIsTS(pathToCodemod)) {
+  //   return compileTS(pathToCodemod, options);
+  // }
+  console.log(options);
 
   return path.resolve(pathToCodemod);
 }

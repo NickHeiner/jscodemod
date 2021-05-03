@@ -63,6 +63,7 @@
     "progress": "2.0.3",
     "react": "17.0.2",
     "serialize-error": "8.1.0",
-    "tempy": "0.7.1"
+    "tempy": "0.7.1",
+    "ts-node": "9.1.1"
   }
 }
