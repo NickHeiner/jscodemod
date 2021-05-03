@@ -162,9 +162,15 @@ async function codemod(
   async function compileAndLoadCodemod() {
     const codemodPath = await getCodemodPath(pathToCodemod);
     
-    const codemod = loadCodemod(codemodPath);
-    log.debug({codemodPath, codemodKeys: Object.keys(codemod)});
+    const codemod = await log.logPhase(
+      {phase: 'load codemod', level: 'debug', codemodPath}, 
+      (_logProgress, setAdditionalLogData) => {
+        const codemod = loadCodemod(codemodPath);
+        setAdditionalLogData({codemodKeys: Object.keys(codemod)});
 
+        // This just needs to be a promise because of logPhase's typing.
+        return Promise.resolve(codemod);
+      });
     return {codemod, codemodPath};
   }
 
@@ -199,8 +205,11 @@ async function codemod(
     // The next line is a bit gnarly to make TS happy.
     const codemodIgnores = _.compact(([] as (RegExp | undefined)[]).concat(codemod.ignore));
 
-    log.debug({inputFilesPatterns}, 'Globbing input file patterns.');
-    const filesToModify = _((await globby(inputFilesPatterns, {dot: true, gitignore: true})))
+    const globbed = await log.logPhase(
+      {level: 'debug', phase: 'globbing input file patterns.', inputFilesPatterns},
+      () => globby(inputFilesPatterns, {dot: true, gitignore: true})
+    );
+    const filesToModify = _(globbed)
       .map(filePath => path.resolve(filePath))
       .reject(filePath => _.some(codemodIgnores, ignorePattern => ignorePattern.test(filePath)))
       .value();
@@ -262,7 +271,7 @@ async function codemod(
       }
     }
 
-    const codemodMetaResults = await runCodemod({
+    const codemodMetaResults = await log.logPhase({level: 'debug', phase: 'run codemod'}, () => runCodemod({
       codemodPath, 
       inputFiles: filesToModify, 
       writeFiles,
@@ -272,7 +281,7 @@ async function codemod(
       onProgress(filesScanned) {
         ui.showReacting(filesScanned, filesToModify.length);
       }
-    });
+    }));
     if (codemodMetaResults === 'aborted' || abortSignal.aborted) { 
       return; 
     }
