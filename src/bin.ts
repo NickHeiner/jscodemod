@@ -4,9 +4,7 @@ import yargs from 'yargs';
 import codemod from './';
 import _ from 'lodash';
 import 'loud-rejection/register';
-import createLogger from 'nth-log';
-import fs from 'fs';
-import { TODO } from './types';
+import getLogger from './get-logger';
 
 const tsOnlyNote = '(Only applicable if your codemod is written in TypeScript)';
 
@@ -107,15 +105,7 @@ const {argv} = yargs
   .help();
 
 async function main() {
-  const logOpts: {name: string; stream?: TODO} = {name: 'jscodemod-coordinator'};
-  if (argv.jsonOutput) {
-    logOpts.stream = process.stdout;
-  }
-  if (argv.porcelain) {
-    logOpts.stream = fs.createWriteStream('/dev/null');
-  }
-  const log = createLogger(logOpts);
-
+  const log = getLogger(_.pick(argv, 'jsonOutput', 'porcelain'));
   log.debug({argv});
 
   // This is not an exhaustive error wrapper, but I think it's ok for now. Making it catch more cases would introduce
