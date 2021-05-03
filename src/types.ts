@@ -1,8 +1,8 @@
 import {PluginTarget, TransformOptions} from '@babel/core';
-import {TSOptions} from './compile-ts';
 import {DetectResults} from './make-interactive-ui';
+import createLog from 'nth-log';
 
-export type NonTSOptions = {
+export type Options = {
   dry?: boolean;
   writeFiles?: boolean;
   porcelain?: boolean;
@@ -10,6 +10,7 @@ export type NonTSOptions = {
   codemodArgs?: string;
   resetDirtyInputFiles?: boolean;
   doPostProcess?: boolean;
+  log?: ReturnType<typeof createLog>;
 }
 
 export type CliUi = {
@@ -18,11 +19,10 @@ export type CliUi = {
   showDebug: (debugEntriesPerFile: Record<string, unknown[]>) => void;
 }
 
-export type Options = Omit<TSOptions, 'log'> & Partial<Pick<TSOptions, 'log'>> & NonTSOptions;
 type FalseyDefaultOptions = 'dry' | 'porcelain' | 'codemodArgs' | 'resetDirtyInputFiles' | 'watch';
-export type InternalOptions = TSOptions 
-  & Pick<NonTSOptions, FalseyDefaultOptions> 
-  & Required<Omit<NonTSOptions, FalseyDefaultOptions>>;
+export type InternalOptions = 
+  & Pick<Options, FalseyDefaultOptions> 
+  & Required<Omit<Options, FalseyDefaultOptions>>;
 
 export type CodemodResult = string | undefined | null;
 

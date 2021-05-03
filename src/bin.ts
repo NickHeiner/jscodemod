@@ -6,8 +6,6 @@ import _ from 'lodash';
 import 'loud-rejection/register';
 import getLogger from './get-logger';
 
-const tsOnlyNote = '(Only applicable if your codemod is written in TypeScript)';
-
 // Passing paths as file globs that start with `.` doesn't work.
 // https://github.com/sindresorhus/globby/issues/168
 
@@ -32,21 +30,6 @@ const {argv} = yargs
       type: 'string',
       required: true,
       describe: 'Path to the codemod to run'
-    },
-    // TODO: allow arbitrary TS arg passthrough at your own risk.
-    tsconfig: {
-      type: 'string',
-      describe: `${tsOnlyNote} path to the tsconfig.json`
-    },
-    // I'm going to skip adding tests for this for now, because I'm not sure it's actually necessary.
-    tsOutDir: {
-      type: 'string',
-      describe: `${tsOnlyNote} directory in which to compile your codemod to. Defaults to a temporary directory.`
-    },
-    tsc: {
-      type: 'string',
-      describe: `${tsOnlyNote} path to a "tsc" executable to compile your codemod. ` +
-       'Defaults to looking for a "tsc" bin accessible from the current working directory.'
     },
     dry: {
       alias: 'd',
@@ -88,7 +71,6 @@ const {argv} = yargs
     }
   })
   .group(['codemod', 'dry', 'resetDirtyInputFiles'], 'Primary')
-  .group(['tsconfig', 'tsOutDir', 'tsc'], 'TypeScript')
   .group(['jsonOutput', 'porcelain', 'watch'], 'Rarely Useful')
   .check(argv => {
     // Yarg's types are messed up.
@@ -112,7 +94,7 @@ async function main() {
   // complexity without adding much safety.
   try {
     const opts = {
-      ..._.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'resetDirtyInputFiles', 'porcelain', 'watch'),
+      ..._.pick(argv, 'dry', 'resetDirtyInputFiles', 'porcelain', 'watch'),
       log
     };
 

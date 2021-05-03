@@ -5,8 +5,6 @@
   "compilerOptions": {
     "target": "ES2019",
     "module": "commonjs",
-    "allowJs": true,                       
-    "checkJs": true,                       
 
     "strict": true,
 

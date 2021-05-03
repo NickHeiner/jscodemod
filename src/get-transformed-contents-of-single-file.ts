@@ -8,7 +8,7 @@ import getLogger from './get-logger';
 async function getTransformedContentsOfSingleFile(
   pathToCodemod: string,
   inputFile: string,
-  codemodOptions?: Options & {debugLogger: boolean}
+  codemodOptions?: Options & {debugLogger?: boolean}
 ): Promise<string> {
   const opts = {...codemodOptions, writeFiles: false, doPostProcess: false, watch: false};
   if (codemodOptions?.debugLogger) {

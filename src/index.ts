@@ -9,8 +9,7 @@ import {cyan} from 'ansi-colors';
 import ora from 'ora';
 import createLog from 'nth-log';
 import fs from 'fs';
-import {TSOptions} from './compile-ts';
-import {CliUi, CodemodKind, InternalOptions, NonTSOptions, Options, TODO} from './types';
+import {CliUi, CodemodKind, InternalOptions, Options, TODO} from './types';
 import execBigCommand from './exec-big-command';
 import getGitRoot from './get-git-root';
 import loadCodemod from './load-codemod';
@@ -28,12 +27,7 @@ const noOpLogger = createLog({name: 'no-op', stream: devNull});
 
 // The rule is too broad.
 // eslint-disable-next-line require-await
-async function getCodemodPath(pathToCodemod: string, options: TSOptions) {
-  // if (pathIsTS(pathToCodemod)) {
-  //   return compileTS(pathToCodemod, options);
-  // }
-  console.log(options);
-
+async function getCodemodPath(pathToCodemod: string) {
   return path.resolve(pathToCodemod);
 }
 
@@ -67,7 +61,7 @@ async function resetDirtyInputFiles(gitRoot: string | null, filesToModify: strin
 
 // TODO: Export this as test-only, or put it in its own file, so it is not being exported
 // from the main export.
-export function getWatch(codemodKind: CodemodKind, watch: NonTSOptions['watch']): boolean {
+export function getWatch(codemodKind: CodemodKind, watch: Options['watch']): boolean {
   const isTransformCodemod = codemodKind === 'transform';
   if (isTransformCodemod && watch) {
     throw new Error('Watch mode is not supported for transform codemods.');
@@ -166,10 +160,7 @@ async function codemod(
   }
 
   async function compileAndLoadCodemod() {
-    const codemodPath = await getCodemodPath(pathToCodemod, {
-      ..._.pick(options, 'tsconfig', 'tsOutDir', 'tsc'),
-      log
-    });
+    const codemodPath = await getCodemodPath(pathToCodemod);
     
     const codemod = loadCodemod(codemodPath);
     log.debug({codemodPath, codemodKeys: Object.keys(codemod)});

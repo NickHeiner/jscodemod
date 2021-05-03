@@ -128,7 +128,7 @@ const getJsonLogs = (stdout: string) => stdout.split('\n').map(line => sanitizeL
 
 // I don't think extracting this to a var would help readability.
 // eslint-disable-next-line no-magic-numbers
-jest.setTimeout(15 * 1000);
+jest.setTimeout(30 * 1000);
 
 describe('happy path', () => {
   createTest({
@@ -209,57 +209,6 @@ describe('error handling', () => {
   });
 });
 
-describe('TS compilation flags', () => {
-  createTest({
-    testName: 'Path to TSC is not specified, and no TSC can be found.',
-    fixtureName: 'no-tsc',
-    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), '--json-output', 'input.js'],
-    expectedExitCode: 1,
-    assert(spawnResult) {
-      const jsonLogs = getJsonLogs(spawnResult.stdout);
-      expect(jsonLogs).toContainEqual(expect.objectContaining({
-        // It's more ergonomic to have this be a single string literal.
-        // eslint-disable-next-line max-len
-        msg: "If you have a TypeScript codemod, and you don't specify a path to a 'tsc' executable that will compile your codemod, then this tool searches in your codemod's node_modules. However, TypeScript could not be found there either."
-      }));
-    }
-  });
-
-  const localTSC = resolveBin.sync('typescript', {executable: 'tsc'});
-  createTest({
-    testName: 'Path to TSC is specified',
-    fixtureName: 'no-tsc',
-    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), '--tsc', localTSC, 'input.js'],
-    snapshot: true
-  });
-
-  createTest({
-    testName: 'Path to tsconfig is not specified, and no tsconfig can be found.',
-    fixtureName: 'tsconfig-non-standard-location',
-    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), '--json-output', 'input.js'],
-    expectedExitCode: 1,
-    assert(spawnResult) {
-      const jsonLogs = getJsonLogs(spawnResult.stdout);
-      expect(jsonLogs).toContainEqual(expect.objectContaining({
-        // It's more ergonomic to have this be a single string literal.
-        // eslint-disable-next-line max-len
-        msg: 'This tool was not able to find a tsconfig.json file by doing a find-up from codemod. Please manually specify a tsconfig file path.'
-      }));
-    }
-  });
-
-  createTest({
-    testName: 'Specified tsconfig path',
-    fixtureName: 'tsconfig-non-standard-location',
-    spawnArgs: [
-      '--codemod', path.join('codemod', 'index.ts'), 
-      '--tsconfig', path.join('configs', 'tsconfig.json'), 
-      'input.js'
-    ],
-    snapshot: true
-  });
-});
-
 describe('git', () => {
   createTest({
     testName: 'Reset dirty files',
@@ -320,7 +269,7 @@ describe('getWatch', () => {
     ['detect', true, true],
     ['detect', false, false],
     ['detect', undefined, true]
-  ])('getWatch(%p, %p)', (codemodKind, watch, expected) => {
+  ] as const)('getWatch(%p, %p)', (codemodKind, watch, expected) => {
     if (_.isError(expected)) {
       expect(() => getWatch(codemodKind, watch)).toThrowError(expected);
     } else {
