@@ -7,9 +7,9 @@ import Piscina from 'piscina';
 import ProgressBar from 'progress';
 import {cyan} from 'ansi-colors';
 import ora from 'ora';
-import createLog from 'nth-log';
+import createLog, {NTHLogger} from 'nth-log';
 import fs from 'fs';
-import {CliUi, CodemodKind, InternalOptions, Options, TODO} from './types';
+import {CliUi, Codemod, CodemodKind, InternalOptions, Options, TODO} from './types';
 import execBigCommand from './exec-big-command';
 import getGitRoot from './get-git-root';
 import loadCodemod from './load-codemod';
@@ -17,6 +17,7 @@ import type {CodemodMetaResult, DebugMeta, DetectMeta, ErrorMeta} from './worker
 import makeInteractiveUI, {DetectResults} from './make-interactive-ui';
 import chokidar from 'chokidar';
 import {AbortController} from 'abortcontroller-polyfill/dist/abortcontroller';
+import runCodemodOnFile from './run-codemod-on-file';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
 
@@ -88,9 +89,17 @@ async function codemod(
     ...passedOptions
   };
 
+  /**
+   * Only use Piscina if there are at least this many files.
+   * At smaller input sizes, Piscina's fixed startup cost isn't justified by the per-file gains. In my anecdotal test,
+   * running a simple codemod on a single file took ~5 seconds with Piscina and ~2 seconds when kept in-process.
+   */
+  const piscinaLowerBoundInclusive = 10;
+
   async function runCodemod({
-    codemodPath, inputFiles, writeFiles, codemodArgs, codemodKind, abortSignal, onProgress
+    codemod, codemodPath, inputFiles, writeFiles, codemodArgs, codemodKind, abortSignal, onProgress, log
   }: {
+    codemod: Codemod,
     codemodPath: string;
     inputFiles: string[]; 
     writeFiles: boolean; 
@@ -98,14 +107,25 @@ async function codemod(
     codemodKind: CodemodKind;
     abortSignal: AbortSignal;
     onProgress?: (filesScanned: number) => void;
+    log: NTHLogger
   }) {
     const isTransformCodemod = codemodKind === 'transform';
+
+    const baseRunnerOpts = {codemodArgs, writeFiles};
   
-    const piscina = new Piscina({
+    const getPiscina = _.once(() => new Piscina({
       filename: require.resolve('./worker'),
       argv: [codemodPath],
-      workerData: {codemodPath, codemodArgs, writeFiles}
-    });
+      workerData: {...baseRunnerOpts, writeFiles}
+    }));
+
+    const runCodemodOnSingleFile = (inputFile: string) => {
+      if (inputFiles.length >= piscinaLowerBoundInclusive) {
+        return getPiscina().runTask(inputFile);
+      }
+
+      return runCodemodOnFile(codemod, inputFile, log, baseRunnerOpts);
+    };
   
     const progressBar = new ProgressBar(':bar (:current/:total, :percent%)', {
       total: inputFiles.length,
@@ -117,7 +137,7 @@ async function codemod(
       if (abortSignal.aborted) {
         return 'aborted';
       }
-      const codemodMetaResult: CodemodMetaResult = await piscina.runTask(inputFile);
+      const codemodMetaResult: CodemodMetaResult = await runCodemodOnSingleFile(inputFile);
       log.debug({
         ...codemodMetaResult,
         fileContents: '<truncated file contents>'
@@ -272,6 +292,7 @@ async function codemod(
     }
 
     const codemodMetaResults = await log.logPhase({level: 'debug', phase: 'run codemod'}, () => runCodemod({
+      codemod,
       codemodPath, 
       inputFiles: filesToModify, 
       writeFiles,
@@ -280,7 +301,8 @@ async function codemod(
       abortSignal,
       onProgress(filesScanned) {
         ui.showReacting(filesScanned, filesToModify.length);
-      }
+      },
+      log
     }));
     if (codemodMetaResults === 'aborted' || abortSignal.aborted) { 
       return; 

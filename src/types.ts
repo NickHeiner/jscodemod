@@ -1,6 +1,6 @@
 import {PluginTarget, TransformOptions} from '@babel/core';
 import {DetectResults} from './make-interactive-ui';
-import createLog from 'nth-log';
+import type {NTHLogger} from 'nth-log';
 
 export type Options = {
   dry?: boolean;
@@ -10,7 +10,7 @@ export type Options = {
   codemodArgs?: string;
   resetDirtyInputFiles?: boolean;
   doPostProcess?: boolean;
-  log?: ReturnType<typeof createLog>;
+  log?: NTHLogger;
 }
 
 export type CliUi = {
@@ -27,7 +27,7 @@ export type InternalOptions =
 export type CodemodResult = string | undefined | null;
 
 type ScalarOrPromise<T> = T | Promise<T>;
-type ParsedArgs = Record<string, unknown> | undefined;
+export type ParsedArgs = Record<string, unknown> | undefined;
 
 export type CodemodKind = 'transform' | 'detect';
 
