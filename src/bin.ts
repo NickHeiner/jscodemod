@@ -94,6 +94,9 @@ async function main() {
   // complexity without adding much safety.
   try {
     const opts = {
+      // Yarg's types are messed up.
+      inputFilePatterns: argv.fileGlobs as string[],
+      inputFiles: [] as string[],
       ..._.pick(argv, 'dry', 'resetDirtyInputFiles', 'porcelain', 'watch'),
       log
     };
@@ -103,9 +106,6 @@ async function main() {
 
     await codemod(
       argv.codemod, 
-      // Yarg's types are messed up.
-      // @ts-expect-error
-      argv.fileGlobs, 
       opts
     );
   } catch (err) {

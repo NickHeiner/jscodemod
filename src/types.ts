@@ -11,7 +11,18 @@ export type Options = {
   resetDirtyInputFiles?: boolean;
   doPostProcess?: boolean;
   log?: NTHLogger;
-}
+
+  // TODO: Write the types such that so only one of these can be passed at a time.
+
+  /**
+   * A list of patterns that will be passed to globby.
+   */
+  inputFilePatterns: string[]
+  /**
+   * A list of files that will be codemodded. 
+   */
+  inputFiles: string[]
+};
 
 export type CliUi = {
   showReacting: (filesToScan: number, filesScanned: number) => void;

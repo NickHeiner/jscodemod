@@ -10,14 +10,18 @@ async function getTransformedContentsOfSingleFile(
   inputFile: string,
   codemodOptions?: Options & {debugLogger?: boolean}
 ): Promise<string> {
-  const opts = {...codemodOptions, writeFiles: false, doPostProcess: false, watch: false};
+  const opts = {
+    ...codemodOptions, 
+    inputFiles: [inputFile],
+    inputFilePatterns: [],
+    writeFiles: false, doPostProcess: false, watch: false
+  };
   if (codemodOptions?.debugLogger) {
     opts.log = getLogger();
   }
 
   const codemodMetaResults = await jscodemod(
     pathToCodemod,
-    [inputFile],
     opts
   ) as unknown as CodemodMetaResult[];
 

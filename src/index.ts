@@ -73,8 +73,7 @@ export function getWatch(codemodKind: CodemodKind, watch: Options['watch']): boo
 
 async function codemod(
   pathToCodemod: string, 
-  inputFilesPatterns: string[], 
-  passedOptions: Options = {}
+  passedOptions: Options
 ): Promise<CodemodMetaResult[] | string[] | undefined> { 
   // TODO: encode that this return type depends on whether 'dry' is passed.
   const {
@@ -225,11 +224,12 @@ async function codemod(
     // The next line is a bit gnarly to make TS happy.
     const codemodIgnores = _.compact(([] as (RegExp | undefined)[]).concat(codemod.ignore));
 
-    const globbed = await log.logPhase(
-      {level: 'debug', phase: 'globbing input file patterns.', inputFilesPatterns},
-      () => globby(inputFilesPatterns, {dot: true, gitignore: true})
-    );
-    const filesToModify = _(globbed)
+    const userSpecifiedFiles = options.inputFilePatterns.length ? options.inputFilePatterns : options.inputFiles;
+    const specifiedFiles = options.inputFilePatterns.length ? await log.logPhase(
+      {level: 'debug', phase: 'globbing input file patterns.', ..._.pick(options, 'inputFilePatterns')},
+      () => globby(options.inputFilePatterns, {dot: true, gitignore: true})
+    ) : options.inputFiles;
+    const filesToModify = _(specifiedFiles)
       .map(filePath => path.resolve(filePath))
       .reject(filePath => _.some(codemodIgnores, ignorePattern => ignorePattern.test(filePath)))
       .value();
@@ -240,13 +240,13 @@ async function codemod(
 
     if (!filesToModify.length) {
       const err = new Error('No files were found to transform.');
-      Object.assign(err, {inputFilesPatterns});
+      Object.assign(err, {userPassedFileSpec: userSpecifiedFiles});
       throw err;
     }
 
     const logMethod = options.dry ? 'info' : 'debug';
     log[logMethod](
-      {filesToModify, count: filesToModify.length, inputFilesPatterns}, 
+      {filesToModify, count: filesToModify.length, userPassedFileSpec: userSpecifiedFiles}, 
       'Found files to modify.'
     );
     ui.showReacting(0, filesToModify.length);
