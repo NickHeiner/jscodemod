@@ -59,6 +59,13 @@ export default async function runCodemodOnFile(
   const log = baseLog.child({sourceCodeFile});
   log.debug({action: 'start'});
 
+  // Keep using baseLog instead of log because NTHLogger .child() does not attach logPhase.
+  // logPhase does not work well for sync operations.
+  const perfLog = <T>(phase: string, fn: () => T): Promise<T> => baseLog.logPhase(
+    {level: 'trace', phase},
+    () => Promise.resolve(fn())
+  );
+
   const originalFileContents = await pFs.readFile(sourceCodeFile, 'utf-8');
   const parsedArgs = await codemod.parseArgs?.(codemodArgs);
 
@@ -83,11 +90,11 @@ export default async function runCodemodOnFile(
   let transformedCode;
   try {
     if ('presets' in codemod) {
-      const parseResult = parseSync(originalFileContents, {
+      const parseResult = await perfLog('parseSync', () => parseSync(originalFileContents, {
         filename: sourceCodeFile,
         ast: true,
         ..._.pick(codemod, 'presets')
-      });
+      }));
 
       if (!parseResult) {
         throw new Error(

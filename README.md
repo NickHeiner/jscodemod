@@ -36,6 +36,9 @@ If your codebase has syntax that Babel doesn't recognize out of the box, you'll 
 
 [Egghead Guide](https://egghead.io/blog/codemods-with-babel-plugins)
 
+### Codemod Performance
+If you're using Babel, and you're using a lot of plugins and presets, parsing even a trivially-small file can take several seconds.
+
 ### Gotchas
 #### TypeScript codemods in TypeScript projects may be slow by default
 If your big project is in TypeScript, and you write your codemod in TypeScript, your build time may be very slow. For example, consider this file struture:
