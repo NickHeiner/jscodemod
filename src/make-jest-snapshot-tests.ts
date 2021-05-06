@@ -1,6 +1,6 @@
 import jscodemod from '.';
 import {Options} from './types';
-import {CodemodMetaResult} from './worker';
+import {CodemodMetaResult} from './run-codemod-on-file';
 import getLogger from './get-logger';
 import globby from 'globby';
 import _ from 'lodash';
@@ -15,6 +15,8 @@ function makeJestSnapshotTests(
   codemodOptions?: Options & {debugLogger?: boolean}
 ): void {
   const inputFiles = globby.sync('**/*.*', {cwd: fixtureDir, absolute: true});
+
+  // TODO Should this use getTransformedContentsOfSingleFile?
 
   const opts: Options = {
     ...codemodOptions, 
@@ -50,6 +52,10 @@ function makeJestSnapshotTests(
 
         if ('error' in codemodMetaResultForThisFile) {
           throw codemodMetaResultForThisFile.error;
+        }
+
+        if (codemodMetaResultForThisFile.debugEntries.length) {
+          console.log(codemodMetaResultForThisFile.debugEntries);
         }
 
         expect(codemodMetaResultForThisFile.fileContents).toMatchSnapshot();

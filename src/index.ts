@@ -13,11 +13,10 @@ import {CliUi, Codemod, CodemodKind, InternalOptions, Options, TODO} from './typ
 import execBigCommand from './exec-big-command';
 import getGitRoot from './get-git-root';
 import loadCodemod from './load-codemod';
-import type {CodemodMetaResult, DebugMeta, DetectMeta, ErrorMeta} from './worker';
+import runCodemodOnFile, {CodemodMetaResult, DetectMeta, ErrorMeta} from './run-codemod-on-file';
 import makeInteractiveUI, {DetectResults} from './make-interactive-ui';
 import chokidar from 'chokidar';
 import {AbortController} from 'abortcontroller-polyfill/dist/abortcontroller';
-import runCodemodOnFile from './run-codemod-on-file';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
 export {default as makeJestSnapshotTests} from './make-jest-snapshot-tests';
@@ -315,10 +314,10 @@ async function codemod(
     const getRelativeFilePath = (absoluteFilePath: string) => 
       gitRoot ? path.relative(gitRoot, absoluteFilePath) : absoluteFilePath;
 
-    const debug = _.filter(codemodMetaResults, 'debugEntries');
+    const debug = _.filter(codemodMetaResults, ({debugEntries}) => debugEntries.length);
     if (debug.length) {
       ui.showDebug(
-        _((debug as DebugMeta[]))
+        _(debug)
           .keyBy('filePath')
           .mapKeys((_val, filePath) => getRelativeFilePath(filePath))
           .mapValues('debugEntries')

@@ -1,6 +1,6 @@
 import jscodemod from '.';
 import {Options} from './types';
-import {CodemodMetaResult} from './worker';
+import {CodemodMetaResult} from './run-codemod-on-file';
 import getLogger from './get-logger';
 
 // TODO: make sure this works when codemod has detect: true.

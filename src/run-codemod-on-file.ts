@@ -14,9 +14,10 @@ const pFs = fs.promises;
  * "could not be cloned" when I tried to pass the codemod itself on `workerData`.
  */
 
-export type BaseCodemodMeta = {
+ export type BaseCodemodMeta = {
   filePath: string;
   fileContents: string;
+  debugEntries: unknown[]
 };
 
 export type TransformMeta = {
@@ -31,11 +32,7 @@ export type ErrorMeta = {
   error: Error
 } & BaseCodemodMeta;
 
-export type DebugMeta = {
-  debugEntries: unknown[]
-} & BaseCodemodMeta;
-
-export type CodemodMetaResult = TransformMeta | DetectMeta | ErrorMeta | DebugMeta;
+export type CodemodMetaResult = TransformMeta | DetectMeta | ErrorMeta;
 
 const makeLabeller = () => {
   let currentLabel: DetectLabel, currentLabelPriority = -Infinity;
@@ -69,12 +66,13 @@ export default async function runCodemodOnFile(
   const originalFileContents = await pFs.readFile(sourceCodeFile, 'utf-8');
   const parsedArgs = await codemod.parseArgs?.(codemodArgs);
 
-  const debugEntries: DebugMeta['debugEntries'] = [];
+  const debugEntries: BaseCodemodMeta['debugEntries'] = [];
   const debugLog = (entry: unknown) => debugEntries.push(entry);
 
   const baseMeta = {
     fileContents: originalFileContents,
-    filePath: sourceCodeFile
+    filePath: sourceCodeFile,
+    debugEntries
   };
 
   const labeller = makeLabeller();
@@ -117,13 +115,6 @@ export default async function runCodemodOnFile(
     };
   }
 
-  if (debugEntries.length) {
-    return {
-      debugEntries,
-      ...baseMeta
-    };
-  }
-
   if (codemod.detect && !alwaysTransform) {
     log.debug({action: 'detect', result: labeller.getLabel()});
     return {
@@ -142,13 +133,6 @@ export default async function runCodemodOnFile(
     await pFs.writeFile(sourceCodeFile, truthyCodemodResult!);
   }
   log.debug({action: codeModified ? 'modified' : 'skipped-write', writeFiles});
-
-  if (debugEntries.length) {
-    return {
-      debugEntries,
-      ...baseMeta
-    };
-  }
 
   return {
     ...baseMeta,
