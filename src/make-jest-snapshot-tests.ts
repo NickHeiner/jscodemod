@@ -16,7 +16,7 @@ function makeJestSnapshotTests(
 ): void {
   const inputFiles = globby.sync('**/*.*', {cwd: fixtureDir, absolute: true});
 
-  // TODO Should this use getTransformedContentsOfSingleFile?
+  // TODO Should this share with getTransformedContentsOfSingleFile?
 
   const opts: Options = {
     ...codemodOptions, 
