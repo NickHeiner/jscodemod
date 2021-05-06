@@ -50,12 +50,12 @@ function makeJestSnapshotTests(
           throw error;
         }
 
-        if ('error' in codemodMetaResultForThisFile) {
-          throw codemodMetaResultForThisFile.error;
-        }
-
         if (codemodMetaResultForThisFile.debugEntries.length) {
           console.log(codemodMetaResultForThisFile.debugEntries);
+        }
+
+        if ('error' in codemodMetaResultForThisFile) {
+          throw codemodMetaResultForThisFile.error;
         }
 
         expect(codemodMetaResultForThisFile.fileContents).toMatchSnapshot();
