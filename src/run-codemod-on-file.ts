@@ -54,7 +54,7 @@ const makeLabeller = () => {
 
 export default async function runCodemodOnFile(
   codemod: Codemod, sourceCodeFile: string, baseLog: NTHLogger, 
-  {codemodArgs, writeFiles}: {codemodArgs?: string, writeFiles: boolean}
+  {codemodArgs, writeFiles, alwaysTransform}: {codemodArgs?: string, writeFiles: boolean; alwaysTransform: boolean}
 ): Promise<CodemodMetaResult> {
   const log = baseLog.child({sourceCodeFile});
   log.debug({action: 'start'});
@@ -124,7 +124,7 @@ export default async function runCodemodOnFile(
     };
   }
 
-  if (codemod.detect) {
+  if (codemod.detect && !alwaysTransform) {
     log.debug({action: 'detect', result: labeller.getLabel()});
     return {
       label: labeller.getLabel(),  

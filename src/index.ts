@@ -98,7 +98,8 @@ async function codemod(
   const piscinaLowerBoundInclusive = 10;
 
   async function runCodemod({
-    codemod, codemodPath, inputFiles, writeFiles, codemodArgs, codemodKind, abortSignal, onProgress, log
+    codemod, codemodPath, inputFiles, writeFiles, codemodArgs, codemodKind, abortSignal, onProgress, log, 
+    alwaysTransform
   }: {
     codemod: Codemod,
     codemodPath: string;
@@ -108,11 +109,12 @@ async function codemod(
     codemodKind: CodemodKind;
     abortSignal: AbortSignal;
     onProgress?: (filesScanned: number) => void;
-    log: NTHLogger
+    log: NTHLogger;
+    alwaysTransform: boolean;
   }) {
     const isTransformCodemod = codemodKind === 'transform';
 
-    const baseRunnerOpts = {codemodArgs, writeFiles};
+    const baseRunnerOpts = {codemodArgs, writeFiles, alwaysTransform};
   
     const getPiscina = _.once(() => new Piscina({
       filename: require.resolve('./worker'),
@@ -299,12 +301,12 @@ async function codemod(
       inputFiles: filesToModify, 
       writeFiles,
       codemodKind,
-      ..._.pick(options, 'codemodArgs'),
+      ..._.pick(options, 'codemodArgs', 'alwaysTransform'),
       abortSignal,
       onProgress(filesScanned) {
         ui.showReacting(filesScanned, filesToModify.length);
       },
-      log
+      log,
     }));
     if (codemodMetaResults === 'aborted' || abortSignal.aborted) { 
       return; 

@@ -40,6 +40,6 @@ export type CodemodMetaResult = TransformMeta | DetectMeta | ErrorMeta | DebugMe
 
 export default function main(sourceCodeFile: string): Promise<CodemodMetaResult> {
   return runCodemodOnFile(
-    codemod, sourceCodeFile, baseLog, _.pick(piscina.workerData, 'codemodArgs', 'writeFiles')
+    codemod, sourceCodeFile, baseLog, _.pick(piscina.workerData, 'codemodArgs', 'writeFiles', 'alwaysTransform')
   );
 }
