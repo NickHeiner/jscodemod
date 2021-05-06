@@ -14,7 +14,7 @@ const pFs = fs.promises;
  * "could not be cloned" when I tried to pass the codemod itself on `workerData`.
  */
 
- export type BaseCodemodMeta = {
+export type BaseCodemodMeta = {
   filePath: string;
   fileContents: string;
   debugEntries: unknown[]

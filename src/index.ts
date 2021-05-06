@@ -95,6 +95,7 @@ async function codemod(
    * running a simple codemod on a single file took ~5 seconds with Piscina and ~2 seconds when kept in-process.
    */
   const piscinaLowerBoundInclusive = 10;
+  // TODO: Make sure tests exercise both Piscina and non-Piscina pathways.
 
   async function runCodemod({
     codemod, codemodPath, inputFiles, writeFiles, codemodArgs, codemodKind, abortSignal, onProgress, log, 
@@ -117,8 +118,10 @@ async function codemod(
   
     const getPiscina = _.once(() => new Piscina({
       filename: require.resolve('./worker'),
+      // TODO: Is passing this necessary?
       argv: [codemodPath],
-      workerData: {...baseRunnerOpts, writeFiles}
+
+      workerData: {...baseRunnerOpts, codemodPath}
     }));
 
     const runCodemodOnSingleFile = (inputFile: string) => {
@@ -305,7 +308,7 @@ async function codemod(
       onProgress(filesScanned) {
         ui.showReacting(filesScanned, filesToModify.length);
       },
-      log,
+      log
     }));
     if (codemodMetaResults === 'aborted' || abortSignal.aborted) { 
       return; 

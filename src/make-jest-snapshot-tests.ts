@@ -51,6 +51,8 @@ function makeJestSnapshotTests(
         }
 
         if (codemodMetaResultForThisFile.debugEntries.length) {
+          // We use console to communicate with the user.
+          // eslint-disable-next-line no-console
           console.log(codemodMetaResultForThisFile.debugEntries);
         }
 
