@@ -133,6 +133,8 @@ export default async function runCodemodOnFile(
       // @ts-ignore
       transformedCode = recast.print(result.ast).code;
 
+      // TODO: Make sure this does not clip a trailing newline.
+
       // const parser = {
       //   parse(source: string, opts: Record<string, unknown>) {
       //     return babelParseSync(source, {
