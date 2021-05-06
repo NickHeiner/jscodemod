@@ -20,6 +20,7 @@ import {AbortController} from 'abortcontroller-polyfill/dist/abortcontroller';
 import runCodemodOnFile from './run-codemod-on-file';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
+export {default as makeJestSnapshotTests} from './make-jest-snapshot-tests';
 
 export {Codemod} from './types';
 

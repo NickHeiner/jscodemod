@@ -92,6 +92,22 @@ Your new `tsconfig` will probably look something like:
 }
 ```
 
+#### TypeScript Codemods Require Configuring Your Test Runner To Use TypeScript
+If you have a test like:
+
+```js
+describe('remove-factory', () => {
+  it(fixtureName, async () => {
+    const transformedContents = await getTransformedContentsOfSingleFile(
+        require.resolve('../codemod'),
+        require.resolve('./__fixtures__/sample.js')
+    )
+    expect(transformedContents).toMatchSnapshot();
+}   
+```
+
+`@nth/jscodemod` uses `ts-node` to compile your TS codemod. However, some test runners, like Jest, have their own module loading system, so the monkey-patching `ts-node` does won't be sufficient. In this case, you need to configure your test runner to support TS. For example, with Jest, you might use [`ts-jest`](https://www.npmjs.com/package/ts-jest).
+
 #### Side Effects
 Your codemod will be loaded many times by the worker pool threads, so be careful about side effects. For example:
 
