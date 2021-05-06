@@ -11,10 +11,10 @@ async function getTransformedContentsOfSingleFile(
   codemodOptions?: Options & {debugLogger?: boolean}
 ): Promise<string> {
   const opts: Options = {
+    alwaysTransform: true,
     ...codemodOptions, 
     inputFiles: [inputFile],
     inputFilePatterns: [],
-    alwaysTransform: true,
     writeFiles: false, 
     doPostProcess: false, 
     watch: false
@@ -27,6 +27,10 @@ async function getTransformedContentsOfSingleFile(
     pathToCodemod,
     opts
   ) as unknown as CodemodMetaResult[];
+
+  if ('error' in codemodMetaResults[0]) {
+    throw codemodMetaResults[0].error;
+  }
 
   return codemodMetaResults[0].fileContents;
 }

@@ -6,6 +6,8 @@ import globby from 'globby';
 import _ from 'lodash';
 import path from 'path';
 
+// TODO: Add note about whether it's best to use require.resolve for pathToCodemod.
+
 function makeJestSnapshotTests(
   pathToCodemod: string,
   fixtureDir: string,
@@ -38,15 +40,19 @@ function makeJestSnapshotTests(
 
     inputFiles.forEach(filePath => {
       it(path.relative(fixtureDir, filePath), () => {
-        const transformedContent = _.find(codemodMetaResults, {filePath});
+        const codemodMetaResultForThisFile = _.find(codemodMetaResults, {filePath});
   
-        if (!transformedContent) {
+        if (!codemodMetaResultForThisFile) {
           const error = new Error(`Bug in @nth/jscodemod: Could not find codemod results for "${filePath}"`);
           Object.assign(error, {filePath, allFilePaths: _.map(codemodMetaResults, 'filePath')});
           throw error;
         }
 
-        expect(transformedContent.fileContents).toMatchSnapshot();
+        if ('error' in codemodMetaResultForThisFile) {
+          throw codemodMetaResultForThisFile.error;
+        }
+
+        expect(codemodMetaResultForThisFile.fileContents).toMatchSnapshot();
       });
     });
   });
