@@ -85,6 +85,7 @@ async function codemod(
     log: noOpLogger, 
     doPostProcess: true, 
     writeFiles: true, 
+    alwaysTransform: false,
     ...passedOptions
   };
 
@@ -195,7 +196,7 @@ async function codemod(
 
   const {codemod} = await compileAndLoadCodemod();
 
-  const codemodKind = codemod.detect ? 'detect' : 'transform';
+  const codemodKind = codemod.detect && !options.alwaysTransform ? 'detect' : 'transform';
   const watch = getWatch(codemodKind, options.watch);
 
   const staticUI: CliUi = {
@@ -296,7 +297,7 @@ async function codemod(
       codemodPath, 
       inputFiles: filesToModify, 
       writeFiles,
-      codemodKind: codemod.detect ? 'detect' : 'transform',
+      codemodKind,
       ..._.pick(options, 'codemodArgs'),
       abortSignal,
       onProgress(filesScanned) {

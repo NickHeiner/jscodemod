@@ -3,6 +3,11 @@ import {DetectResults} from './make-interactive-ui';
 import type {NTHLogger} from 'nth-log';
 
 export type Options = {
+  /**
+   * Treat the codemod as a transform, even if it has set `detect: true`.
+   */
+  alwaysTransform?: boolean;
+
   dry?: boolean;
   writeFiles?: boolean;
   porcelain?: boolean;

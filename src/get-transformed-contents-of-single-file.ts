@@ -10,11 +10,14 @@ async function getTransformedContentsOfSingleFile(
   inputFile: string,
   codemodOptions?: Options & {debugLogger?: boolean}
 ): Promise<string> {
-  const opts = {
+  const opts: Options = {
     ...codemodOptions, 
     inputFiles: [inputFile],
     inputFilePatterns: [],
-    writeFiles: false, doPostProcess: false, watch: false
+    alwaysTransform: true,
+    writeFiles: false, 
+    doPostProcess: false, 
+    watch: false
   };
   if (codemodOptions?.debugLogger) {
     opts.log = getLogger();
