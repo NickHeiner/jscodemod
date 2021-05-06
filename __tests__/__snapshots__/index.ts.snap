@@ -122,7 +122,15 @@ const codemod: Codemod = {
 };
 
 export default codemod;",
-  "source/optional-chaining.js": "const g = a => a?.b?.c?.d;",
+  "source/optional-chaining.js": "if (
+  /* weird spacing */
+  condition
+  &&
+  flag
+) {
+  f();
+}
+const g = a => a?.b?.c?.d;",
   "source/ts.ts": "function g(
   a: string,
   b: number,
