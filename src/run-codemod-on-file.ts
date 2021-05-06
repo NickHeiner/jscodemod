@@ -3,7 +3,7 @@ import fs from 'fs';
 import type {CodemodResult, DetectLabel, Codemod, TODO} from './types';
 import {serializeError} from 'serialize-error';
 import _ from 'lodash';
-import {parseSync as babelParseSync, transformSync as babelTransformSync, transformFromAstSync as babelTransformFromAstSync, Visitor} from '@babel/core';
+import {parse as babelParse, transformSync as babelTransformSync, transformFromAstSync as babelTransformFromAstSync, Visitor, TransformOptions} from '@babel/core';
 import * as recast from 'recast';
 
 // I wonder if we could measure perf gains by trimming this import list.
@@ -88,16 +88,24 @@ export default async function runCodemodOnFile(
 
   let transformedCode;
   try {
-    if ('presets' in codemod || 'getPlugin' in codemod) {
-      const baseBabelOpts = {
-        filename: sourceCodeFile,
-        ast: true
-      };
+    if ('presets' in codemod || 'getPlugin' in codemod || 'getPlugins' in codemod) {
+      // const codemodPlugins = codemod.getPlugin
+      //   ? []
+      //   : await codemod.getPlugins(codemodOpts);
 
+      const codemodPlugins = await codemod.getPlugin(codemodOpts);
+      const pluginsToUse = Array.isArray(codemodPlugins) ? codemodPlugins : [codemodPlugins]; 
+
+      const getBabelOpts = (extraPlugins: Exclude<TransformOptions['plugins'], null> = []): TransformOptions => ({
+        filename: sourceCodeFile,
+        plugins: [...extraPlugins, ...pluginsToUse],
+        ast: true
+      });
+      
       const parser = {
         parse(source: string, opts: Record<string, unknown>) {
-          return babelParseSync(source, {
-            ...baseBabelOpts,
+          return babelParse(source, {
+            ...getBabelOpts(),
             ..._.pick(codemod, 'presets'),
             ..._.omit(
               opts, 
@@ -106,38 +114,69 @@ export default async function runCodemodOnFile(
           });
         }
       };
-
-      const ast = await perfLog('parseSync', () => recast.parse(originalFileContents, {parser}));
-
-      // debugLog(ast);
-
-      const plugin = await codemod.getPlugin(codemodOpts);
-
-      // const setAst = (): {visitor: Visitor<TODO>} => ({
-      //   visitor: {
-      //     Program(path) {
-      //       console.log('replaceWith');
-      //       path.replaceWith(ast.program);
-      //     }
-      //   }
-      // });
-
-      // const transformResult = babelTransformSync('', {
-      //   plugins: [setAst, plugin]
-      // });
-
-      const transformResult = babelTransformFromAstSync(ast, originalFileContents, {
-        plugins: [plugin]
+      
+      const ast = recast.parse(originalFileContents, {parser});
+  
+      const setAst = (): {visitor: Visitor<TODO>} => ({
+        visitor: {
+          Program(path) {
+            path.replaceWith(ast.program);
+          }
+        }
       });
-
-      if (!transformResult) {
-        throw new Error(`Bug in @nth/jscodemod: transforming "${sourceCodeFile}" resulted in a null babel result.`);
+  
+      const result = babelTransformSync('', getBabelOpts([setAst]));
+      if (!result) {
+        throw new Error(`Transforming "${sourceCodeFile}" resulted in a null babel result.`);
       }
+  
+      // @ts-ignore
+      transformedCode = recast.print(result.ast).code;
 
-      // debugLog(transformResult);
+      // const parser = {
+      //   parse(source: string, opts: Record<string, unknown>) {
+      //     return babelParseSync(source, {
+      //       ...baseBabelOpts,
+      //       ..._.pick(codemod, 'presets'),
+      //       ..._.omit(
+      //         opts, 
+      //         'jsx', 'loc', 'locations', 'range', 'comment', 'onComment', 'tolerant', 'ecmaVersion'
+      //       )
+      //     });
+      //   }
+      // };
 
-      transformedCode = recast.print(transformResult.ast as recast.types.ASTNode).code;
-      console.log({transformedCode, printed: recast.print(transformResult.ast as recast.types.ASTNode)});
+      // const ast = await perfLog('parseSync', () => recast.parse(originalFileContents, {parser}));
+
+      // // debugLog(ast);
+
+      // const plugin = await codemod.getPlugin(codemodOpts);
+
+      // // const setAst = (): {visitor: Visitor<TODO>} => ({
+      // //   visitor: {
+      // //     Program(path) {
+      // //       console.log('replaceWith');
+      // //       path.replaceWith(ast.program);
+      // //     }
+      // //   }
+      // // });
+
+      // // const transformResult = babelTransformSync('', {
+      // //   plugins: [setAst, plugin]
+      // // });
+
+      // const transformResult = babelTransformFromAstSync(ast, originalFileContents, {
+      //   plugins: [plugin]
+      // });
+
+      // if (!transformResult) {
+      //   throw new Error(`Bug in @nth/jscodemod: transforming "${sourceCodeFile}" resulted in a null babel result.`);
+      // }
+
+      // // debugLog(transformResult);
+
+      // transformedCode = recast.print(transformResult.ast as recast.types.ASTNode).code;
+      // console.log({transformedCode, printed: recast.print(transformResult.ast as recast.types.ASTNode)});
     } else {
       transformedCode = await codemod.transform(codemodOpts);
     }

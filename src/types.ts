@@ -93,7 +93,10 @@ export type Codemod = {
 } & (
   {
     presets: TransformOptions['presets'];
-    getPlugin: (opts: BaseCodemodArgs) => ScalarOrPromise<PluginTarget>
+
+    // TODO: Split these out so it's one or the other.
+    getPlugin: (opts: BaseCodemodArgs) => ScalarOrPromise<PluginTarget>;
+    getPlugins?: (opts: BaseCodemodArgs) => ScalarOrPromise<PluginTarget[]>;
   }
   |
   {
