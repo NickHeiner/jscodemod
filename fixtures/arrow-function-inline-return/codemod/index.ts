@@ -1,4 +1,4 @@
-import {Codemod} from '@nth/jscodemod';
+import {Codemod} from '../../..';
 import babelPlugin, {TODO} from './babel-plugin';
 import {parse as babelParse, TransformOptions, transformSync} from '@babel/core';
 import {parse, print} from 'recast';

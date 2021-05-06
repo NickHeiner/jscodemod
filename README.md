@@ -40,6 +40,19 @@ If your codebase has syntax that Babel doesn't recognize out of the box, you'll 
 If you're using Babel, and you're using a lot of plugins and presets, parsing even a trivially-small file can take several seconds.
 
 ### Gotchas
+#### Parsing Too Many Files
+When you run:
+
+```
+$ jscodemod --codemod codemod.ts src
+```
+
+The tool will scan all git-tracked files in `src`, which may be more than you want. (For example, this could include image files.) To fix this, explicitly pass the file extensions you want:
+
+```
+$ jscodemod --codemod codemod.ts 'src/**/*.{js,ts}'
+```
+
 #### TypeScript codemods in TypeScript projects may be slow by default
 If your big project is in TypeScript, and you write your codemod in TypeScript, your build time may be very slow. For example, consider this file struture:
 

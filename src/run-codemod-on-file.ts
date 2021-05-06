@@ -1,9 +1,10 @@
 import type {NTHLogger} from 'nth-log';
 import fs from 'fs';
-import type {CodemodResult, DetectLabel, Codemod} from './types';
+import type {CodemodResult, DetectLabel, Codemod, TODO} from './types';
 import {serializeError} from 'serialize-error';
 import _ from 'lodash';
-import {parseSync, transformFromAstSync} from '@babel/core';
+import {parseSync as babelParseSync, transformSync as babelTransformSync, transformFromAstSync as babelTransformFromAstSync, Visitor} from '@babel/core';
+import * as recast from 'recast';
 
 // I wonder if we could measure perf gains by trimming this import list.
 
@@ -87,23 +88,56 @@ export default async function runCodemodOnFile(
 
   let transformedCode;
   try {
-    if ('presets' in codemod) {
-      const parseResult = await perfLog('parseSync', () => parseSync(originalFileContents, {
+    if ('presets' in codemod || 'getPlugin' in codemod) {
+      const baseBabelOpts = {
         filename: sourceCodeFile,
-        ast: true,
-        ..._.pick(codemod, 'presets')
-      }));
+        ast: true
+      };
 
-      if (!parseResult) {
-        throw new Error(
-          "Bug in jscodemod: Babel.parseSync returned a falsey parseResult. I don't know when this would happen."
-        );
-      }
+      const parser = {
+        parse(source: string, opts: Record<string, unknown>) {
+          return babelParseSync(source, {
+            ...baseBabelOpts,
+            ..._.pick(codemod, 'presets'),
+            ..._.omit(
+              opts, 
+              'jsx', 'loc', 'locations', 'range', 'comment', 'onComment', 'tolerant', 'ecmaVersion'
+            )
+          });
+        }
+      };
+
+      const ast = await perfLog('parseSync', () => recast.parse(originalFileContents, {parser}));
+
+      // debugLog(ast);
 
       const plugin = await codemod.getPlugin(codemodOpts);
-      transformedCode = transformFromAstSync(parseResult, originalFileContents, {
+
+      // const setAst = (): {visitor: Visitor<TODO>} => ({
+      //   visitor: {
+      //     Program(path) {
+      //       console.log('replaceWith');
+      //       path.replaceWith(ast.program);
+      //     }
+      //   }
+      // });
+
+      // const transformResult = babelTransformSync('', {
+      //   plugins: [setAst, plugin]
+      // });
+
+      const transformResult = babelTransformFromAstSync(ast, originalFileContents, {
         plugins: [plugin]
-      })?.code;
+      });
+
+      if (!transformResult) {
+        throw new Error(`Bug in @nth/jscodemod: transforming "${sourceCodeFile}" resulted in a null babel result.`);
+      }
+
+      // debugLog(transformResult);
+
+      transformedCode = recast.print(transformResult.ast as recast.types.ASTNode).code;
+      console.log({transformedCode, printed: recast.print(transformResult.ast as recast.types.ASTNode)});
     } else {
       transformedCode = await codemod.transform(codemodOpts);
     }
@@ -123,7 +157,7 @@ export default async function runCodemodOnFile(
     };
   }
 
-  const codeModified = Boolean(transformedCode && transformedCode !== originalFileContents);
+  const codeModified = transformedCode !== undefined && transformedCode !== originalFileContents;
   if (codeModified && writeFiles) {
     // I originally had this cast inline but TS didn't recognize it.
     const truthyCodemodResult = transformedCode as CodemodResult;

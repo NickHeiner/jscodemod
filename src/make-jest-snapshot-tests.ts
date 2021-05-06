@@ -45,8 +45,11 @@ function makeJestSnapshotTests(
         const codemodMetaResultForThisFile = _.find(codemodMetaResults, {filePath});
   
         if (!codemodMetaResultForThisFile) {
-          const error = new Error(`Bug in @nth/jscodemod: Could not find codemod results for "${filePath}"`);
-          Object.assign(error, {filePath, allFilePaths: _.map(codemodMetaResults, 'filePath')});
+          const allFilePaths = _.map(codemodMetaResults, 'filePath');
+          const error = new Error(
+            `Bug in @nth/jscodemod: Could not find codemod results for "${filePath}". ` +
+            `Codemod results were found for: "${allFilePaths.join('", "')}"`);
+          Object.assign(error, {filePath, allFilePaths});
           throw error;
         }
 

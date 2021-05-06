@@ -116,6 +116,7 @@ async function codemod(
 
     const baseRunnerOpts = {codemodArgs, writeFiles, alwaysTransform};
   
+    // TODO: Maybe set the maxThreads lower to avoid eating all the CPU.
     const getPiscina = _.once(() => new Piscina({
       filename: require.resolve('./worker'),
       // TODO: Is passing this necessary?
