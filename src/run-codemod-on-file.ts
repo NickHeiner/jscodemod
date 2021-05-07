@@ -99,6 +99,9 @@ export default async function runCodemodOnFile(
       // 
       // The impact of this would be reduced if we detected when the AST is unchanged, and then did not write new
       // file contents. However, this proved difficult to do.
+      // 
+      // eslint-disable-next-line max-len
+      // Maybe we want the parserOverrides approach: https://github.com/codemod-js/codemod/blob/06310982b67783e9d2861a7737c7810396417bd3/packages/core/src/RecastPlugin.ts.
 
       const codemodPlugins = await codemod.getPlugin(codemodOpts);
       const pluginsToUse = Array.isArray(codemodPlugins) ? codemodPlugins : [codemodPlugins]; 
