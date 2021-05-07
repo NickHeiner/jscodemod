@@ -90,6 +90,15 @@ export default async function runCodemodOnFile(
   try {
     if ('presets' in codemod || 'getPlugin' in codemod) {
       // TODO: This can probably be cleaned up.
+      // TODO: This makes some excessive changes:
+      //    * Paren insertion: https://github.com/benjamn/recast/issues/914
+      //    * Reformatting `return\n(expr)` to `return expr`. This doesn't repro with recast-only.
+      //    * If a file is entirely commented out, it'll be deleted.
+      //    * A trailing comment will have a space removed:
+      //          `a; /*f*/` => `a;/*f*/`
+      // 
+      // The impact of this would be reduced if we detected when the AST is unchanged, and then did not write new
+      // file contents. However, this proved difficult to do.
 
       const codemodPlugins = await codemod.getPlugin(codemodOpts);
       const pluginsToUse = Array.isArray(codemodPlugins) ? codemodPlugins : [codemodPlugins]; 
@@ -105,6 +114,8 @@ export default async function runCodemodOnFile(
           return babelParse(source, {
             ...getBabelOpts(),
             ..._.pick(codemod, 'presets'),
+            // There are options that are recognized by recast but not babel. Babel errors when they're passed. To avoid
+            // this, we'll omit them.
             ..._.omit(
               opts, 
               'jsx', 'loc', 'locations', 'range', 'comment', 'onComment', 'tolerant', 'ecmaVersion'
@@ -123,6 +134,8 @@ export default async function runCodemodOnFile(
         }
       });
   
+      // result.ast.end will be 0, and ast.end is originalFileContents.length.
+      // Passing originalFileContents instead of '' solves that problem, but causes some other problem.
       const result = babelTransformSync('', getBabelOpts([setAst]));
       if (!result) {
         throw new Error(`Transforming "${sourceCodeFile}" resulted in a null babel result.`);
