@@ -88,10 +88,8 @@ export default async function runCodemodOnFile(
 
   let transformedCode;
   try {
-    if ('presets' in codemod || 'getPlugin' in codemod || 'getPlugins' in codemod) {
-      // const codemodPlugins = codemod.getPlugin
-      //   ? []
-      //   : await codemod.getPlugins(codemodOpts);
+    if ('presets' in codemod || 'getPlugin' in codemod) {
+      // TODO: This can probably be cleaned up.
 
       const codemodPlugins = await codemod.getPlugin(codemodOpts);
       const pluginsToUse = Array.isArray(codemodPlugins) ? codemodPlugins : [codemodPlugins]; 
@@ -130,55 +128,11 @@ export default async function runCodemodOnFile(
         throw new Error(`Transforming "${sourceCodeFile}" resulted in a null babel result.`);
       }
   
-      // @ts-ignore
-      transformedCode = recast.print(result.ast).code;
+      transformedCode = recast.print(result.ast as recast.types.ASTNode).code;
 
-      // TODO: Make sure this does not clip a trailing newline.
-
-      // const parser = {
-      //   parse(source: string, opts: Record<string, unknown>) {
-      //     return babelParseSync(source, {
-      //       ...baseBabelOpts,
-      //       ..._.pick(codemod, 'presets'),
-      //       ..._.omit(
-      //         opts, 
-      //         'jsx', 'loc', 'locations', 'range', 'comment', 'onComment', 'tolerant', 'ecmaVersion'
-      //       )
-      //     });
-      //   }
-      // };
-
-      // const ast = await perfLog('parseSync', () => recast.parse(originalFileContents, {parser}));
-
-      // // debugLog(ast);
-
-      // const plugin = await codemod.getPlugin(codemodOpts);
-
-      // // const setAst = (): {visitor: Visitor<TODO>} => ({
-      // //   visitor: {
-      // //     Program(path) {
-      // //       console.log('replaceWith');
-      // //       path.replaceWith(ast.program);
-      // //     }
-      // //   }
-      // // });
-
-      // // const transformResult = babelTransformSync('', {
-      // //   plugins: [setAst, plugin]
-      // // });
-
-      // const transformResult = babelTransformFromAstSync(ast, originalFileContents, {
-      //   plugins: [plugin]
-      // });
-
-      // if (!transformResult) {
-      //   throw new Error(`Bug in @nth/jscodemod: transforming "${sourceCodeFile}" resulted in a null babel result.`);
-      // }
-
-      // // debugLog(transformResult);
-
-      // transformedCode = recast.print(transformResult.ast as recast.types.ASTNode).code;
-      // console.log({transformedCode, printed: recast.print(transformResult.ast as recast.types.ASTNode)});
+      if (originalFileContents.endsWith('\n') && !transformedCode.endsWith('\n')) {
+        transformedCode += '\n';
+      }
     } else {
       transformedCode = await codemod.transform(codemodOpts);
     }
