@@ -19,6 +19,7 @@ function makeJestSnapshotTests(
   // TODO Should this share with getTransformedContentsOfSingleFile?
 
   const opts: Options = {
+    respectIgnores: false,
     ...codemodOptions, 
     inputFiles,
     inputFilePatterns: [],

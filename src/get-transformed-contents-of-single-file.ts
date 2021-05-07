@@ -12,6 +12,7 @@ async function getTransformedContentsOfSingleFile(
 ): Promise<string> {
   const opts: Options = {
     alwaysTransform: true,
+    respectIgnores: false,
     ...codemodOptions, 
     inputFiles: [inputFile],
     inputFilePatterns: [],

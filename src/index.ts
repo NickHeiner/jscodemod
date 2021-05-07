@@ -85,6 +85,7 @@ async function codemod(
     log: noOpLogger, 
     doPostProcess: true, 
     writeFiles: true, 
+    respectIgnores: true,
     alwaysTransform: false,
     ...passedOptions
   };
@@ -229,7 +230,9 @@ async function codemod(
     }
 
     // The next line is a bit gnarly to make TS happy.
-    const codemodIgnores = _.compact(([] as (RegExp | undefined)[]).concat(codemod.ignore));
+    const codemodIgnores = options.respectIgnores 
+      ? _.compact(([] as (RegExp | undefined)[]).concat(codemod.ignore)) 
+      : [];
 
     const userSpecifiedFiles = options.inputFilePatterns.length ? options.inputFilePatterns : options.inputFiles;
     const specifiedFiles = options.inputFilePatterns.length ? await log.logPhase(

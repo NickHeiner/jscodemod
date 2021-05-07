@@ -17,6 +17,8 @@ export type Options = {
   doPostProcess?: boolean;
   log?: NTHLogger;
 
+  respectIgnores?: boolean;
+
   // TODO: Write the types such that so only one of these can be passed at a time.
 
   /**
@@ -96,7 +98,7 @@ export type Codemod = {
 
     // TODO: Split these out so it's one or the other.
     getPlugin: (opts: BaseCodemodArgs) => ScalarOrPromise<PluginTarget>;
-    getPlugins?: (opts: BaseCodemodArgs) => ScalarOrPromise<PluginTarget[]>;
+    // getPlugins?: (opts: BaseCodemodArgs) => ScalarOrPromise<PluginTarget[]>;
   }
   |
   {
