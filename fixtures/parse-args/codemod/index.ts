@@ -1,4 +1,4 @@
-import {Codemod} from '@nth/jscodemod';
+import {Codemod} from '../../..';
 import yargs from 'yargs';
 
 const codemod: Codemod = {
@@ -14,7 +14,7 @@ const codemod: Codemod = {
       .help()
       .parse(rawCommandLineArgs);
   },
-  transform() {
+  transform({commandLineArgs}) {
     return null;
   }
 };

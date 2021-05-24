@@ -87,6 +87,7 @@ export default async function runCodemodOnFile(
   };
 
   let transformedCode;
+  // TODO: This try is now way too broad.
   try {
     if ('presets' in codemod || 'getPlugin' in codemod) {
       // TODO: This can probably be cleaned up.

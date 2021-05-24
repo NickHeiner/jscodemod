@@ -95,8 +95,10 @@ async function codemod(
    * At smaller input sizes, Piscina's fixed startup cost isn't justified by the per-file gains. In my anecdotal test,
    * running a simple codemod on a single file took ~5 seconds with Piscina and ~2 seconds when kept in-process.
    */
-  const piscinaLowerBoundInclusive = 10;
+  const piscinaLowerBoundInclusive = Infinity;
   // TODO: Make sure tests exercise both Piscina and non-Piscina pathways.
+  // TODO: I've somehow made using Piscina incredibly slow. Figure out why it's no longer good for smaller file sizes,
+  // and find the right lower bound.
 
   async function runCodemod({
     codemod, codemodPath, inputFiles, writeFiles, codemodArgs, codemodKind, abortSignal, onProgress, log, 

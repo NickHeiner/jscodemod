@@ -10,6 +10,8 @@ function loadCodemod(codemodPath: string): Codemod {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const codemod = require(codemodPath);
 
+  delete require.cache[require.resolve(codemodPath)];
+
   return codemod.default || codemod;
 }
 
