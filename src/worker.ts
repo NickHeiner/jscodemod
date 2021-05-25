@@ -1,9 +1,14 @@
-import createLog from 'nth-log';
+import getLogger from './get-logger';
 import piscina from 'piscina';
 import fs from 'fs';
 import loadCodemod from './load-codemod';
+import type {CodemodResult} from './types';
+import _ from 'lodash';
 
-const baseLog = createLog({name: 'jscodemod-worker'});
+const baseLog = getLogger({
+  name: 'jscodemod-worker',
+  ...piscina.workerData.logOpts
+});
 
 const pFs = fs.promises;
 
@@ -25,12 +30,19 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
   const originalFileContents = await pFs.readFile(sourceCodeFile, 'utf-8');
   const parsedArgs = await codemod.parseArgs?.(piscina.workerData.codemodArgs);
 
-  // TODO: Handle the codemod throwing an error?
-  const transformedCode = await codemod.transform({
-    source: originalFileContents, 
-    filePath: sourceCodeFile, 
-    commandLineArgs: parsedArgs
-  });
+  let transformedCode: CodemodResult;
+  let threwError = false;
+  try {
+    transformedCode = await codemod.transform({
+      source: originalFileContents, 
+      filePath: sourceCodeFile, 
+      commandLineArgs: parsedArgs
+    });
+  } catch (e) {
+    threwError = true;
+    log.error({error: _.pick(e, 'message', 'stack')}, 'Codemod threw an error for a file.');
+  }
+
   const codeModified = Boolean(transformedCode && transformedCode !== originalFileContents);
 
   const {writeFiles} = piscina.workerData; 
@@ -39,7 +51,7 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await pFs.writeFile(sourceCodeFile, transformedCode!);
   }
-  log.debug({action: codeModified ? 'modified' : 'skipped', writeFiles});
+  log.debug({action: threwError ? 'error' : codeModified ? 'modified' : 'skipped', writeFiles});
   return {
     codeModified, 
     fileContents: transformedCode ? transformedCode : originalFileContents,

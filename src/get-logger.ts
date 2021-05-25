@@ -6,6 +6,7 @@ import {TODO} from './types';
 const getLogger = _.once((opts?: {
   jsonOutput: boolean;
   porcelain: boolean;
+  name?: string
 }) => {
   const logOpts: {name: string; stream?: TODO} = {name: 'jscodemod-coordinator'};
   if (opts?.jsonOutput) {
@@ -14,6 +15,10 @@ const getLogger = _.once((opts?: {
   if (opts?.porcelain) {
     logOpts.stream = fs.createWriteStream('/dev/null');
   }
+  if (opts?.name) {
+    logOpts.name = opts?.name;
+  }
+
   return createLogger(logOpts);
 });
 

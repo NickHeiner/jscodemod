@@ -104,7 +104,7 @@ async function main() {
   // complexity without adding much safety.
   try {
     const opts = {
-      ..._.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'resetDirtyInputFiles', 'porcelain'),
+      ..._.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'resetDirtyInputFiles', 'porcelain', 'jsonOutput'),
       log
     };
 

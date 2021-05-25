@@ -1,4 +1,4 @@
-type CodemodResult = string | undefined | null;
+export type CodemodResult = string | undefined | null;
 
 type ScalarOrPromise<T> = T | Promise<T>;
 type ParsedArgs = Record<string, unknown> | undefined;
