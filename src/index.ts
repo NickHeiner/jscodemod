@@ -31,6 +31,7 @@ export type NonTSOptions = {
   dry?: boolean;
   writeFiles?: boolean;
   porcelain?: boolean;
+  jsonOutput?: boolean;
   codemodArgs?: string;
   resetDirtyInputFiles?: boolean;
   doPostProcess?: boolean;
@@ -38,7 +39,7 @@ export type NonTSOptions = {
 
 export type Options = Omit<TSOptions, 'log'> & Partial<Pick<TSOptions, 'log'>> & NonTSOptions;
 
-type FalseyDefaultOptions = 'dry' | 'porcelain' | 'codemodArgs' | 'resetDirtyInputFiles';
+type FalseyDefaultOptions = 'dry' | 'porcelain' | 'codemodArgs' | 'resetDirtyInputFiles' | 'jsonOutput';
 export type InternalOptions = TSOptions 
   & Pick<NonTSOptions, FalseyDefaultOptions> 
   & Required<Omit<NonTSOptions, FalseyDefaultOptions>>;
@@ -53,14 +54,26 @@ async function getCodemodPath(pathToCodemod: string, options: TSOptions) {
   return path.resolve(pathToCodemod);
 }
 
-function transformCode(codemodPath: string, inputFiles: string[], writeFiles: boolean, codemodArgs?: string) {
+function getProgressUI(logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, totalCount: number) {
+  if (logOpts.porcelain || logOpts.jsonOutput) {
+    // This is intentional.
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    return {tick() {}};
+  }
+
+  return new ProgressBar(':bar (:current/:total, :percent%)', {total: totalCount});
+}
+
+function transformCode(codemodPath: string, inputFiles: string[], writeFiles: boolean, 
+  logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, codemodArgs?: string) {
+
   const piscina = new Piscina({
     filename: require.resolve('./worker'),
     argv: [codemodPath],
-    workerData: {codemodPath, codemodArgs, writeFiles}
+    workerData: {codemodPath, codemodArgs, writeFiles, logOpts}
   });
 
-  const progressBar = new ProgressBar(':bar (:current/:total, :percent%)', {total: inputFiles.length});
+  const progressBar = getProgressUI(logOpts, inputFiles.length);
   return Promise.all(inputFiles.map(async inputFile => {
     const codemodMetaResult: CodemodMetaResult = await piscina.runTask(inputFile);
     progressBar.tick();
@@ -173,7 +186,9 @@ async function codemod(
     await resetDirtyInputFiles(gitRoot, filesToModify, log);
   }
   
-  const codemodMetaResults = await transformCode(codemodPath, filesToModify, writeFiles, options.codemodArgs);
+  const codemodMetaResults = await transformCode(codemodPath, filesToModify, writeFiles, 
+    _.pick(passedOptions, 'jsonOutput', 'porcelain'), options.codemodArgs 
+  );
   if (typeof codemod.postProcess === 'function' && doPostProcess) {
     const modifiedFiles = _(codemodMetaResults).filter('codeModified').map('filePath').value();
     await log.logPhase({

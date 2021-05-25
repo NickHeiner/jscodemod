@@ -207,6 +207,32 @@ describe('error handling', () => {
       expect(stderr).toMatchSnapshot();
     }
   });
+
+  createTest({
+    testName: 'handles codemod throwing an error',
+    fixtureName: 'will-throw-error',
+    spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), 'source', '--json-output'],
+    snapshot: true,
+    assert(spawnResult) {
+      const jsonLogs = getJsonLogs(spawnResult.stdout);
+
+      expect(jsonLogs).toContainEqual(expect.objectContaining({
+        msg: 'Codemod threw an error for a file.',
+        error: expect.objectContaining({
+          stack: expect.any(String),
+          // I tried to use a regex matcher here but I couldn't get it to work.
+          message: expect.stringContaining('source/a.js')
+        })
+      }));
+      expect(jsonLogs).toContainEqual(expect.objectContaining({
+        msg: 'Codemod threw an error for a file.',
+        error: expect.objectContaining({
+          stack: expect.any(String),
+          message: expect.stringContaining('source/b.js')
+        })
+      }));
+    }
+  });
 });
 
 describe('TS compilation flags', () => {

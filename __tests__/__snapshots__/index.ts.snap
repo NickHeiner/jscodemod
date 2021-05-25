@@ -63,6 +63,18 @@ const file = 'asdf';",
 }
 `;
 
+exports[`error handling handles codemod throwing an error 1`] = `
+Object {
+  "codemod/codemod.js": "module.exports = {
+  transform({filePath}) {
+    throw new Error(\`Error for: \${filePath}\`);
+  }
+};",
+  "source/a.js": "console.log('a');",
+  "source/b.js": "console.log('b');",
+}
+`;
+
 exports[`error handling missing required argument to codemod 1`] = `
 "Options:
       --version       Show version number                              [boolean]
