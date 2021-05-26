@@ -10,11 +10,12 @@ import ora from 'ora';
 import createLog from 'nth-log';
 import fs from 'fs';
 import compileTS from './compile-ts';
-import {TODO} from './types';
+import {Codemod, TODO} from './types';
 import execBigCommand from './exec-big-command';
 import getGitRoot from './get-git-root';
 import loadCodemod from './load-codemod';
 import {CodemodMetaResult} from './worker';
+import gitignore from './gitignore';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
 
@@ -109,6 +110,19 @@ async function resetDirtyInputFiles(gitRoot: string | null, filesToModify: strin
   }
 }
 
+async function getCodemodIgnores(codemod: Codemod): Promise<RegExp[]> {
+  // The next line is a bit gnarly to make TS happy.
+  const codemodIgnores = _.compact(([] as (RegExp | undefined)[]).concat(codemod.ignore));
+  const ignoreFileIgnores = codemod.ignoreFiles ? (await gitignore({
+    paths: codemod.ignoreFiles
+  })).map((ignorePath: string) => new RegExp(ignorePath)) : [];
+
+  return [
+    ...codemodIgnores,
+    ...ignoreFileIgnores
+  ];
+}
+
 async function codemod(
   pathToCodemod: string, 
   inputFilesPatterns: string[], 
@@ -134,8 +148,7 @@ async function codemod(
   const codemod = loadCodemod(codemodPath);
   log.debug({codemodPath, codemodKeys: Object.keys(codemod)});
   
-  // The next line is a bit gnarly to make TS happy.
-  const codemodIgnores = _.compact(([] as (RegExp | undefined)[]).concat(codemod.ignore));
+  const codemodIgnores = await getCodemodIgnores(codemod);
 
   log.debug({inputFilesPatterns}, 'Globbing input file patterns.');
   const filesToModify = _((await globby(inputFilesPatterns, {dot: true, gitignore: true})))
