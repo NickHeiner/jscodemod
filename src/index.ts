@@ -125,7 +125,7 @@ async function getIsIgnoredByIgnoreFile(log: TODO, ignoreFiles: string[] | undef
   return () => false;
 } 
 
-async function codemod(
+async function jscodemod(
   pathToCodemod: string, 
   inputFilesPatterns: string[], 
   passedOptions: Options = {}
@@ -223,9 +223,9 @@ async function codemod(
       // This non-null assertion is safe because if we verififed above that `postProcess` is defined, it will not
       // have been undefined by the time this executes.
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    }, () => codemod.postProcess!(modifiedFiles));
+    }, () => codemod.postProcess!(modifiedFiles, {jscodemod}));
   }
   return codemodMetaResults;
 }
 
-export default codemod;
+export default jscodemod;
