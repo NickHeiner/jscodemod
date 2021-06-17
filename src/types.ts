@@ -5,9 +5,12 @@ type ParsedArgs = Record<string, unknown> | undefined;
 
 export type Codemod = {
   /**
-   * Any file matching these patterns will not be processed.
+   * Specify which files should not be transformed.
+   * 
+   * If a regex is passed, the any file path matching that regex will be ignored.
+   * If a string is passed, any file path containing that string will be ignored.
    */
-  ignore?: RegExp[] | RegExp;
+  ignore?: RegExp[] | RegExp | string[] | string;
 
   /**
    * Use this to block the codemod from running on files ignored by .*ignore files. The elements of this array are paths

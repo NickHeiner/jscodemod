@@ -213,7 +213,10 @@ const f = () => 1;",
 exports[`happy path dry 1`] = `
 Object {
   "codemod/codemod.js": "module.exports = {
-  ignore: /codemod-ignored/,
+  ignore: [
+    /codemod-ignored/,
+    'omitted-via-string-pattern'
+  ],
   postProcess: modifiedFiles => {
     console.log('codemod post process', JSON.stringify(modifiedFiles));
   },
@@ -228,13 +231,17 @@ Object {
   "source/b.js": "function b() {}",
   "source/blank.js": "",
   "source/codemod-ignored.js": "// codemod ignored",
+  "source/codemod-omitted-via-string-pattern.js": "// codemod ignored",
 }
 `;
 
 exports[`happy path dry porcelain 1`] = `
 Object {
   "codemod/codemod.js": "module.exports = {
-  ignore: /codemod-ignored/,
+  ignore: [
+    /codemod-ignored/,
+    'omitted-via-string-pattern'
+  ],
   postProcess: modifiedFiles => {
     console.log('codemod post process', JSON.stringify(modifiedFiles));
   },
@@ -249,6 +256,7 @@ Object {
   "source/b.js": "function b() {}",
   "source/blank.js": "",
   "source/codemod-ignored.js": "// codemod ignored",
+  "source/codemod-omitted-via-string-pattern.js": "// codemod ignored",
 }
 `;
 
@@ -262,7 +270,10 @@ exports[`happy path dry porcelain 2`] = `
 exports[`happy path prepend-string 1`] = `
 Object {
   "codemod/codemod.js": "module.exports = {
-  ignore: /codemod-ignored/,
+  ignore: [
+    /codemod-ignored/,
+    'omitted-via-string-pattern'
+  ],
   postProcess: modifiedFiles => {
     console.log('codemod post process', JSON.stringify(modifiedFiles));
   },
@@ -280,6 +291,7 @@ function b() {}",
   "source/blank.js": "/* prefix prepend string */
 ",
   "source/codemod-ignored.js": "// codemod ignored",
+  "source/codemod-omitted-via-string-pattern.js": "// codemod ignored",
 }
 `;
 

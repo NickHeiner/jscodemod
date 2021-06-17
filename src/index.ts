@@ -151,7 +151,7 @@ async function codemod(
   log.debug({codemodPath, codemodKeys: Object.keys(codemod)});
   
   // The next line is a bit gnarly to make TS happy.
-  const codemodIgnores = _.compact(([] as (RegExp | undefined)[]).concat(codemod.ignore));
+  const codemodIgnores = _.compact(([] as (RegExp | string | undefined)[]).concat(codemod.ignore));
   const isIgnoredByIgnoreFile = await getIsIgnoredByIgnoreFile(log, codemod.ignoreFiles);
 
   log.debug({
@@ -161,8 +161,10 @@ async function codemod(
   }, 'Globbing input file patterns.');
   const filesToModify = _((await globby(inputFilesPatterns, {dot: true, gitignore: true})))
     .map(filePath => path.resolve(filePath))
-    .reject(filePath => _.some(codemodIgnores, ignorePattern => ignorePattern.test(filePath)) ||
-      isIgnoredByIgnoreFile(filePath))
+    .reject(filePath => _.some(codemodIgnores, ignorePattern => 
+      typeof ignorePattern === 'string' ? filePath.includes(ignorePattern) : ignorePattern.test(filePath)) ||
+      isIgnoredByIgnoreFile(filePath)
+    )
     .value();
 
   if (!filesToModify.length) {

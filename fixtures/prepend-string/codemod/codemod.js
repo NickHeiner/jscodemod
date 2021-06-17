@@ -1,5 +1,8 @@
 module.exports = {
-  ignore: /codemod-ignored/,
+  ignore: [
+    /codemod-ignored/,
+    'omitted-via-string-pattern'
+  ],
   postProcess: modifiedFiles => {
     console.log('codemod post process', JSON.stringify(modifiedFiles));
   },
