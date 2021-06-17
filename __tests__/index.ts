@@ -244,7 +244,7 @@ describe('error handling', () => {
       }
     });
 
-  createTestForThrowingError('codemod-unnamed', 'codemod-unnamed');
+  createTestForThrowingError('codemod-unnamed.js', 'codemod-unnamed.js');
   createTestForThrowingError('my-codemod-name', 'codemod-named.js');
 });
 
