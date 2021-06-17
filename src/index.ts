@@ -165,6 +165,7 @@ async function codemod(
       typeof ignorePattern === 'string' ? filePath.includes(ignorePattern) : ignorePattern.test(filePath)) ||
       isIgnoredByIgnoreFile(filePath)
     )
+    .sort()
     .value();
 
   if (!filesToModify.length) {
