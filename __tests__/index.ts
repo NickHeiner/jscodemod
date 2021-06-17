@@ -217,31 +217,35 @@ describe('error handling', () => {
     }
   });
 
-  createTest({
-    testName: 'handles codemod throwing an error',
-    fixtureName: 'will-throw-error',
-    spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), 'source', '--json-output'],
-    snapshot: true,
-    assert(spawnResult) {
-      const jsonLogs = getJsonLogs(spawnResult.stdout);
+  const createTestForThrowingError = (codemodName: string, codemodFileName: string) => 
+    createTest({
+      testName: `handles codemod ${codemodName} (${codemodFileName}) throwing an error`,
+      fixtureName: 'will-throw-error',
+      spawnArgs: ['--codemod', path.join('codemod', codemodFileName), 'source', '--json-output'],
+      snapshot: true,
+      assert(spawnResult) {
+        const jsonLogs = getJsonLogs(spawnResult.stdout);
 
-      expect(jsonLogs).toContainEqual(expect.objectContaining({
-        msg: 'Codemod threw an error for a file.',
-        error: expect.objectContaining({
-          stack: expect.any(String),
-          // I tried to use a regex matcher here but I couldn't get it to work.
-          message: expect.stringContaining('source/a.js')
-        })
-      }));
-      expect(jsonLogs).toContainEqual(expect.objectContaining({
-        msg: 'Codemod threw an error for a file.',
-        error: expect.objectContaining({
-          stack: expect.any(String),
-          message: expect.stringContaining('source/b.js')
-        })
-      }));
-    }
-  });
+        expect(jsonLogs).toContainEqual(expect.objectContaining({
+          msg: `Codemod "${codemodName}" threw an error for a file.`,
+          error: expect.objectContaining({
+            stack: expect.any(String),
+            // I tried to use a regex matcher here but I couldn't get it to work.
+            message: expect.stringContaining('source/a.js')
+          })
+        }));
+        expect(jsonLogs).toContainEqual(expect.objectContaining({
+          msg: `Codemod "${codemodName}" threw an error for a file.`,
+          error: expect.objectContaining({
+            stack: expect.any(String),
+            message: expect.stringContaining('source/b.js')
+          })
+        }));
+      }
+    });
+
+  createTestForThrowingError('codemod-unnamed', 'codemod-unnamed');
+  createTestForThrowingError('my-codemod-name', 'codemod-named.js');
 });
 
 describe('TS compilation flags', () => {

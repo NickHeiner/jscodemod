@@ -3,9 +3,14 @@ export type CodemodResult = string | undefined | null;
 type ScalarOrPromise<T> = T | Promise<T>;
 type ParsedArgs = Record<string, unknown> | undefined;
 
-import jscodemod from './';
+import jscodemod, {Options} from './';
 
 export type Codemod = {
+  /**
+   * A name for the codemod, like "transform-cjs-to-esm". Defaults to the file name. Used for logging.
+   */
+  name?: string;
+
   /**
    * Specify which files should not be transformed.
    * 
@@ -51,7 +56,13 @@ export type Codemod = {
   /**
    * After all transforms have been run, this function will be invoked with an array of files there were modified.
    */
-  postProcess?: (modifiedFiles: string[], opts: {jscodemod: typeof jscodemod}) => Promise<unknown>;
+  postProcess?: (modifiedFiles: string[], opts: {
+    jscodemod(
+      pathToCodemod: string, 
+      inputFilesPatterns: string[], 
+      options: Partial<Options>
+    ): ReturnType<typeof jscodemod>
+  }) => Promise<unknown>;
 
   /**
    * Transform a single file. Return null or undefined to indicate that the file should not be modified.

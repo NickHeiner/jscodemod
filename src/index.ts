@@ -16,6 +16,7 @@ import getGitRoot from './get-git-root';
 import loadCodemod from './load-codemod';
 import {CodemodMetaResult} from './worker';
 import gitignore from './gitignore';
+import getCodemodName from './get-codemod-name';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
 
@@ -148,13 +149,16 @@ async function jscodemod(
   });
   
   const codemod = loadCodemod(codemodPath);
-  log.debug({codemodPath, codemodKeys: Object.keys(codemod)});
+  const codemodName = getCodemodName(codemod, codemodPath);
+
+  log.debug({codemodPath, codemodName, codemodKeys: Object.keys(codemod)});
   
   // The next line is a bit gnarly to make TS happy.
   const codemodIgnores = _.compact(([] as (RegExp | string | undefined)[]).concat(codemod.ignore));
   const isIgnoredByIgnoreFile = await getIsIgnoredByIgnoreFile(log, codemod.ignoreFiles);
 
   log.debug({
+    codemodName,
     inputFilesPatterns, 
     // Workaround for https://github.com/NickHeiner/nth-log/issues/12.
     codemodIgnores: codemodIgnores.map(re => re.toString())
@@ -176,7 +180,7 @@ async function jscodemod(
 
   const logMethod = options.dry ? 'info' : 'debug';
   log[logMethod](
-    {filesToModify, count: filesToModify.length, inputFilesPatterns}, 
+    {filesToModify, count: filesToModify.length, inputFilesPatterns, codemodName}, 
     'Found files to modify.'
   );
 
@@ -205,7 +209,7 @@ async function jscodemod(
   }
 
   const gitRoot = await getGitRoot(filesToModify);
-  log.debug({gitRoot});
+  log.debug({gitRoot, codemodName});
 
   if (options.resetDirtyInputFiles) {
     await resetDirtyInputFiles(gitRoot, filesToModify, log);
@@ -219,11 +223,19 @@ async function jscodemod(
     await log.logPhase({
       phase: 'postProcess',
       modifiedFiles,
+      codemodName,
       loglevel: 'debug'
       // This non-null assertion is safe because if we verififed above that `postProcess` is defined, it will not
       // have been undefined by the time this executes.
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    }, () => codemod.postProcess!(modifiedFiles, {jscodemod}));
+    }, () => codemod.postProcess!(modifiedFiles, {
+      jscodemod(pathToCodemod: string, inputFilesPatterns: string[], options: Partial<Options>) {
+        return jscodemod(pathToCodemod, inputFilesPatterns, {
+          ...passedOptions,
+          ...options
+        });
+      }
+    }));
   }
   return codemodMetaResults;
 }
