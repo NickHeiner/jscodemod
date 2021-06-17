@@ -226,7 +226,7 @@ async function jscodemod(
       phase: 'postProcess',
       modifiedFiles,
       codemodName,
-      loglevel: 'debug'
+      level: 'debug'
       // This non-null assertion is safe because if we verififed above that `postProcess` is defined, it will not
       // have been undefined by the time this executes.
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
