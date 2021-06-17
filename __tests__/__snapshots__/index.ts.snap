@@ -63,60 +63,6 @@ const file = 'asdf';",
 }
 `;
 
-exports[`error handling handles codemod codemod-unnamed (codemod-unnamed) throwing an error 1`] = `
-Object {
-  "codemod/codemod-named.js": "module.exports = {
-  name: 'my-codemod-name',
-  transform({filePath}) {
-    throw new Error(\`Error for: \${filePath}\`);
-  }
-};",
-  "codemod/codemod-unnamed.js": "module.exports = {
-  transform({filePath}) {
-    throw new Error(\`Error for: \${filePath}\`);
-  }
-};",
-  "source/a.js": "console.log('a');",
-  "source/b.js": "console.log('b');",
-}
-`;
-
-exports[`error handling handles codemod codemod-unnamed (codemod-unnamed.js) throwing an error 1`] = `
-Object {
-  "codemod/codemod-named.js": "module.exports = {
-  name: 'my-codemod-name',
-  transform({filePath}) {
-    throw new Error(\`Error for: \${filePath}\`);
-  }
-};",
-  "codemod/codemod-unnamed.js": "module.exports = {
-  transform({filePath}) {
-    throw new Error(\`Error for: \${filePath}\`);
-  }
-};",
-  "source/a.js": "console.log('a');",
-  "source/b.js": "console.log('b');",
-}
-`;
-
-exports[`error handling handles codemod codemod-unnamed.asdfjs (codemod-unnamed.js) throwing an error 1`] = `
-Object {
-  "codemod/codemod-named.js": "module.exports = {
-  name: 'my-codemod-name',
-  transform({filePath}) {
-    throw new Error(\`Error for: \${filePath}\`);
-  }
-};",
-  "codemod/codemod-unnamed.js": "module.exports = {
-  transform({filePath}) {
-    throw new Error(\`Error for: \${filePath}\`);
-  }
-};",
-  "source/a.js": "console.log('a');",
-  "source/b.js": "console.log('b');",
-}
-`;
-
 exports[`error handling handles codemod codemod-unnamed.js (codemod-unnamed.js) throwing an error 1`] = `
 Object {
   "codemod/codemod-named.js": "module.exports = {
