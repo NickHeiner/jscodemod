@@ -124,7 +124,16 @@ const sanitizeLogLine = (logEntry: {msg: string} & Record<string, unknown>) => (
   msg: stripAnsi(logEntry.msg)
 });
 
-const getJsonLogs = (stdout: string) => stdout.split('\n').map(line => sanitizeLogLine(parseJson(line)));
+const getJsonLogs = (stdout: string) => stdout.split('\n').map(line => {
+  let parsedLine;
+  try {
+    parsedLine = parseJson(line);
+  } catch (e) {
+    log.error({line}, 'Could not parse line');
+    throw e;
+  }
+  return sanitizeLogLine(parsedLine);
+});
 
 // I don't think extracting this to a var would help readability.
 // eslint-disable-next-line no-magic-numbers
@@ -304,6 +313,28 @@ describe('git', () => {
     git: true,
     spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), 'source'],
     snapshot: true
+  });
+});
+
+describe('ignore files', () => {
+  createTest({
+    testName: 'happy path',
+    fixtureName: 'ignorefiles',
+    spawnArgs: ['--codemod', 'codemod.js', '**/*.txt'],
+    snapshot: true
+  });
+
+  createTest({
+    testName: 'missing ignore file',
+    fixtureName: 'ignorefiles',
+    spawnArgs: ['--codemod', 'codemod-missing-ignore-file.js', '**/*.txt', '--json-output'],
+    expectedExitCode: 1,
+    assert(spawnResult) {
+      const jsonLogs = getJsonLogs(spawnResult.stdout);
+      expect(jsonLogs).toContainEqual(expect.objectContaining({
+        msg: 'Ignore file "does-not-exist.ignore" does not exist.'
+      }));
+    }
   });
 });
 

@@ -15,6 +15,7 @@ import execBigCommand from './exec-big-command';
 import getGitRoot from './get-git-root';
 import loadCodemod from './load-codemod';
 import {CodemodMetaResult} from './worker';
+import gitignore from './gitignore';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
 
@@ -109,6 +110,21 @@ async function resetDirtyInputFiles(gitRoot: string | null, filesToModify: strin
   }
 }
 
+async function getIsIgnoredByIgnoreFile(log: TODO, ignoreFiles: string[] | undefined) {
+  if (ignoreFiles) {
+    try {
+      return await gitignore({paths: ignoreFiles});
+    } catch (e) {
+      if (e.code === 'ENOENT') {
+        log.error({invalidIgnoreFilePath: e.file}, `Ignore file "${e.file}" does not exist.`);
+        throw e;
+      }
+    }
+  }
+
+  return () => false;
+} 
+
 async function codemod(
   pathToCodemod: string, 
   inputFilesPatterns: string[], 
@@ -136,11 +152,17 @@ async function codemod(
   
   // The next line is a bit gnarly to make TS happy.
   const codemodIgnores = _.compact(([] as (RegExp | undefined)[]).concat(codemod.ignore));
+  const isIgnoredByIgnoreFile = await getIsIgnoredByIgnoreFile(log, codemod.ignoreFiles);
 
-  log.debug({inputFilesPatterns}, 'Globbing input file patterns.');
+  log.debug({
+    inputFilesPatterns, 
+    // Workaround for https://github.com/NickHeiner/nth-log/issues/12.
+    codemodIgnores: codemodIgnores.map(re => re.toString())
+  }, 'Globbing input file patterns.');
   const filesToModify = _((await globby(inputFilesPatterns, {dot: true, gitignore: true})))
     .map(filePath => path.resolve(filePath))
-    .reject(filePath => _.some(codemodIgnores, ignorePattern => ignorePattern.test(filePath)))
+    .reject(filePath => _.some(codemodIgnores, ignorePattern => ignorePattern.test(filePath)) ||
+      isIgnoredByIgnoreFile(filePath))
     .value();
 
   if (!filesToModify.length) {

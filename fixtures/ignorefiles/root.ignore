@@ -1,0 +1,3 @@
+ignored-by-root.txt
+dir-1/ignored-by-root.txt
+dir-1/dir-2/ignored-by-root.txt

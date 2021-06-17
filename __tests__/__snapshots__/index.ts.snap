@@ -286,3 +286,37 @@ function b() {}",
 exports[`happy path prepend-string 2`] = `"codemod post process [\\"<test-dir>/source/.dotfile.js\\",\\"<test-dir>/source/a.js\\",\\"<test-dir>/source/b.js\\",\\"<test-dir>/source/blank.js\\"]"`;
 
 exports[`happy path prepend-string 3`] = `"commandLineArgs {}"`;
+
+exports[`ignore files happy path 1`] = `
+Object {
+  "codemod-missing-ignore-file.js": "module.exports = {
+  transform() { 
+    return 'transformed';
+  },
+  ignoreFiles: ['does-not-exist.ignore']
+};",
+  "codemod.js": "const path = require('path');
+
+module.exports = {
+  transform() { 
+    return 'transformed';
+  },
+  ignoreFiles: [path.resolve(__dirname, 'root.ignore'), 'dir-1/nested.ignore']
+};",
+  "dir-1/dir-2/ignored-by-nested.txt": "",
+  "dir-1/dir-2/ignored-by-root.txt": "",
+  "dir-1/dir-2/transformed.txt": "transformed",
+  "dir-1/ignored-by-nested.txt": "",
+  "dir-1/ignored-by-root.txt": "",
+  "dir-1/nested.ignore": "../ignored-by-nested.txt
+ignored-by-nested.txt
+dir-2/ignored-by-nested.txt",
+  "dir-1/transformed.txt": "transformed",
+  "ignored-by-nested.txt": "",
+  "ignored-by-root.txt": "",
+  "root.ignore": "ignored-by-root.txt
+dir-1/ignored-by-root.txt
+dir-1/dir-2/ignored-by-root.txt",
+  "transformed.txt": "transformed",
+}
+`;
