@@ -195,7 +195,8 @@ async function jscodemod(
       "This probably means the arguments you passed to it didn't validate. To pass arguments to a codemod, " +
       "put them at the end of the whole command, like 'jscodemod -c codemod.js fileGlob -- -a b'.");
   process.on('exit', handleExit);
-  await codemod.parseArgs?.(options.codemodArgs);
+  const parsedArgs = await codemod.parseArgs?.(options.codemodArgs);
+  log.debug({codemodName, parsedArgs});
   process.off('exit', handleExit);
 
   if (options.dry) {
