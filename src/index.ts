@@ -34,7 +34,7 @@ export type NonTSOptions = {
   writeFiles?: boolean;
   porcelain?: boolean;
   jsonOutput?: boolean;
-  codemodArgs?: string;
+  codemodArgs?: string[];
   resetDirtyInputFiles?: boolean;
   doPostProcess?: boolean;
 }
@@ -67,12 +67,13 @@ function getProgressUI(logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, total
 }
 
 function transformCode(codemodPath: string, inputFiles: string[], writeFiles: boolean, 
-  logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, codemodArgs?: string) {
+  logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, codemodArgs?: string[]) {
 
+  const rawArgs = codemodArgs ? JSON.stringify(codemodArgs) : undefined;
   const piscina = new Piscina({
     filename: require.resolve('./worker'),
     argv: [codemodPath],
-    workerData: {codemodPath, codemodArgs, writeFiles, logOpts}
+    workerData: {codemodPath, codemodArgs: rawArgs, writeFiles, logOpts}
   });
 
   const progressBar = getProgressUI(logOpts, inputFiles.length);

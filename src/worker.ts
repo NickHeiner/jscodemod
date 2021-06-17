@@ -30,7 +30,8 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
   log.debug({action: 'start', codemod: codemodName});
 
   const originalFileContents = await pFs.readFile(sourceCodeFile, 'utf-8');
-  const parsedArgs = await codemod.parseArgs?.(piscina.workerData.codemodArgs);
+  const rawArgs = piscina.workerData.codemodArgs ? JSON.parse(piscina.workerData.codemodArgs) : undefined;
+  const parsedArgs = await codemod.parseArgs?.(rawArgs);
 
   let transformedCode: CodemodResult;
   let threwError = false;

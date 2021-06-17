@@ -1,11 +1,10 @@
 export type CodemodResult = string | undefined | null;
 
 type ScalarOrPromise<T> = T | Promise<T>;
-type ParsedArgs = Record<string, unknown> | undefined;
 
 import jscodemod, {Options} from './';
 
-export type Codemod = {
+export type Codemod<ParsedArgs = unknown> = {
   /**
    * A name for the codemod, like "transform-cjs-to-esm". Defaults to the file name. Used for logging.
    */
@@ -50,8 +49,7 @@ export type Codemod = {
    * 
    * @param rawCommandLineArgs a string of passed arguments, like "--args --to --pass-through"
    */
-  parseArgs?: (rawCommandLineArgs?: string) => ScalarOrPromise<ParsedArgs>
-  // TODO: Can we make the type of returned args flow through to transform better?
+  parseArgs?: (rawCommandLineArgs?: string[]) => ScalarOrPromise<ParsedArgs>
 
   /**
    * After all transforms have been run, this function will be invoked with an array of files there were modified.
