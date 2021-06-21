@@ -301,6 +301,7 @@ describe('TS compilation flags', () => {
 
 describe('git', () => {
   createTest({
+    modifier: 'only',
     testName: 'Reset dirty files',
     fixtureName: 'git-dirty',
     git: true,
@@ -309,7 +310,13 @@ describe('git', () => {
       '--reset-dirty-input-files',
       'source'
     ],
-    snapshot: true
+    snapshot: true,
+    assert(spawnResult) {
+      const jsonLogs = getJsonLogs(spawnResult.stdout);
+      const modifiedFileLog = _.find(jsonLogs, 'modifiedFiles');
+      expect(modifiedFileLog).toBeTruthy();
+      expect(modifiedFileLog).toMatchInlineSnapshot();
+    }
   });
   createTest({
     testName: 'Modify dirty files',
