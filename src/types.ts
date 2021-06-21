@@ -52,7 +52,14 @@ export type Codemod<ParsedArgs = unknown> = {
   parseArgs?: (rawCommandLineArgs?: string[]) => ScalarOrPromise<ParsedArgs>
 
   /**
-   * After all transforms have been run, this function will be invoked with an array of files there were modified.
+   * After all transforms have been run, this function will be invoked once with an array of files there were modified.
+   * 
+   * @param modifiedFiles
+   * @param opts
+   * @param opts.jscodemod A function you can invoke to run another codemod phase. The options passed to this function 
+   *                       default to the options derived from the original command line invocation of jscodemod. For 
+   *                       example, if the user passed --resetDirtyInputFiles to the command line, then when you call
+   *                       opts.jscodemod(), `resetDirtyInputFiles` will default to true.
    */
   postProcess?: (modifiedFiles: string[], opts: {
     jscodemod(

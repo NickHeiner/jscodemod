@@ -1,5 +1,18 @@
 ### Workflow & Codemod Authoring
-* Support for post-processing steps removes cases where you'd need to write a custom bash script.
+* Support for post-processing steps removes cases where you'd need to write a custom bash script. For example:
+  ```js
+  const codemod = {
+    transform({source}) { /* ... */ }
+
+    async postProcess(modifiedFiles, {jscodemod}) {
+      // Run a second codemod on the set of files we modified in the first phase.
+      await jscodemod(
+        require.resolve('path/to/second-codemod-phase'),
+        modifiedFiles
+      )
+    }
+  }
+  ```
 * At scale, codemod authors often need to exclude some files from processing. In jscodeshift, you'd do something like:
   ```js
   const IGNORED_FILES = ['path/to/a.js', 'path/to/b.js']
@@ -13,10 +26,11 @@
     }
   }
   ```
-  With jscodemod, simply pass regexes to the `ignore` field:
+  With jscodemod, use the built-in ignore functionality:
   ```ts
   const codemod = {
-    ignore: [new RegExp('path/to/a.js'), new RegExp('path/to/b.js'), /directory-to-omit/]
+    ignore: [new RegExp('path/to/a.js'), 'path/to/b.js', /directory-to-omit/]
+    ignoreFiles: ['path/to/.eslintignore', 'path/to/.npmignore']
     // ...
   }
   ```

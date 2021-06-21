@@ -32,6 +32,28 @@ The argument you pass to `--codemod` is a file that exports a `Codemod`. Look in
 
 If your codebase has syntax that Babel doesn't recognize out of the box, you'll want need to handle it. (TypeScript, babel-plugin-proposal-pipeline-operator vs. babel-plugin-syntax-pipeline-operator).
 
+### Examples
+```ts
+const codemod = {
+  // Ignore files with paths matching these regexes, or including these strings.
+  ignore: [new RegExp('path/to/a.js'), 'path/to/b.js', /directory-to-omit/],
+
+  // Ignore files specified by these config files used by other tools
+  ignoreFiles: ['path/to/.eslintignore', 'path/to/.npmignore'],
+
+  transform({source}) { /* ... */ }
+
+  // Take actions after the codemod has run.
+  async postProcess(modifiedFiles, {jscodemod}) {
+    // Run a second codemod on the set of files we modified in the first phase.
+    await jscodemod(
+      require.resolve('path/to/second-codemod-phase'),
+      modifiedFiles
+    )
+  }
+}
+```
+
 ### Gotchas
 #### Side Effects
 Your codemod will be loaded many times by the worker pool threads, so be careful about side effects. For example:
