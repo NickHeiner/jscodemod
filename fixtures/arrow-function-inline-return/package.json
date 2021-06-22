@@ -2,7 +2,7 @@
   "name": "arrow-function-inline-return",
   "//": "@babel/core must be a dependency, because it's required by @babel/preset-typescript.",
   "dependencies": {
-    "@babel/core": "7.13.1",
+    "@babel/core": "7.14.6",
     "@babel/types": "7.13.0",
     "@babel/traverse": "7.13.0",
     "@babel/preset-env": "7.14.7",

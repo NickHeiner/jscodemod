@@ -27,6 +27,7 @@ const pFs = fs.promises;
 const codemod = loadCodemod(piscina.workerData.codemodPath);
 
 export type CodemodMetaResult = {
+  action: 'error' | 'modified' | 'skipped';
   filePath: string;
   codeModified: boolean;
   fileContents: string;
@@ -155,8 +156,10 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await pFs.writeFile(sourceCodeFile, transformedCode!);
   }
-  log.debug({action: threwError ? 'error' : codeModified ? 'modified' : 'skipped', writeFiles});
+  const action = threwError ? 'error' : codeModified ? 'modified' : 'skipped';
+  log.debug({action, writeFiles});
   return {
+    action,
     codeModified, 
     fileContents: transformedCode ? transformedCode : originalFileContents,
     filePath: sourceCodeFile

@@ -228,6 +228,7 @@ describe('error handling', () => {
     createTest({
       testName: `handles codemod ${codemodName} (${codemodFileName}) throwing an error`,
       fixtureName: 'will-throw-error',
+      expectedExitCode: 1,
       spawnArgs: ['--codemod', path.join('codemod', codemodFileName), 'source', '--json-output'],
       snapshot: true,
       assert(spawnResult) {
