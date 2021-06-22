@@ -72,11 +72,9 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
       throw e;
     }
     
-    const pluginsToUse = Array.isArray(codemodPlugins) ? codemodPlugins : [codemodPlugins]; 
-
-    const getBabelOpts = (extraPlugins: Exclude<TransformOptions['plugins'], null> = []): TransformOptions => ({
+    const getBabelOpts = (plugins: Exclude<TransformOptions['plugins'], null> = []): TransformOptions => ({
       filename: sourceCodeFile,
-      plugins: [...extraPlugins, ...pluginsToUse],
+      plugins,
       ast: true
     });
 
@@ -114,9 +112,11 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
       }
     });
 
+    const pluginsToUse = Array.isArray(codemodPlugins) ? codemodPlugins : [codemodPlugins]; 
+
     // result.ast.end will be 0, and ast.end is originalFileContents.length.
     // Passing originalFileContents instead of '' solves that problem, but causes some other problem.
-    const result = babelTransformSync('', getBabelOpts([setAst]));
+    const result = babelTransformSync('', getBabelOpts([setAst, pluginsToUse]));
     if (!result) {
       const err = new Error(`Transforming "${sourceCodeFile}" resulted in a null babel result.`);
       Object.assign(err, {
