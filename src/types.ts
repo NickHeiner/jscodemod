@@ -92,7 +92,25 @@ export type Codemod<ParsedArgs = unknown> = {
   getPlugin?: never;
 } | {
   transform?: never;
+
+  /**
+   * The set of babel presets needed to compile your code, like `@babel/preset-env`.
+   */
   presets: TransformOptions['presets'];
+
+  /**
+   * Return a plugin that will be used to codemod your code.
+   * 
+   * When using this approach, be aware of the following known issues:
+   *    * Some parens will be inserted erroneously: https://github.com/benjamn/recast/issues/914
+   *    * A trailing comment will have a space removed:
+   *          `a; /*f*\/` => `a;/*f*\/`
+   * 
+   * @param opts
+   * @param opts.source the contents of the file to transform.
+   * @param opts.filePath the path to the file to transform.
+   * @param opts.commandLineArgs parsed arguments returned by `yourCodemod.parseArgs()`, if any.
+   */
   getPlugin: (opts: BaseCodemodArgs<ParsedArgs>) => ScalarOrPromise<PluginTarget>;
 })
 
