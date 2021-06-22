@@ -117,13 +117,29 @@ function b() {}"
 exports[`git Modify dirty files 1`] = `
 Object {
   "codemod/codemod.js": "module.exports = {
+  ignore: 'dirty-transformed-by-second-codemod',
   transform({source}) {
     return \`/* prefix git dirty */\\\\n\${source}\`;
+  },
+  async postProcess(modifiedFiles, {jscodemod}) {
+    console.log(JSON.stringify({modifiedFiles}));
+    await jscodemod(
+      require.resolve('./second-codemod'),
+      require.resolve('../source/dirty-transformed-by-second-codemod'),
+    )
+  }
+};",
+  "codemod/second-codemod.js": "module.exports = {
+  transform({source}) {
+    return \`/* prefix git dirty second codemod */\\\\n\${source}\`;
   }
 };",
   "git-ignored.js": "console.log('git ignored');
 ",
   "git-untracked.js": "// git untracked",
+  "source/dirty-transformed-by-second-codemod.js": "/* prefix git dirty second codemod */
+// Transformed by second codemod
+const y = 'dirty state';",
   "source/dirty.js": "/* prefix git dirty */
 const x = 'dirty state';",
   "source/nested-git-ignored.js": "console.log('nested git ignored');",
@@ -135,13 +151,29 @@ const x = 'starting state';",
 exports[`git Reset dirty files 1`] = `
 Object {
   "codemod/codemod.js": "module.exports = {
+  ignore: 'dirty-transformed-by-second-codemod',
   transform({source}) {
     return \`/* prefix git dirty */\\\\n\${source}\`;
+  },
+  async postProcess(modifiedFiles, {jscodemod}) {
+    console.log(JSON.stringify({modifiedFiles}));
+    await jscodemod(
+      require.resolve('./second-codemod'),
+      require.resolve('../source/dirty-transformed-by-second-codemod'),
+    )
+  }
+};",
+  "codemod/second-codemod.js": "module.exports = {
+  transform({source}) {
+    return \`/* prefix git dirty second codemod */\\\\n\${source}\`;
   }
 };",
   "git-ignored.js": "console.log('git ignored');
 ",
   "git-untracked.js": "// git untracked",
+  "source/dirty-transformed-by-second-codemod.js": "/* prefix git dirty second codemod */
+// Transformed by second codemod
+const y = 'starting state';",
   "source/dirty.js": "/* prefix git dirty */
 const x = 'starting state';",
   "source/nested-git-ignored.js": "console.log('nested git ignored');",

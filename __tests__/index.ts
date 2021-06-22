@@ -22,7 +22,7 @@ type TestArgs = {
   git?: boolean;
   snapshot?: true; 
   setUpNodeModules?: boolean;
-  assert?: (ExecaReturnValue, testDir: string) => void;
+  assert?: (ExecaReturnValue, testDir: string, getRelativeFilePaths: (inputFilePaths: string[]) => string[]) => void;
   modifier?: 'only' | 'skip';
 }
 
@@ -113,15 +113,16 @@ function createTest({
       expect(fileContents).toMatchSnapshot();
     }
     if (assert) {
-      await assert(spawnResult, testDir);
+      const getRelativeFilePaths = 
+        (inputFilePaths: string[]) => inputFilePaths.map(filePath => path.relative(testDir, filePath));
+      await assert(spawnResult, testDir, getRelativeFilePaths);
     }
   });
   /* eslint-enable jest/no-conditional-expect */
 }
 
 const sanitizeLogLine = (logEntry: {msg: string} & Record<string, unknown>) => ({
-  ..._.omit(logEntry, ['name', 'hostname', 'pid', 'time', 'v']),
-  msg: stripAnsi(logEntry.msg)
+  ..._.omit(logEntry, ['name', 'hostname', 'pid', 'time', 'v'])
 });
 
 const getJsonLogs = (stdout: string) => stdout.split('\n').map(line => {
@@ -132,7 +133,11 @@ const getJsonLogs = (stdout: string) => stdout.split('\n').map(line => {
     log.error({line}, 'Could not parse line');
     throw e;
   }
-  return sanitizeLogLine(parsedLine);
+  const logLine = sanitizeLogLine(parsedLine);
+  if (logLine.msg) {
+    logLine.msg = stripAnsi(logLine.msg as string);
+  }
+  return logLine;
 });
 
 // I don't think extracting this to a var would help readability.
@@ -163,12 +168,12 @@ describe('happy path', () => {
     fixtureName: 'prepend-string',
     spawnArgs: ['--dry', '--json-output', '--codemod', path.join('codemod', 'codemod.js'), 'source'],
     snapshot: true,
-    assert(spawnResult, testDir) {
+    assert(spawnResult, testDir, getRelativeFilePaths) {
       const jsonLogs = getJsonLogs(spawnResult.stdout);
       const inputFilesLogLine = _.find(jsonLogs, 'filesToModify');
 
       const inputFiles = ((inputFilesLogLine as Record<string, unknown>).filesToModify as string[]);
-      const relativeInputFiles = new Set(inputFiles.map(inputFile => path.relative(testDir, inputFile)));
+      const relativeInputFiles = new Set(getRelativeFilePaths(inputFiles));
       expect(relativeInputFiles).toEqual(
         new Set(['source/.dotfile.js', 'source/a.js', 'source/b.js', 'source/blank.js'])
       );
@@ -301,21 +306,28 @@ describe('TS compilation flags', () => {
 
 describe('git', () => {
   createTest({
-    modifier: 'only',
     testName: 'Reset dirty files',
     fixtureName: 'git-dirty',
     git: true,
     spawnArgs: [
       '--codemod', path.join('codemod', 'codemod.js'), 
       '--reset-dirty-input-files',
+      '--jsonOutput',
       'source'
     ],
     snapshot: true,
-    assert(spawnResult) {
+    assert(spawnResult, testDir, getRelativeFilePaths) {
       const jsonLogs = getJsonLogs(spawnResult.stdout);
       const modifiedFileLog = _.find(jsonLogs, 'modifiedFiles');
       expect(modifiedFileLog).toBeTruthy();
-      expect(modifiedFileLog).toMatchInlineSnapshot();
+      const modifiedFiles = new Set(getRelativeFilePaths(modifiedFileLog.modifiedFiles as string[]));
+      expect(modifiedFiles).toMatchInlineSnapshot(`
+Set {
+  "source/.gitignore",
+  "source/dirty.js",
+  "source/unmodified.js",
+}
+`);
     }
   });
   createTest({
