@@ -4,6 +4,7 @@ import fs from 'fs';
 import loadCodemod from './load-codemod';
 import type {CodemodResult} from './types';
 import _ from 'lodash';
+import getCodemodName from './get-codemod-name';
 
 const baseLog = getLogger({
   name: 'jscodemod-worker',
@@ -25,10 +26,12 @@ export type CodemodMetaResult = {
 }
 export default async function main(sourceCodeFile: string): Promise<CodemodMetaResult> {
   const log = baseLog.child({sourceCodeFile});
-  log.debug({action: 'start'});
+  const codemodName = getCodemodName(codemod, piscina.workerData.codemodPath);
+  log.debug({action: 'start', codemod: codemodName});
 
   const originalFileContents = await pFs.readFile(sourceCodeFile, 'utf-8');
-  const parsedArgs = await codemod.parseArgs?.(piscina.workerData.codemodArgs);
+  const rawArgs = piscina.workerData.codemodArgs ? JSON.parse(piscina.workerData.codemodArgs) : undefined;
+  const parsedArgs = await codemod.parseArgs?.(rawArgs);
 
   let transformedCode: CodemodResult;
   let threwError = false;
@@ -40,7 +43,7 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
     });
   } catch (e) {
     threwError = true;
-    log.error({error: _.pick(e, 'message', 'stack')}, 'Codemod threw an error for a file.');
+    log.error({error: _.pick(e, 'message', 'stack')}, `Codemod "${codemodName}" threw an error for a file.`);
   }
 
   const codeModified = Boolean(transformedCode && transformedCode !== originalFileContents);

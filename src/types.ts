@@ -1,9 +1,15 @@
 export type CodemodResult = string | undefined | null;
 
 type ScalarOrPromise<T> = T | Promise<T>;
-type ParsedArgs = Record<string, unknown> | undefined;
 
-export type Codemod = {
+import jscodemod, {Options} from './';
+
+export type Codemod<ParsedArgs = unknown> = {
+  /**
+   * A name for the codemod, like "transform-cjs-to-esm". Defaults to the file name. Used for logging.
+   */
+  name?: string;
+
   /**
    * Specify which files should not be transformed.
    * 
@@ -43,13 +49,25 @@ export type Codemod = {
    * 
    * @param rawCommandLineArgs a string of passed arguments, like "--args --to --pass-through"
    */
-  parseArgs?: (rawCommandLineArgs?: string) => ScalarOrPromise<ParsedArgs>
-  // TODO: Can we make the type of returned args flow through to transform better?
+  parseArgs?: (rawCommandLineArgs?: string[]) => ScalarOrPromise<ParsedArgs>
 
   /**
-   * After all transforms have been run, this function will be invoked with an array of files there were modified.
+   * After all transforms have been run, this function will be invoked once with an array of files there were modified.
+   * 
+   * @param modifiedFiles
+   * @param opts
+   * @param opts.jscodemod A function you can invoke to run another codemod phase. The options passed to this function 
+   *                       default to the options derived from the original command line invocation of jscodemod. For 
+   *                       example, if the user passed --resetDirtyInputFiles to the command line, then when you call
+   *                       opts.jscodemod(), `resetDirtyInputFiles` will default to true.
    */
-  postProcess?: (modifiedFiles: string[]) => Promise<unknown>;
+  postProcess?: (modifiedFiles: string[], opts: {
+    jscodemod(
+      pathToCodemod: string, 
+      inputFilesPatterns: string[], 
+      options: Partial<Options>
+    ): ReturnType<typeof jscodemod>
+  }) => Promise<unknown>;
 
   /**
    * Transform a single file. Return null or undefined to indicate that the file should not be modified.

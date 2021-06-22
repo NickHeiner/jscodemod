@@ -1,6 +1,6 @@
 {
   "name": "@nth/jscodemod",
-  "version": "1.0.0-4",
+  "version": "1.0.0-5",
   "description": "JS codemod runner",
   "main": "build/index.js",
   "repository": "git@github.com:NickHeiner/jscodemod.git",
@@ -34,7 +34,7 @@
     "eslint": "7.9.0",
     "eslint-config-nth": "2.0.1",
     "eslint-plugin-jest": "24.0.1",
-    "jest": "26.4.2",
+    "jest": "27.0.5",
     "jscodeshift": "0.11.0",
     "recast": "0.20.4",
     "resolve-bin": "0.4.0",

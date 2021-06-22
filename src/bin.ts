@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import yargs from 'yargs';
-import codemod from './';
+import jscodemod from './';
 import _ from 'lodash';
 import 'loud-rejection/register';
 import getLogger from './get-logger';
@@ -111,7 +111,7 @@ async function main() {
     // Yarg's types are messed up.
     Object.assign(opts, _.pick(argv, 'codemodArgs'));
 
-    await codemod(
+    await jscodemod(
       argv.codemod, 
       // Yarg's types are messed up.
       // @ts-expect-error

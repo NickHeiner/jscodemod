@@ -1,18 +1,19 @@
 import {Codemod} from '@nth/jscodemod';
 import yargs from 'yargs';
 
-const codemod: Codemod = {
-  parseArgs(rawCommandLineArgs = '') {
-    return yargs.options({
-      requiredFlag: {
-        alias: 'r',
-        type: 'string',
-        required: true,
-        describe: 'This arg is required'
-      }
-    })
-      .help()
-      .parse(rawCommandLineArgs);
+const yargsBuilder = yargs.options({
+  requiredFlag: {
+    alias: 'r',
+    type: 'string',
+    required: true,
+    describe: 'This arg is required'
+  }
+})
+  .help();
+
+const codemod: Codemod<ReturnType<typeof yargsBuilder.parse>> = {
+  parseArgs(rawCommandLineArgs) {
+    return yargsBuilder.parse(rawCommandLineArgs!);
   },
   transform() {
     return null;

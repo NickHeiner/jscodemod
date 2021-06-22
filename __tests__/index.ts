@@ -22,7 +22,7 @@ type TestArgs = {
   git?: boolean;
   snapshot?: true; 
   setUpNodeModules?: boolean;
-  assert?: (ExecaReturnValue, testDir: string) => void;
+  assert?: (ExecaReturnValue, testDir: string, getRelativeFilePaths: (inputFilePaths: string[]) => string[]) => void;
   modifier?: 'only' | 'skip';
 }
 
@@ -113,15 +113,16 @@ function createTest({
       expect(fileContents).toMatchSnapshot();
     }
     if (assert) {
-      await assert(spawnResult, testDir);
+      const getRelativeFilePaths = 
+        (inputFilePaths: string[]) => inputFilePaths.map(filePath => path.relative(testDir, filePath));
+      await assert(spawnResult, testDir, getRelativeFilePaths);
     }
   });
   /* eslint-enable jest/no-conditional-expect */
 }
 
 const sanitizeLogLine = (logEntry: {msg: string} & Record<string, unknown>) => ({
-  ..._.omit(logEntry, ['name', 'hostname', 'pid', 'time', 'v']),
-  msg: stripAnsi(logEntry.msg)
+  ..._.omit(logEntry, ['name', 'hostname', 'pid', 'time', 'v'])
 });
 
 const getJsonLogs = (stdout: string) => stdout.split('\n').map(line => {
@@ -132,7 +133,11 @@ const getJsonLogs = (stdout: string) => stdout.split('\n').map(line => {
     log.error({line}, 'Could not parse line');
     throw e;
   }
-  return sanitizeLogLine(parsedLine);
+  const logLine = sanitizeLogLine(parsedLine);
+  if (logLine.msg) {
+    logLine.msg = stripAnsi(logLine.msg as string);
+  }
+  return logLine;
 });
 
 // I don't think extracting this to a var would help readability.
@@ -163,12 +168,12 @@ describe('happy path', () => {
     fixtureName: 'prepend-string',
     spawnArgs: ['--dry', '--json-output', '--codemod', path.join('codemod', 'codemod.js'), 'source'],
     snapshot: true,
-    assert(spawnResult, testDir) {
+    assert(spawnResult, testDir, getRelativeFilePaths) {
       const jsonLogs = getJsonLogs(spawnResult.stdout);
       const inputFilesLogLine = _.find(jsonLogs, 'filesToModify');
 
       const inputFiles = ((inputFilesLogLine as Record<string, unknown>).filesToModify as string[]);
-      const relativeInputFiles = new Set(inputFiles.map(inputFile => path.relative(testDir, inputFile)));
+      const relativeInputFiles = new Set(getRelativeFilePaths(inputFiles));
       expect(relativeInputFiles).toEqual(
         new Set(['source/.dotfile.js', 'source/a.js', 'source/b.js', 'source/blank.js'])
       );
@@ -217,31 +222,35 @@ describe('error handling', () => {
     }
   });
 
-  createTest({
-    testName: 'handles codemod throwing an error',
-    fixtureName: 'will-throw-error',
-    spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), 'source', '--json-output'],
-    snapshot: true,
-    assert(spawnResult) {
-      const jsonLogs = getJsonLogs(spawnResult.stdout);
+  const createTestForThrowingError = (codemodName: string, codemodFileName: string) => 
+    createTest({
+      testName: `handles codemod ${codemodName} (${codemodFileName}) throwing an error`,
+      fixtureName: 'will-throw-error',
+      spawnArgs: ['--codemod', path.join('codemod', codemodFileName), 'source', '--json-output'],
+      snapshot: true,
+      assert(spawnResult) {
+        const jsonLogs = getJsonLogs(spawnResult.stdout);
 
-      expect(jsonLogs).toContainEqual(expect.objectContaining({
-        msg: 'Codemod threw an error for a file.',
-        error: expect.objectContaining({
-          stack: expect.any(String),
-          // I tried to use a regex matcher here but I couldn't get it to work.
-          message: expect.stringContaining('source/a.js')
-        })
-      }));
-      expect(jsonLogs).toContainEqual(expect.objectContaining({
-        msg: 'Codemod threw an error for a file.',
-        error: expect.objectContaining({
-          stack: expect.any(String),
-          message: expect.stringContaining('source/b.js')
-        })
-      }));
-    }
-  });
+        expect(jsonLogs).toContainEqual(expect.objectContaining({
+          msg: `Codemod "${codemodName}" threw an error for a file.`,
+          error: expect.objectContaining({
+            stack: expect.any(String),
+            // I tried to use a regex matcher here but I couldn't get it to work.
+            message: expect.stringContaining('source/a.js')
+          })
+        }));
+        expect(jsonLogs).toContainEqual(expect.objectContaining({
+          msg: `Codemod "${codemodName}" threw an error for a file.`,
+          error: expect.objectContaining({
+            stack: expect.any(String),
+            message: expect.stringContaining('source/b.js')
+          })
+        }));
+      }
+    });
+
+  createTestForThrowingError('codemod-unnamed.js', 'codemod-unnamed.js');
+  createTestForThrowingError('my-codemod-name', 'codemod-named.js');
 });
 
 describe('TS compilation flags', () => {
@@ -303,9 +312,23 @@ describe('git', () => {
     spawnArgs: [
       '--codemod', path.join('codemod', 'codemod.js'), 
       '--reset-dirty-input-files',
+      '--jsonOutput',
       'source'
     ],
-    snapshot: true
+    snapshot: true,
+    assert(spawnResult, testDir, getRelativeFilePaths) {
+      const jsonLogs = getJsonLogs(spawnResult.stdout);
+      const modifiedFileLog = _.find(jsonLogs, 'modifiedFiles');
+      expect(modifiedFileLog).toBeTruthy();
+      const modifiedFiles = new Set(getRelativeFilePaths(modifiedFileLog.modifiedFiles as string[]));
+      expect(modifiedFiles).toMatchInlineSnapshot(`
+Set {
+  "source/.gitignore",
+  "source/dirty.js",
+  "source/unmodified.js",
+}
+`);
+    }
   });
   createTest({
     testName: 'Modify dirty files',
