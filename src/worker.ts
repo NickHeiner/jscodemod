@@ -45,7 +45,7 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
 
   const handleError = (e: Error, messageSuffix: string) => {
     threwError = true;
-    log.error({error: _.pick(e, 'message', 'stack')}, `Codemod "${codemodName}" threw an error ${messageSuffix}`);
+    log.error({error: _.pick(e, 'message', 'stack')}, `Codemod "${codemodName}" threw an error ${messageSuffix}.`);
   };
 
   const codemodOpts = {
@@ -92,7 +92,7 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
 
     const parser = {
       parse(source: string, opts: Record<string, unknown>) {
-        return babelParse(source, {
+        const babelOpts = {
           ...getBabelOpts(),
           ..._.pick(codemod, 'presets'),
           // There are options that are recognized by recast but not babel. Babel errors when they're passed. To avoid
@@ -101,7 +101,9 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
             opts, 
             'jsx', 'loc', 'locations', 'range', 'comment', 'onComment', 'tolerant', 'ecmaVersion'
           )
-        });
+        };
+        log.trace({babelOpts});
+        return babelParse(source, babelOpts);
       }
     };
 
