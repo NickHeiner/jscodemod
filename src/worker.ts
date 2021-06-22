@@ -36,7 +36,7 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
   let transformedCode: CodemodResult;
   let threwError = false;
   try {
-    transformedCode = await codemod.transform({
+    transformedCode = await codemod.transform!({
       source: originalFileContents, 
       filePath: sourceCodeFile, 
       commandLineArgs: parsedArgs

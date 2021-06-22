@@ -1,8 +1,15 @@
 export type CodemodResult = string | undefined | null;
+import {PluginTarget, TransformOptions} from '@babel/core';
 
 type ScalarOrPromise<T> = T | Promise<T>;
 
 import jscodemod, {Options} from './';
+
+export type BaseCodemodArgs<ParsedArgs> = {
+  filePath: string;
+  // TODO: only specify this as an option to transform if parseArgs is present.
+  commandLineArgs?: ParsedArgs;
+}
 
 export type Codemod<ParsedArgs = unknown> = {
   /**
@@ -68,7 +75,7 @@ export type Codemod<ParsedArgs = unknown> = {
       options: Partial<Options>
     ): ReturnType<typeof jscodemod>
   }) => Promise<unknown>;
-
+} & ({
   /**
    * Transform a single file. Return null or undefined to indicate that the file should not be modified.
    * 
@@ -79,11 +86,15 @@ export type Codemod<ParsedArgs = unknown> = {
    */
   transform(opts: {
     source: string;
-    filePath: string;
-    // TODO: only specify this as an option to transform if parseArgs is present.
-    commandLineArgs?: ParsedArgs;
-  }): CodemodResult | Promise<CodemodResult>;
-}
+  } & BaseCodemodArgs<ParsedArgs>): CodemodResult | Promise<CodemodResult>;
+
+  presets?: never;
+  getPlugin?: never;
+} | {
+  transform?: never;
+  presets: TransformOptions['presets'];
+  getPlugin: (opts: BaseCodemodArgs<ParsedArgs>) => ScalarOrPromise<PluginTarget>;
+})
 
 // The `any` here is intentional.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
