@@ -40,29 +40,25 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
   const rawArgs = piscina.workerData.codemodArgs ? JSON.parse(piscina.workerData.codemodArgs) : undefined;
   const parsedArgs = await codemod.parseArgs?.(rawArgs);
 
-  let transformedCode: CodemodResult;
-  let threwError = false;
-
-  const handleError = (e: Error, messageSuffix: string) => {
-    threwError = true;
-    log.error({error: _.pick(e, 'message', 'stack')}, `Codemod "${codemodName}" threw an error ${messageSuffix}.`);
-  };
-
   const codemodOpts = {
     source: originalFileContents, 
     filePath: sourceCodeFile, 
     commandLineArgs: parsedArgs
   };
 
-  if (codemod.transform) {
-    try {
-      transformedCode = await codemod.transform(codemodOpts);
-    } catch (e) {
-      handleError(e, 'for a file');
-    }
-  } else {
-    // The impact of erroneous changes would be reduced if we detected when the AST is unchanged, and then did not write
-    // new file contents. However, this proved difficult to do.
+  const transformFile = async (): Promise<CodemodResult> => {
+    if (codemod.transform) {
+      try {
+        return codemod.transform(codemodOpts);
+      } catch (e) {
+        e.phase = 'codemod.transform()';
+        e.suggestion = "Check your transform() method for a bug, or add this file to your codemod's ignore list.";
+        throw e;
+      }
+    } 
+
+    // The impact of erroneous changes would be reduced if we detected when the AST is unchanged, and then did not 
+    // write new file contents. However, this proved difficult to do.
     // 
     // eslint-disable-next-line max-len
     // Maybe we want the parserOverrides approach: https://github.com/codemod-js/codemod/blob/06310982b67783e9d2861a7737c7810396417bd3/packages/core/src/RecastPlugin.ts.
@@ -71,7 +67,9 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
     try {
       codemodPlugins = await codemod.getPlugin(codemodOpts);
     } catch (e) {
-      handleError(e, 'when callling codemod.getPlugin()');
+      e.phase = 'codemod.getPlugin()';
+      e.suggestion = 'Check your getPlugin() method for a bug.';
+      throw e;
     }
     
     const pluginsToUse = Array.isArray(codemodPlugins) ? codemodPlugins : [codemodPlugins]; 
@@ -99,7 +97,14 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
       }
     };
 
-    const ast = recast.parse(originalFileContents, {parser});
+    let ast: ReturnType<typeof recast.parse>; 
+    try {
+      ast = recast.parse(originalFileContents, {parser});
+    } catch (e) {
+      e.phase = 'recast.parse using the settings you passed';
+      e.suggestion = "Check that you passed the right babel preset in the codemod's `presets` field.";
+      throw e;
+    }
 
     const setAst = (): {visitor: Visitor<TODO>} => ({
       visitor: {
@@ -113,14 +118,33 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
     // Passing originalFileContents instead of '' solves that problem, but causes some other problem.
     const result = babelTransformSync('', getBabelOpts([setAst]));
     if (!result) {
-      throw new Error(`Transforming "${sourceCodeFile}" resulted in a null babel result.`);
+      const err = new Error(`Transforming "${sourceCodeFile}" resulted in a null babel result.`);
+      Object.assign(err, {
+        phase: 'running your codemod babel plugin',
+        suggestion: "Check your plugin for a bug, or ignore this file in your codemod's ignore list."
+      });
+      throw err;
     }
 
-    transformedCode = recast.print(result.ast as recast.types.ASTNode).code;
+    let transformedCode = recast.print(result.ast as recast.types.ASTNode).code;
 
     if (originalFileContents.endsWith('\n') && !transformedCode.endsWith('\n')) {
       transformedCode += '\n';
-    }    
+    }  
+    
+    return transformedCode;
+  };
+
+  let transformedCode: CodemodResult = null;
+  let threwError = false;
+
+  try {
+    transformedCode = await transformFile();
+  } catch (e) {
+    threwError = true;
+    log.error({
+      error: _.pick(e, 'message', 'stack', 'phase'),
+    }, `File ${sourceCodeFile}: Codemod "${codemodName}" threw an error during ${e.phase}. ${e.suggestion}`);
   }
 
   const codeModified = Boolean(transformedCode && transformedCode !== originalFileContents);

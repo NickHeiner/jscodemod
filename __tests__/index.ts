@@ -232,16 +232,16 @@ describe('error handling', () => {
         const jsonLogs = getJsonLogs(spawnResult.stdout);
 
         expect(jsonLogs).toContainEqual(expect.objectContaining({
-          msg: `Codemod "${codemodName}" threw an error for a file.`,
           error: expect.objectContaining({
+            phase: 'codemod.transform()',
             stack: expect.any(String),
             // I tried to use a regex matcher here but I couldn't get it to work.
             message: expect.stringContaining('source/a.js')
           })
         }));
         expect(jsonLogs).toContainEqual(expect.objectContaining({
-          msg: `Codemod "${codemodName}" threw an error for a file.`,
           error: expect.objectContaining({
+            phase: 'codemod.transform()',
             stack: expect.any(String),
             message: expect.stringContaining('source/b.js')
           })
