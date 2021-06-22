@@ -1,5 +1,6 @@
 {
   "name": "arrow-function-inline-return",
+  "//": "@babel/core must be a dependency, because it's required by @babel/preset-typescript.",
   "dependencies": {
     "@babel/core": "7.13.1",
     "@babel/types": "7.13.0",
