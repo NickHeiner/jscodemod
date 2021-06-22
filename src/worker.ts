@@ -143,7 +143,7 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
   } catch (e) {
     threwError = true;
     log.error({
-      error: _.pick(e, 'message', 'stack', 'phase'),
+      error: _.pick(e, 'message', 'stack', 'phase')
     }, `File ${sourceCodeFile}: Codemod "${codemodName}" threw an error during ${e.phase}. ${e.suggestion}`);
   }
 
