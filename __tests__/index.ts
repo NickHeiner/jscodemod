@@ -189,6 +189,8 @@ describe('happy path', () => {
       expect(sanitizedStdout).toMatchSnapshot();
     }
   });
+
+  // This test also covers the getPlugin() path.
   createTest({
     testName: 'TS without manually specifying any of the args determining how to compile',
     fixtureName: 'arrow-function-inline-return',
