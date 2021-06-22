@@ -190,7 +190,6 @@ describe('happy path', () => {
     }
   });
   createTest({
-    modifier: 'only',
     testName: 'TS without manually specifying any of the args determining how to compile',
     fixtureName: 'arrow-function-inline-return',
     spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), 'source'],
