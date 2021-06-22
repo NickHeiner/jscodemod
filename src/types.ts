@@ -108,6 +108,9 @@ export type Codemod<ParsedArgs = unknown> = {
    * 
    * Running a code formatter like prettier may help some of these issues.
    * 
+   * jscodemod bundles @babel/core and recast. If those bundled versions don't work for your project, then the 
+   * getPlugin() codemod API won't work for you. Use transform() instead.
+   * 
    * @param opts
    * @param opts.source the contents of the file to transform.
    * @param opts.filePath the path to the file to transform.
