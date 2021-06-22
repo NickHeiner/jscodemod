@@ -215,7 +215,27 @@ const codemod: Codemod = {
 };
 
 export default codemod;",
-  "source/optional-chaining.js": "const g = a => a?.b?.c?.d;",
+  "source/commented-out.js": "// const g = a => {
+//   return a?.b?.c?.d
+// };",
+  "source/optional-chaining.js": "const g = a => a?.b?.c?.d;
+",
+  "source/recast-oddities.js": "let x = 1;/* trailing comment */
+
+/**
+ * I was previously seeing issues where this would transform \`return (\\\\n expr \\\\n)\` to \`return expr\`, but I'm not seeing
+ * that any more.
+ */
+function f() {
+  return (
+    true || false
+  )
+}
+
+// Will be erroneously transformed because of https://github.com/benjamn/recast/issues/914.
+const e = () => (function(g, h) {
+  return i;
+});",
   "source/ts.ts": "function g(
   a: string,
   b: number,

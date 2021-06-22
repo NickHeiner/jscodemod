@@ -106,6 +106,8 @@ export type Codemod<ParsedArgs = unknown> = {
    *    * A trailing comment will have a space removed:
    *          `a; /*f*\/` => `a;/*f*\/`
    * 
+   * Running a code formatter like prettier may help some of these issues.
+   * 
    * @param opts
    * @param opts.source the contents of the file to transform.
    * @param opts.filePath the path to the file to transform.

@@ -51,7 +51,7 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
   const codemodOpts = {
     source: originalFileContents, 
     filePath: sourceCodeFile, 
-    commandLineArgs: parsedArgs,
+    commandLineArgs: parsedArgs
   };
 
   if (codemod.transform) {
