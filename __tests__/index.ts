@@ -18,6 +18,7 @@ type TestArgs = {
   fixtureName: string; 
   testName?: string;
   spawnArgs: string[];
+  processOverrides?: typeof process.env;
   expectedExitCode?: number;
   git?: boolean;
   snapshot?: true; 
@@ -36,7 +37,8 @@ const replaceAll = (string: string, pattern: string | RegExp, replacement: strin
 };
 
 function createTest({
-  fixtureName, testName, spawnArgs, expectedExitCode = 0, snapshot, git, setUpNodeModules = true, assert, modifier
+  fixtureName, testName, spawnArgs, expectedExitCode = 0, snapshot, git, setUpNodeModules = true, assert, modifier,
+  processOverrides = process.env
 }: TestArgs) {
   // This is part of our dynamic testing approach.
   /* eslint-disable jest/no-conditional-expect */
@@ -77,7 +79,7 @@ function createTest({
     try {
       spawnResult = await log.logPhase(
         {phase: 'spawn codemod', level: 'debug', binPath, spawnArgs}, 
-        () => execa(binPath, spawnArgs, {cwd: testDir})
+        () => execa(binPath, spawnArgs, {cwd: testDir, env: processOverrides})
       );
     } catch (error) {
       spawnResult = error;
@@ -195,6 +197,18 @@ describe('happy path', () => {
     testName: 'TS without manually specifying any of the args determining how to compile',
     fixtureName: 'arrow-function-inline-return',
     spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), 'source'],
+    snapshot: true
+  });
+
+  createTest({
+    modifier: 'only',
+    testName: 'getPlugin uses the willNotifyOnAstChange API',
+    fixtureName: 'arrow-function-inline-return',
+    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), path.join('source', 'recast-oddities.js')],
+    processOverrides: {
+      NOTIFY_ON_AST_CHANGE: 'true', 
+      ...process.env
+    },
     snapshot: true
   });
 });
