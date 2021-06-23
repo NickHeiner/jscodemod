@@ -84,14 +84,23 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
     }
     
     // The impact of erroneous changes would be reduced if we detected when the AST is unchanged, and then did not 
-    // write new file contents. However, this proved difficult to do.
-    // 
-    // eslint-disable-next-line max-len
-    // Maybe we want the parserOverrides approach: https://github.com/codemod-js/codemod/blob/06310982b67783e9d2861a7737c7810396417bd3/packages/core/src/RecastPlugin.ts.
+    // write new file contents. However, this proved difficult to do. Instead, we'll allow the plugin to explicitly say
+    // when it changed.
+
+    let pluginWillSignalWhenAstHasChanged = false;
+    let pluginChangedAst = false;
 
     let codemodPlugins; 
     try {
-      codemodPlugins = await codemod.getPlugin(codemodOpts);
+      codemodPlugins = await codemod.getPlugin({
+        ...codemodOpts,
+        willNotifyOnAstChange: () => {
+          pluginWillSignalWhenAstHasChanged = true; 
+        },
+        astDidChange: () => {
+          pluginChangedAst = true; 
+        }
+      });
     } catch (e) {
       e.phase = 'codemod.getPlugin()';
       e.suggestion = 'Check your getPlugin() method for a bug.';
@@ -152,6 +161,11 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
     // result.ast.end will be 0, and ast.end is originalFileContents.length.
     // Passing originalFileContents instead of '' solves that problem, but causes some other problem.
     const result = babelTransformSync('', getBabelOpts([setAst, pluginsToUse]));
+
+    if (pluginWillSignalWhenAstHasChanged && !pluginChangedAst) {
+      return originalFileContents;
+    }
+
     if (!result) {
       const err = new Error(`Transforming "${sourceCodeFile}" resulted in a null babel result.`);
       Object.assign(err, {

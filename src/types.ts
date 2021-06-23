@@ -116,7 +116,10 @@ export type Codemod<ParsedArgs = unknown> = {
    * @param opts.filePath the path to the file to transform.
    * @param opts.commandLineArgs parsed arguments returned by `yourCodemod.parseArgs()`, if any.
    */
-  getPlugin: (opts: BaseCodemodArgs<ParsedArgs>) => ScalarOrPromise<PluginTarget>;
+  getPlugin: (opts: BaseCodemodArgs<ParsedArgs> & {
+    willNotifyOnAstChange: () => void;
+    astDidChange: () => void;
+  }) => ScalarOrPromise<PluginTarget>;
 })
 
 // The `any` here is intentional.
