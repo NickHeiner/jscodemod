@@ -211,7 +211,7 @@ import _ from 'lodash';
 
 const codemod: Codemod = {
   getPlugin: () => babelPlugin,
-  presets: ['@babel/preset-typescript', '@babel/preset-env']
+  presets: ['@babel/preset-react', '@babel/preset-typescript', '@babel/preset-env']
 };
 
 export default codemod;",
@@ -219,6 +219,10 @@ export default codemod;",
 //   return a?.b?.c?.d
 // };",
   "source/optional-chaining.js": "const g = a => a?.b?.c?.d;
+
+
+const C = <img />;
+const Empty = <div></div>;
 ",
   "source/recast-oddities.js": "let x = 1;/* trailing comment */
 

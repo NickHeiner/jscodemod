@@ -4,7 +4,7 @@ import _ from 'lodash';
 
 const codemod: Codemod = {
   getPlugin: () => babelPlugin,
-  presets: ['@babel/preset-typescript', '@babel/preset-env']
+  presets: ['@babel/preset-react', '@babel/preset-typescript', '@babel/preset-env']
 };
 
 export default codemod;

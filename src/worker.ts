@@ -89,7 +89,16 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
           ..._.omit(
             opts, 
             'jsx', 'loc', 'locations', 'range', 'comment', 'onComment', 'tolerant', 'ecmaVersion'
-          )
+          ),
+          /**
+           * We must have babel emit tokens. Otherwise, recast will use esprima to tokenize, which won't have the 
+           * user-provided babel config.
+           * 
+           * https://github.com/benjamn/recast/issues/834
+           */
+          parserOpts: {
+            tokens: true
+          }
         };
         log.trace({babelOpts});
         return babelParse(source, babelOpts);
