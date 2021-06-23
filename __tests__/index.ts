@@ -201,7 +201,6 @@ describe('happy path', () => {
   });
 
   createTest({
-    modifier: 'only',
     testName: 'getPlugin uses the willNotifyOnAstChange API',
     fixtureName: 'arrow-function-inline-return',
     spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), path.join('source', 'recast-oddities.js')],
