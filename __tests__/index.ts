@@ -200,6 +200,8 @@ describe('happy path', () => {
     snapshot: true
   });
 
+  // What happens if you call didChange but not willNotify?
+
   createTest({
     testName: 'getPlugin uses the willNotifyOnAstChange API',
     fixtureName: 'arrow-function-inline-return',
