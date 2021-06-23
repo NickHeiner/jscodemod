@@ -1,3 +1,7 @@
+#!/usr/bin/env node
+
+const y = 1;
+
 let x = 1; /* trailing comment */
 
 /**

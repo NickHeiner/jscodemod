@@ -58,15 +58,29 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
       }
     }
 
+    /**
+     * Unfortunately, the workflow of using Recast and Babel together has some interactions that don't occur when using
+     * Recast alone. I think this has to do with the setAST maneuver. In particular:
+     * 
+     * 1. Leading whitespace will be dropped. (`\n\nf()` ==> `f()`)
+     * 2. If the file has a shebang, it'll be combined with the first line. 
+     *    (`#!/usr/bin/env node\nf()` ==> `#!/usr/bin/env nodef()`)
+     * 
+     * To fix this, we manually trim out the problematic leading parts, do the recast transform, then add them back at
+     * the end.
+     */
     let fileContentsForRecast = originalFileContents;
     let fileContentsPrefixToReattachPostTransform = '';
     if (originalFileContents.startsWith('#!')) {
       const shebangEndIndex = originalFileContents.indexOf('\n');
       fileContentsForRecast = originalFileContents.slice(shebangEndIndex);
       fileContentsPrefixToReattachPostTransform = originalFileContents.slice(0, shebangEndIndex);
-      log.warn({shebangEndIndex, fileContentsPrefixToReattachPostTransform, fileContentsForRecast}, 'shebang prfix');
-    } else {
-      log.warn({originalFileContents}, 'no shebang prefix');
+
+      const leadingWhitespace = /\s+/.exec(fileContentsForRecast);
+      if (leadingWhitespace) {
+        fileContentsForRecast = fileContentsForRecast.slice(leadingWhitespace[0].length);
+        fileContentsPrefixToReattachPostTransform += leadingWhitespace[0];
+      }
     }
     
     // The impact of erroneous changes would be reduced if we detected when the AST is unchanged, and then did not 
@@ -148,7 +162,7 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
     }
 
     let transformedCode = 
-      fileContentsPrefixToReattachPostTransform + '\n\n' + recast.print(result.ast as recast.types.ASTNode).code;
+      fileContentsPrefixToReattachPostTransform + recast.print(result.ast as recast.types.ASTNode).code;
 
     if (originalFileContents.endsWith('\n') && !transformedCode.endsWith('\n')) {
       transformedCode += '\n';

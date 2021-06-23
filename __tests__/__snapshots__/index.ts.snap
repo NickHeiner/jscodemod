@@ -1,5 +1,79 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`TS compilation flags Path to TSC is not specified, and no TSC can be found. 1`] = `
+Object {
+  "codemod/babel-plugin.ts": "import * as BabelTypes from '@babel/types';
+import type {Visitor} from '@babel/traverse';
+
+// TODO is our intentional any type.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type TODO = any;
+
+export default ({types: t}: {types: typeof BabelTypes}): {visitor: Visitor<TODO>} => 
+  ({
+    visitor: {
+      ArrowFunctionExpression(path) {
+        if (t.isBlockStatement(path.node.body) && path.node.body.body.length === 1 &&
+              t.isReturnStatement(path.node.body.body[0])) {
+
+          // I'm confident that this value will not be null, based on the runtime checks above.
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          path.get('body').replaceWith(path.node.body.body[0].argument!);  
+        }
+      }
+    }
+  });",
+  "codemod/index.ts": "import {Codemod} from '@nth/jscodemod';
+import babelPlugin from './babel-plugin';
+import _ from 'lodash';
+
+const codemod: Codemod = {
+  getPlugin: () => babelPlugin,
+  presets: ['@babel/preset-react', '@babel/preset-typescript', '@babel/preset-env']
+};
+
+export default codemod;",
+  "source/commented-out.js": "// const g = a => {
+//   return a?.b?.c?.d
+// };",
+  "source/optional-chaining.js": "const g = a => a?.b?.c?.d;
+
+
+const C = <img />;
+const Empty = <div></div>;
+",
+  "source/recast-oddities.js": "#!/usr/bin/env node
+
+const y = 1;
+
+let x = 1;/* trailing comment */
+
+/**
+ * I was previously seeing issues where this would transform \`return (\\\\n expr \\\\n)\` to \`return expr\`, but I'm not seeing
+ * that any more.
+ */
+function f() {
+  return (
+    true || false
+  )
+}
+
+// Will be erroneously transformed because of https://github.com/benjamn/recast/issues/914.
+const e = () => (function(g, h) {
+  return i;
+});",
+  "source/ts.ts": "function g(
+  a: string,
+  b: number,
+  c: boolean
+) {
+  return 0;
+}
+
+const f = () => 1;",
+}
+`;
+
 exports[`TS compilation flags Path to TSC is specified 1`] = `
 Object {
   "codemod/index.ts": "import {Codemod} from '@nth/jscodemod';
