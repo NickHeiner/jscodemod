@@ -56,8 +56,19 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
         e.suggestion = "Check your transform() method for a bug, or add this file to your codemod's ignore list.";
         throw e;
       }
-    } 
+    }
 
+    let fileContentsForRecast = originalFileContents;
+    let fileContentsPrefixToReattachPostTransform = '';
+    if (originalFileContents.startsWith('#!')) {
+      const shebangEndIndex = originalFileContents.indexOf('\n');
+      fileContentsForRecast = originalFileContents.slice(shebangEndIndex);
+      fileContentsPrefixToReattachPostTransform = originalFileContents.slice(0, shebangEndIndex);
+      log.warn({shebangEndIndex, fileContentsPrefixToReattachPostTransform, fileContentsForRecast}, 'shebang prfix');
+    } else {
+      log.warn({originalFileContents}, 'no shebang prefix');
+    }
+    
     // The impact of erroneous changes would be reduced if we detected when the AST is unchanged, and then did not 
     // write new file contents. However, this proved difficult to do.
     // 
@@ -107,7 +118,7 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
 
     let ast: ReturnType<typeof recast.parse>; 
     try {
-      ast = recast.parse(originalFileContents, {parser});
+      ast = recast.parse(fileContentsForRecast, {parser});
     } catch (e) {
       e.phase = 'recast.parse using the settings you passed';
       e.suggestion = "Check that you passed the right babel preset in the codemod's `presets` field.";
@@ -136,7 +147,8 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
       throw err;
     }
 
-    let transformedCode = recast.print(result.ast as recast.types.ASTNode).code;
+    let transformedCode = 
+      fileContentsPrefixToReattachPostTransform + '\n\n' + recast.print(result.ast as recast.types.ASTNode).code;
 
     if (originalFileContents.endsWith('\n') && !transformedCode.endsWith('\n')) {
       transformedCode += '\n';
