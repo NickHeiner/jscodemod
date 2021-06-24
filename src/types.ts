@@ -1,8 +1,15 @@
 export type CodemodResult = string | undefined | null;
+import {PluginTarget, TransformOptions} from '@babel/core';
 
 type ScalarOrPromise<T> = T | Promise<T>;
 
 import jscodemod, {Options} from './';
+
+export type BaseCodemodArgs<ParsedArgs> = {
+  filePath: string;
+  // TODO: only specify this as an option to transform if parseArgs is present.
+  commandLineArgs?: ParsedArgs;
+}
 
 export type Codemod<ParsedArgs = unknown> = {
   /**
@@ -68,7 +75,7 @@ export type Codemod<ParsedArgs = unknown> = {
       options: Partial<Options>
     ): ReturnType<typeof jscodemod>
   }) => Promise<unknown>;
-
+} & ({
   /**
    * Transform a single file. Return null or undefined to indicate that the file should not be modified.
    * 
@@ -79,11 +86,64 @@ export type Codemod<ParsedArgs = unknown> = {
    */
   transform(opts: {
     source: string;
-    filePath: string;
-    // TODO: only specify this as an option to transform if parseArgs is present.
-    commandLineArgs?: ParsedArgs;
-  }): CodemodResult | Promise<CodemodResult>;
-}
+  } & BaseCodemodArgs<ParsedArgs>): CodemodResult | Promise<CodemodResult>;
+
+  presets?: never;
+  getPlugin?: never;
+} | {
+  transform?: never;
+
+  /**
+   * The set of babel presets needed to compile your code, like `@babel/preset-env`.
+   */
+  presets: TransformOptions['presets'];
+
+  /**
+   * Return a plugin that will be used to codemod your code.
+   * 
+   * When using this approach, be aware of the following known issues:
+   *    * Some parens will be inserted erroneously: https://github.com/benjamn/recast/issues/914
+   *    * A trailing comment will have a space removed:
+   *          `a; /*f*\/` => `a;/*f*\/`
+   * 
+   * Running a code formatter like prettier may help some of these issues.
+   * 
+   * To reduce noise associated with unintentional changes like the ones listed above, you can explicitly tell jscodemod
+   * when your plugin has modified the input AST. (Unfortunately, this is very hard to figure out automatically.) To do
+   * this, use the `willNotifyOnAstChange` and `astDidChange` methods passed in the options argument:
+   * 
+   *    getPlugin({willNotifyOnAstChange, astDidChange}) {
+   *      willNotifyOnAstChange();
+   * 
+   *      return ({types}) => ({visitor: 
+   *        Program(path) {
+   *          // when you're going to change the AST
+   *          astDidChange();
+   *        }
+   *      })
+   *    }
+   * 
+   * It's an error to call astDidChange() if you haven't called willNotifyOnAstChange() first.
+   * 
+   * You don't have to use the willNotifyOnAstChange API. You can ignore both these methods, and then jscodemod will 
+   * always transform the file. If your usecase is narrow enough, this could be fine. But if you're making a broad 
+   * change, and you're getting noisy changes like those listed above, then consider this API.
+   * 
+   * jscodemod bundles @babel/core and recast. If those bundled versions don't work for your project, then the 
+   * getPlugin() codemod API won't work for you. Use transform() instead.
+   * 
+   * @param opts
+   * @param opts.source the contents of the file to transform.
+   * @param opts.filePath the path to the file to transform.
+   * @param opts.commandLineArgs parsed arguments returned by `yourCodemod.parseArgs()`, if any.
+   * @param opts.willNotifyOnAstChange Call this if you plan to call astDidChange().
+   * @param opts.astDidChange Call this if you modified the AST.
+   */
+  getPlugin: (opts: BaseCodemodArgs<ParsedArgs> & {
+    willNotifyOnAstChange: () => void;
+    astDidChange: () => void;
+  }) => ScalarOrPromise<PluginTarget>;
+})
 
 // The `any` here is intentional.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

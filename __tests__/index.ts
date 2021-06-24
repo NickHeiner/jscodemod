@@ -18,6 +18,7 @@ type TestArgs = {
   fixtureName: string; 
   testName?: string;
   spawnArgs: string[];
+  processOverrides?: typeof process.env;
   expectedExitCode?: number;
   git?: boolean;
   snapshot?: true; 
@@ -36,7 +37,8 @@ const replaceAll = (string: string, pattern: string | RegExp, replacement: strin
 };
 
 function createTest({
-  fixtureName, testName, spawnArgs, expectedExitCode = 0, snapshot, git, setUpNodeModules = true, assert, modifier
+  fixtureName, testName, spawnArgs, expectedExitCode = 0, snapshot, git, setUpNodeModules = true, assert, modifier,
+  processOverrides = process.env
 }: TestArgs) {
   // This is part of our dynamic testing approach.
   /* eslint-disable jest/no-conditional-expect */
@@ -77,7 +79,7 @@ function createTest({
     try {
       spawnResult = await log.logPhase(
         {phase: 'spawn codemod', level: 'debug', binPath, spawnArgs}, 
-        () => execa(binPath, spawnArgs, {cwd: testDir})
+        () => execa(binPath, spawnArgs, {cwd: testDir, env: processOverrides})
       );
     } catch (error) {
       spawnResult = error;
@@ -189,10 +191,36 @@ describe('happy path', () => {
       expect(sanitizedStdout).toMatchSnapshot();
     }
   });
+
+  // This test also covers the getPlugin() path.
   createTest({
     testName: 'TS without manually specifying any of the args determining how to compile',
     fixtureName: 'arrow-function-inline-return',
     spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), 'source'],
+    snapshot: true
+  });
+
+  createTest({
+    testName: 'getPlugin uses the willNotifyOnAstChange API',
+    fixtureName: 'arrow-function-inline-return',
+    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), path.join('source', 'recast-oddities.js')],
+    processOverrides: {
+      CALL_WILL_NOTIFY_ON_AST_CHANGE: 'true', 
+      CALL_AST_DID_CHANGE: 'true', 
+      ...process.env
+    },
+    snapshot: true
+  });
+
+  createTest({
+    testName: 'getPlugin calls astDidChange() but forgot to call willNotifyOnAstChange()',
+    fixtureName: 'arrow-function-inline-return',
+    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), path.join('source', 'optional-chaining.js')],
+    expectedExitCode: 1,
+    processOverrides: {
+      CALL_AST_DID_CHANGE: 'true',
+      ...process.env
+    },
     snapshot: true
   });
 });
@@ -226,22 +254,23 @@ describe('error handling', () => {
     createTest({
       testName: `handles codemod ${codemodName} (${codemodFileName}) throwing an error`,
       fixtureName: 'will-throw-error',
+      expectedExitCode: 1,
       spawnArgs: ['--codemod', path.join('codemod', codemodFileName), 'source', '--json-output'],
       snapshot: true,
       assert(spawnResult) {
         const jsonLogs = getJsonLogs(spawnResult.stdout);
 
         expect(jsonLogs).toContainEqual(expect.objectContaining({
-          msg: `Codemod "${codemodName}" threw an error for a file.`,
           error: expect.objectContaining({
+            phase: 'codemod.transform()',
             stack: expect.any(String),
             // I tried to use a regex matcher here but I couldn't get it to work.
             message: expect.stringContaining('source/a.js')
           })
         }));
         expect(jsonLogs).toContainEqual(expect.objectContaining({
-          msg: `Codemod "${codemodName}" threw an error for a file.`,
           error: expect.objectContaining({
+            phase: 'codemod.transform()',
             stack: expect.any(String),
             message: expect.stringContaining('source/b.js')
           })

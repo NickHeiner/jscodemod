@@ -184,76 +184,73 @@ const x = 'starting state';",
 
 exports[`happy path TS without manually specifying any of the args determining how to compile 1`] = `
 Object {
-  "codemod/babel-plugin.ts": "import * as BabelTypes from '@babel/types';
+  "codemod/index.ts": "import {Codemod} from '@nth/jscodemod';
+import _ from 'lodash';
+import * as BabelTypes from '@babel/types';
 import type {Visitor} from '@babel/traverse';
 
 // TODO is our intentional any type.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type TODO = any;
 
-export default ({types: t}: {types: typeof BabelTypes}): {visitor: Visitor<TODO>} => 
-  ({
-    visitor: {
-      ArrowFunctionExpression(path) {
-        if (t.isBlockStatement(path.node.body) && path.node.body.body.length === 1 &&
-              t.isReturnStatement(path.node.body.body[0])) {
-
-          // I'm confident that this value will not be null, based on the runtime checks above.
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          path.get('body').replaceWith(path.node.body.body[0].argument!);  
-        }
-      }
-    }
-  });",
-  "codemod/index.ts": "import {Codemod} from '@nth/jscodemod';
-import babelPlugin, {TODO} from './babel-plugin';
-import {parse as babelParse, TransformOptions, transformSync} from '@babel/core';
-import {parse, print} from 'recast';
-import _ from 'lodash';
-import type {Visitor} from '@babel/traverse';
-
 const codemod: Codemod = {
-  transform({source, filePath}: {source: string, filePath: string}) {
-    const getBabelOpts = (plugins: Exclude<TransformOptions['plugins'], null> = []): TransformOptions => ({
-      filename: filePath,
-      plugins: [...plugins, '@babel/plugin-syntax-optional-chaining', '@babel/plugin-syntax-typescript', babelPlugin],
-      ast: true
-    });
-    
-    const parser = {
-      parse(source: string, opts: Record<string, unknown>) {
-        return babelParse(source, {
-          ...getBabelOpts(),
-          ..._.omit(
-            opts, 
-            'jsx', 'loc', 'locations', 'range', 'comment', 'onComment', 'tolerant', 'ecmaVersion'
-          )
-        });
-      }
-    };
-    
-    const ast = parse(source, {parser});
-
-    const setAst = (): {visitor: Visitor<TODO>} => ({
-      visitor: {
-        Program(path) {
-          path.replaceWith(ast.program);
-        }
-      }
-    });
-
-    const result = transformSync('', getBabelOpts([setAst]));
-    if (!result) {
-      throw new Error(\`Transforming \\"\${filePath}\\" resulted in a null babel result.\`);
+  getPlugin: ({willNotifyOnAstChange, astDidChange}) => {
+    if (process.env.CALL_WILL_NOTIFY_ON_AST_CHANGE) {
+      willNotifyOnAstChange();
     }
 
-    // @ts-ignore
-    return print(result.ast).code;
-  }
+    return ({types: t}: {types: typeof BabelTypes}): {visitor: Visitor<TODO>} => 
+      ({
+        visitor: {
+          ArrowFunctionExpression(path) {
+            if (t.isBlockStatement(path.node.body) && path.node.body.body.length === 1 &&
+                  t.isReturnStatement(path.node.body.body[0])) {
+
+              if (process.env.CALL_AST_DID_CHANGE) {
+                astDidChange();
+              }
+    
+              // I'm confident that this value will not be null, based on the runtime checks above.
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              path.get('body').replaceWith(path.node.body.body[0].argument!);  
+            }
+          }
+        }
+      });
+  },
+  presets: ['@babel/preset-react', '@babel/preset-typescript', '@babel/preset-env']
 };
 
 export default codemod;",
-  "source/optional-chaining.js": "const g = a => a?.b?.c?.d;",
+  "source/commented-out.js": "// const g = a => {
+//   return a?.b?.c?.d
+// };",
+  "source/optional-chaining.js": "const g = a => a?.b?.c?.d;
+
+
+const C = <img />;
+const Empty = <div></div>;
+",
+  "source/recast-oddities.js": "#!/usr/bin/env node
+
+const y = 1;
+
+let x = 1;/* trailing comment */
+
+/**
+ * I was previously seeing issues where this would transform \`return (\\\\n expr \\\\n)\` to \`return expr\`, but I'm not seeing
+ * that any more.
+ */
+function f() {
+  return (
+    true || false
+  )
+}
+
+// Will be erroneously transformed because of https://github.com/benjamn/recast/issues/914.
+const e = () => (function(g, h) {
+  return i;
+});",
   "source/ts.ts": "function g(
   a: string,
   b: number,
@@ -321,6 +318,176 @@ exports[`happy path dry porcelain 2`] = `
 <test-dir>/source/a.js
 <test-dir>/source/b.js
 <test-dir>/source/blank.js"
+`;
+
+exports[`happy path getPlugin calls astDidChange() but forgot to call willNotifyOnAstChange() 1`] = `
+Object {
+  "codemod/index.ts": "import {Codemod} from '@nth/jscodemod';
+import _ from 'lodash';
+import * as BabelTypes from '@babel/types';
+import type {Visitor} from '@babel/traverse';
+
+// TODO is our intentional any type.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type TODO = any;
+
+const codemod: Codemod = {
+  getPlugin: ({willNotifyOnAstChange, astDidChange}) => {
+    if (process.env.CALL_WILL_NOTIFY_ON_AST_CHANGE) {
+      willNotifyOnAstChange();
+    }
+
+    return ({types: t}: {types: typeof BabelTypes}): {visitor: Visitor<TODO>} => 
+      ({
+        visitor: {
+          ArrowFunctionExpression(path) {
+            if (t.isBlockStatement(path.node.body) && path.node.body.body.length === 1 &&
+                  t.isReturnStatement(path.node.body.body[0])) {
+
+              if (process.env.CALL_AST_DID_CHANGE) {
+                astDidChange();
+              }
+    
+              // I'm confident that this value will not be null, based on the runtime checks above.
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              path.get('body').replaceWith(path.node.body.body[0].argument!);  
+            }
+          }
+        }
+      });
+  },
+  presets: ['@babel/preset-react', '@babel/preset-typescript', '@babel/preset-env']
+};
+
+export default codemod;",
+  "source/commented-out.js": "// const g = a => {
+//   return a?.b?.c?.d
+// };",
+  "source/optional-chaining.js": "const g = a => {
+  return a?.b?.c?.d
+};
+
+
+const C = <img />;
+const Empty = <div></div>;
+",
+  "source/recast-oddities.js": "#!/usr/bin/env node
+
+const y = 1;
+
+let x = 1; /* trailing comment */
+
+/**
+ * I was previously seeing issues where this would transform \`return (\\\\n expr \\\\n)\` to \`return expr\`, but I'm not seeing
+ * that any more.
+ */
+function f() {
+  return (
+    true || false
+  )
+}
+
+// Will be erroneously transformed because of https://github.com/benjamn/recast/issues/914.
+const e = () => function(g, h) {
+  return i;
+};",
+  "source/ts.ts": "function g(
+  a: string,
+  b: number,
+  c: boolean
+) {
+  return 0;
+}
+
+const f = () => {
+  return 1
+};",
+}
+`;
+
+exports[`happy path getPlugin uses the willNotifyOnAstChange API 1`] = `
+Object {
+  "codemod/index.ts": "import {Codemod} from '@nth/jscodemod';
+import _ from 'lodash';
+import * as BabelTypes from '@babel/types';
+import type {Visitor} from '@babel/traverse';
+
+// TODO is our intentional any type.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type TODO = any;
+
+const codemod: Codemod = {
+  getPlugin: ({willNotifyOnAstChange, astDidChange}) => {
+    if (process.env.CALL_WILL_NOTIFY_ON_AST_CHANGE) {
+      willNotifyOnAstChange();
+    }
+
+    return ({types: t}: {types: typeof BabelTypes}): {visitor: Visitor<TODO>} => 
+      ({
+        visitor: {
+          ArrowFunctionExpression(path) {
+            if (t.isBlockStatement(path.node.body) && path.node.body.body.length === 1 &&
+                  t.isReturnStatement(path.node.body.body[0])) {
+
+              if (process.env.CALL_AST_DID_CHANGE) {
+                astDidChange();
+              }
+    
+              // I'm confident that this value will not be null, based on the runtime checks above.
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              path.get('body').replaceWith(path.node.body.body[0].argument!);  
+            }
+          }
+        }
+      });
+  },
+  presets: ['@babel/preset-react', '@babel/preset-typescript', '@babel/preset-env']
+};
+
+export default codemod;",
+  "source/commented-out.js": "// const g = a => {
+//   return a?.b?.c?.d
+// };",
+  "source/optional-chaining.js": "const g = a => {
+  return a?.b?.c?.d
+};
+
+
+const C = <img />;
+const Empty = <div></div>;
+",
+  "source/recast-oddities.js": "#!/usr/bin/env node
+
+const y = 1;
+
+let x = 1; /* trailing comment */
+
+/**
+ * I was previously seeing issues where this would transform \`return (\\\\n expr \\\\n)\` to \`return expr\`, but I'm not seeing
+ * that any more.
+ */
+function f() {
+  return (
+    true || false
+  )
+}
+
+// Will be erroneously transformed because of https://github.com/benjamn/recast/issues/914.
+const e = () => function(g, h) {
+  return i;
+};",
+  "source/ts.ts": "function g(
+  a: string,
+  b: number,
+  c: boolean
+) {
+  return 0;
+}
+
+const f = () => {
+  return 1
+};",
+}
 `;
 
 exports[`happy path prepend-string 1`] = `

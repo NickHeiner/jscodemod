@@ -35,6 +35,9 @@ export type NonTSOptions = {
   porcelain?: boolean;
   jsonOutput?: boolean;
   codemodArgs?: string[];
+  // TODO: It would be helpful to make this more powerful. A multi-phase codemod may touch multiple sets of files.
+  // Codemods in the later phase shouldn't resetDirtyInputFiles that are only dirty because they're modified by an 
+  // earlier phase.
   resetDirtyInputFiles?: boolean;
   doPostProcess?: boolean;
 }
@@ -222,6 +225,9 @@ async function jscodemod(
   );
   if (typeof codemod.postProcess === 'function' && doPostProcess) {
     const modifiedFiles = _(codemodMetaResults).filter('codeModified').map('filePath').value();
+
+    // TODO: if the postProcess phase fails, there's no way for that to propagate back up to the caller, which means
+    // we can't exit with a non-zero code.
     await log.logPhase({
       phase: 'postProcess',
       modifiedFiles,

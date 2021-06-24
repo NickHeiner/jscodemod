@@ -5,6 +5,7 @@ import jscodemod from './';
 import _ from 'lodash';
 import 'loud-rejection/register';
 import getLogger from './get-logger';
+import {CodemodMetaResult} from './worker';
 
 const tsOnlyNote = '(Only applicable if your codemod is written in TypeScript)';
 
@@ -111,17 +112,28 @@ async function main() {
     // Yarg's types are messed up.
     Object.assign(opts, _.pick(argv, 'codemodArgs'));
 
-    await jscodemod(
+    const codemodMetaResults = await jscodemod(
       argv.codemod, 
       // Yarg's types are messed up.
       // @ts-expect-error
       argv.fileGlobs, 
       opts
     );
+
+    const erroredFiles = _(codemodMetaResults)
+      .filter({action: 'error'})
+      .map((result: CodemodMetaResult) => _.omit(result, 'fileContents'))
+      .value();
+    if (erroredFiles.length) {
+      log.error({erroredFiles}, 'The codemod threw errors for some files.');
+      process.exit(1);
+    }
+
+    log.debug({codemodMetaResults});
   } catch (err) {
     // TODO: Maybe known errors should be marked with a flag, since showing a stack trace for them probably
     // is just noise.
-    log.fatal({err});
+    log.error({err}, err.message || 'Potential bug in jscodemod: uncaught error.');
     if (!argv.jsonOutput) {
       // This is intentional.
       // eslint-disable-next-line no-console

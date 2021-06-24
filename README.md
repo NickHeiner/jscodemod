@@ -10,6 +10,7 @@ Yes. I've used jscodeshift, which was created in 2015, in the past. However, I w
 * jscodeshift performance and [usability](https://github.com/facebook/jscodeshift/issues/335) suffers on large codebases (jscodemod is 30x-50x faster than jscodeshift on codebases of 10,000+ files).
 * jscodeshift has no support for [async](https://github.com/facebook/jscodeshift/issues/254) or TS transforms.
 * When writing a complex transform with jscodeshift, you end up wrapping it in a bash script, which becomes painful.
+* This tool allows you to use a babel plugin directly.
 
 For more detail, see [Comparison with JSCodeshift](docs/comparison-with-jscodeshift.md).
 
@@ -30,11 +31,12 @@ The argument you pass to `--codemod` is a file that exports a `Codemod`. Look in
 1. Use [ASTExplorer](https://astexplorer.net/) with the "transform" option enabled for an interactive environment for developing your plugin.
 1. Read the [Babel Plugin Handbook](https://github.com/jamiebuilds/babel-handbook/) to learn how to write a Babel plugin.
 
-If your codebase has syntax that Babel doesn't recognize out of the box, you'll want need to handle it. (TypeScript, babel-plugin-proposal-pipeline-operator vs. babel-plugin-syntax-pipeline-operator).
-
 ### Examples
+Using the low-level `transform` API:
 ```ts
-const codemod = {
+import type {Codemod} from '@nth/jscodemod';
+
+const codemod: Codemod = {
   // Ignore files with paths matching these regexes, or including these strings.
   ignore: [new RegExp('path/to/a.js'), 'path/to/b.js', /directory-to-omit/],
 
@@ -54,7 +56,48 @@ const codemod = {
 }
 ```
 
+Using the high-level `getPlugin` API:
+```ts
+import type {Codemod} from '@nth/jscodemod';
+const codemod: Codemod = {
+  // Whatever presets are needed to parse your code.
+  presets: ['@babel/preset-react', '@babel/preset-typescript', '@babel/preset-env']
+
+  // The transformation you'd like to do in the codemod.
+  getPlugin({source, fileName}) {
+    return ({types: t}) => ({
+      visitor: {
+        /* ... your babel plugin here */
+      }
+    })
+  }
+}
+```
+
 ### Gotchas
+
+#### Babel Parse v. Transform
+If: 
+1. You're using the low-level `transform` API
+1. You're codemodding your code with Babel
+1. You have syntax that Babel can't handle by default (e.g. React, TypeScript, the latest ES proposals)
+
+Then you'll need to tell Babel how to parse your code. However, you don't want to actually apply these transformations,
+because unlike the compilation step, you're outputting source code, not built code. (For example, if you have optional
+chaining syntax in your source, you don't want your codemod to compile that to ES5.)
+
+The solution to this is to do two phases:
+
+```js
+const ast = babelParse(source, {ast: true, presets});
+const transformedAst = babelTransform(ast, plugins: [myCodemodPlugin]);
+const source = babelGenerate(transformedAst);
+```
+
+Of course, `babelGenerate` will lose your formatting, so you'll probably want to use `recast`.
+
+If you use the `getPlugin` API, this is all handled for you.
+
 #### Side Effects
 Your codemod will be loaded many times by the worker pool threads, so be careful about side effects. For example:
 
