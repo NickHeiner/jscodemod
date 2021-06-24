@@ -201,7 +201,6 @@ describe('happy path', () => {
   });
 
   createTest({
-    modifier: 'only',
     testName: 'getPlugin uses the willNotifyOnAstChange API',
     fixtureName: 'arrow-function-inline-return',
     spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), path.join('source', 'recast-oddities.js')],
@@ -214,13 +213,12 @@ describe('happy path', () => {
   });
 
   createTest({
-    modifier: 'only',
     testName: 'getPlugin calls astDidChange() but forgot to call willNotifyOnAstChange()',
     fixtureName: 'arrow-function-inline-return',
-    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), path.join('source', 'recast-oddities.js')],
+    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), path.join('source', 'optional-chaining.js')],
     expectedExitCode: 1,
     processOverrides: {
-      CALL_WILL_NOTIFY_ON_AST_CHANGE: 'true', 
+      CALL_AST_DID_CHANGE: 'true',
       ...process.env
     },
     snapshot: true

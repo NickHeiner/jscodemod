@@ -162,6 +162,19 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
     // Passing originalFileContents instead of '' solves that problem, but causes some other problem.
     const result = babelTransformSync('', getBabelOpts([setAst, pluginsToUse]));
 
+    log.debug({pluginWillSignalWhenAstHasChanged, pluginChangedAst});
+
+    if (!pluginWillSignalWhenAstHasChanged && pluginChangedAst) {
+      const err = new Error('Your plugin called astDidChange() but not willNotifyOnAstChange(). ' + 
+        'This almost definitely means you have a bug.');
+      Object.assign(err, {
+        phase: 'your codemod babel plugin running',
+        suggestion: 'call willNotifyOnAstChange() if you intend to use the astDidChange() API, ' +
+          "or remove all calls to astDidChange() if you don't."
+      });
+      throw err;
+    }
+
     if (pluginWillSignalWhenAstHasChanged && !pluginChangedAst) {
       return originalFileContents;
     }
@@ -169,7 +182,7 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
     if (!result) {
       const err = new Error(`Transforming "${sourceCodeFile}" resulted in a null babel result.`);
       Object.assign(err, {
-        phase: 'running your codemod babel plugin',
+        phase: 'your codemod babel plugin running',
         suggestion: "Check your plugin for a bug, or ignore this file in your codemod's ignore list."
       });
       throw err;
