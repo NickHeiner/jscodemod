@@ -39,7 +39,11 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
 
   const originalFileContents = await pFs.readFile(sourceCodeFile, 'utf-8');
   const rawArgs = piscina.workerData.codemodArgs ? JSON.parse(piscina.workerData.codemodArgs) : undefined;
-  const parsedArgs = await codemod.parseArgs?.(rawArgs);
+  const parsedArgs = await baseLog.logPhase({
+    phase: 'parse args', 
+    level: 'trace', 
+    codemod: codemodName
+  }, () => codemod.parseArgs?.(rawArgs));
 
   const codemodOpts = {
     source: originalFileContents, 
