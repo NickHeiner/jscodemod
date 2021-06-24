@@ -108,6 +108,27 @@ export type Codemod<ParsedArgs = unknown> = {
    * 
    * Running a code formatter like prettier may help some of these issues.
    * 
+   * To reduce noise associated with unintentional changes like the ones listed above, you can explicitly tell jscodemod
+   * when your plugin has modified the input AST. (Unfortunately, this is very hard to figure out automatically.) To do
+   * this, use the `willNotifyOnAstChange` and `astDidChange` methods passed in the options argument:
+   * 
+   *    getPlugin({willNotifyOnAstChange, astDidChange}) {
+   *      willNotifyOnAstChange();
+   * 
+   *      return ({types}) => ({visitor: 
+   *        Program(path) {
+   *          // when you're going to change the AST
+   *          astDidChange();
+   *        }
+   *      })
+   *    }
+   * 
+   * It's an error to call astDidChange() if you haven't called willNotifyOnAstChange() first.
+   * 
+   * You don't have to use the willNotifyOnAstChange API. You can ignore both these methods, and then jscodemod will 
+   * always transform the file. If your usecase is narrow enough, this could be fine. But if you're making a broad 
+   * change, and you're getting noisy changes like those listed above, then consider this API.
+   * 
    * jscodemod bundles @babel/core and recast. If those bundled versions don't work for your project, then the 
    * getPlugin() codemod API won't work for you. Use transform() instead.
    * 
@@ -115,6 +136,8 @@ export type Codemod<ParsedArgs = unknown> = {
    * @param opts.source the contents of the file to transform.
    * @param opts.filePath the path to the file to transform.
    * @param opts.commandLineArgs parsed arguments returned by `yourCodemod.parseArgs()`, if any.
+   * @param opts.willNotifyOnAstChange Call this if you plan to call astDidChange().
+   * @param opts.astDidChange Call this if you modified the AST.
    */
   getPlugin: (opts: BaseCodemodArgs<ParsedArgs> & {
     willNotifyOnAstChange: () => void;
