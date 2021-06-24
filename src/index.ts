@@ -66,6 +66,7 @@ function getProgressUI(logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, total
     return {tick() {}};
   }
 
+  // TODO: I'm pretty sure this % is extra.˝
   return new ProgressBar(':bar (:current/:total, :percent%)', {total: totalCount});
 }
 
