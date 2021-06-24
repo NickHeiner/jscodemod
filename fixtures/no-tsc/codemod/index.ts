@@ -1,4 +1,4 @@
-import {Codemod} from '@nth/jscodemod';
+import {Codemod} from '@nick.heiner/jscodemod';
 
 // Compiling this will not work automatically, because no TSC will be found.
 

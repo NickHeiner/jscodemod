@@ -1,4 +1,4 @@
-import {Codemod} from '@nth/jscodemod';
+import {Codemod} from '@nick.heiner/jscodemod';
 import _ from 'lodash';
 import * as BabelTypes from '@babel/types';
 import type {Visitor} from '@babel/traverse';

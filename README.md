@@ -34,7 +34,7 @@ The argument you pass to `--codemod` is a file that exports a `Codemod`. Look in
 ### Examples
 Using the low-level `transform` API:
 ```ts
-import type {Codemod} from '@nth/jscodemod';
+import type {Codemod} from '@nick.heiner/jscodemod';
 
 const codemod: Codemod = {
   // Ignore files with paths matching these regexes, or including these strings.
@@ -58,7 +58,7 @@ const codemod: Codemod = {
 
 Using the high-level `getPlugin` API:
 ```ts
-import type {Codemod} from '@nth/jscodemod';
+import type {Codemod} from '@nick.heiner/jscodemod';
 const codemod: Codemod = {
   // Whatever presets are needed to parse your code.
   presets: ['@babel/preset-react', '@babel/preset-typescript', '@babel/preset-env']

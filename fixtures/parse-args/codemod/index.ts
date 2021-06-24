@@ -1,4 +1,4 @@
-import {Codemod} from '@nth/jscodemod';
+import {Codemod} from '@nick.heiner/jscodemod';
 import yargs from 'yargs';
 
 const yargsBuilder = yargs.options({

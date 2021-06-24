@@ -2,7 +2,7 @@
 
 exports[`TS compilation flags Path to TSC is specified 1`] = `
 Object {
-  "codemod/index.ts": "import {Codemod} from '@nth/jscodemod';
+  "codemod/index.ts": "import {Codemod} from '@nick.heiner/jscodemod';
 
 // Compiling this will not work automatically, because no TSC will be found.
 
@@ -22,7 +22,7 @@ module.exports = {
 
 exports[`TS compilation flags Specified tsconfig path 1`] = `
 Object {
-  "codemod/index.ts": "import {Codemod} from '@nth/jscodemod';
+  "codemod/index.ts": "import {Codemod} from '@nick.heiner/jscodemod';
 
 // Compiling this will not work, because no TSC will be found.
 
@@ -184,7 +184,7 @@ const x = 'starting state';",
 
 exports[`happy path TS without manually specifying any of the args determining how to compile 1`] = `
 Object {
-  "codemod/index.ts": "import {Codemod} from '@nth/jscodemod';
+  "codemod/index.ts": "import {Codemod} from '@nick.heiner/jscodemod';
 import _ from 'lodash';
 import * as BabelTypes from '@babel/types';
 import type {Visitor} from '@babel/traverse';
@@ -322,7 +322,7 @@ exports[`happy path dry porcelain 2`] = `
 
 exports[`happy path getPlugin calls astDidChange() but forgot to call willNotifyOnAstChange() 1`] = `
 Object {
-  "codemod/index.ts": "import {Codemod} from '@nth/jscodemod';
+  "codemod/index.ts": "import {Codemod} from '@nick.heiner/jscodemod';
 import _ from 'lodash';
 import * as BabelTypes from '@babel/types';
 import type {Visitor} from '@babel/traverse';
@@ -407,7 +407,7 @@ const f = () => {
 
 exports[`happy path getPlugin uses the willNotifyOnAstChange API 1`] = `
 Object {
-  "codemod/index.ts": "import {Codemod} from '@nth/jscodemod';
+  "codemod/index.ts": "import {Codemod} from '@nick.heiner/jscodemod';
 import _ from 'lodash';
 import * as BabelTypes from '@babel/types';
 import type {Visitor} from '@babel/traverse';
