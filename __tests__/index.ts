@@ -200,14 +200,27 @@ describe('happy path', () => {
     snapshot: true
   });
 
-  // What happens if you call didChange but not willNotify?
-
   createTest({
+    modifier: 'only',
     testName: 'getPlugin uses the willNotifyOnAstChange API',
     fixtureName: 'arrow-function-inline-return',
     spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), path.join('source', 'recast-oddities.js')],
     processOverrides: {
-      NOTIFY_ON_AST_CHANGE: 'true', 
+      CALL_WILL_NOTIFY_ON_AST_CHANGE: 'true', 
+      CALL_AST_DID_CHANGE: 'true', 
+      ...process.env
+    },
+    snapshot: true
+  });
+
+  createTest({
+    modifier: 'only',
+    testName: 'getPlugin calls astDidChange() but forgot to call willNotifyOnAstChange()',
+    fixtureName: 'arrow-function-inline-return',
+    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), path.join('source', 'recast-oddities.js')],
+    expectedExitCode: 1,
+    processOverrides: {
+      CALL_WILL_NOTIFY_ON_AST_CHANGE: 'true', 
       ...process.env
     },
     snapshot: true

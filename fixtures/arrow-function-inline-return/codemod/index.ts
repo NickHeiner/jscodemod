@@ -9,7 +9,7 @@ export type TODO = any;
 
 const codemod: Codemod = {
   getPlugin: ({willNotifyOnAstChange, astDidChange}) => {
-    if (process.env.NOTIFY_ON_AST_CHANGE) {
+    if (process.env.CALL_WILL_NOTIFY_ON_AST_CHANGE) {
       willNotifyOnAstChange();
     }
 
@@ -20,7 +20,7 @@ const codemod: Codemod = {
             if (t.isBlockStatement(path.node.body) && path.node.body.body.length === 1 &&
                   t.isReturnStatement(path.node.body.body[0])) {
 
-              if (process.env.NOTIFY_ON_AST_CHANGE) {
+              if (process.env.CALL_AST_DID_CHANGE) {
                 astDidChange();
               }
     
