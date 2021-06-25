@@ -96,6 +96,8 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
 
     let codemodPlugins; 
     try {
+      // TODO: Make a way for the codemod to cleanly say that the file should not be modified. 
+      // Maybe returning undefined?
       codemodPlugins = await codemod.getPlugin({
         ...codemodOpts,
         willNotifyOnAstChange: () => {
