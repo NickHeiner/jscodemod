@@ -15,13 +15,13 @@ import {getTransformedContentsOfSingleFile} from '../build';
 const log = createLog({name: 'test'});
 
 type TestArgs = {
-  fixtureName: string; 
+  fixtureName: string;
   testName?: string;
   spawnArgs: string[];
   processOverrides?: typeof process.env;
   expectedExitCode?: number;
   git?: boolean;
-  snapshot?: true; 
+  snapshot?: true;
   setUpNodeModules?: boolean;
   assert?: (ExecaReturnValue, testDir: string, getRelativeFilePaths: (inputFilePaths: string[]) => string[]) => void;
   modifier?: 'only' | 'skip';
@@ -72,13 +72,13 @@ function createTest({
       await execa('mkdir', ['-p', path.dirname(symlinkLocation)], {cwd: testDir});
       await execa('ln', ['-s', repoRoot, symlinkLocation], {cwd: testDir});
     }
-    
+
     const binPath = path.resolve(repoRoot, packageJson.bin);
 
     let spawnResult;
     try {
       spawnResult = await log.logPhase(
-        {phase: 'spawn codemod', level: 'debug', binPath, spawnArgs}, 
+        {phase: 'spawn codemod', level: 'debug', binPath, spawnArgs},
         () => execa(binPath, spawnArgs, {cwd: testDir, env: processOverrides})
       );
     } catch (error) {
@@ -94,12 +94,12 @@ function createTest({
     expect(spawnResult.exitCode).toBe(expectedExitCode);
     if (snapshot) {
       const files = await log.logPhase(
-        {phase: 'snapshot glob', level: 'debug'}, 
+        {phase: 'snapshot glob', level: 'debug'},
         async (_logProgress, setAdditionalLogData) => {
           // We'll consider codemods that modify `package.json` or these other config files to be out of scope.
           const globPatterns = ['**/*', '!yarn.lock', '!package.json', '!tsconfig.json', '!node_modules'];
           const files = await globby(
-            globPatterns, 
+            globPatterns,
             {cwd: testDir}
           );
           setAdditionalLogData({foundFileCount: files.length});
@@ -115,7 +115,7 @@ function createTest({
       expect(fileContents).toMatchSnapshot();
     }
     if (assert) {
-      const getRelativeFilePaths = 
+      const getRelativeFilePaths =
         (inputFilePaths: string[]) => inputFilePaths.map(filePath => path.relative(testDir, filePath));
       await assert(spawnResult, testDir, getRelativeFilePaths);
     }
@@ -205,8 +205,8 @@ describe('happy path', () => {
     fixtureName: 'arrow-function-inline-return',
     spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), path.join('source', 'recast-oddities.js')],
     processOverrides: {
-      CALL_WILL_NOTIFY_ON_AST_CHANGE: 'true', 
-      CALL_AST_DID_CHANGE: 'true', 
+      CALL_WILL_NOTIFY_ON_AST_CHANGE: 'true',
+      CALL_AST_DID_CHANGE: 'true',
       ...process.env
     },
     snapshot: true
@@ -250,7 +250,7 @@ describe('error handling', () => {
     }
   });
 
-  const createTestForThrowingError = (codemodName: string, codemodFileName: string) => 
+  const createTestForThrowingError = (codemodName: string, codemodFileName: string) =>
     createTest({
       testName: `handles codemod ${codemodName} (${codemodFileName}) throwing an error`,
       fixtureName: 'will-throw-error',
@@ -325,8 +325,8 @@ describe('TS compilation flags', () => {
     testName: 'Specified tsconfig path',
     fixtureName: 'tsconfig-non-standard-location',
     spawnArgs: [
-      '--codemod', path.join('codemod', 'index.ts'), 
-      '--tsconfig', path.join('configs', 'tsconfig.json'), 
+      '--codemod', path.join('codemod', 'index.ts'),
+      '--tsconfig', path.join('configs', 'tsconfig.json'),
       'input.js'
     ],
     snapshot: true
@@ -339,7 +339,7 @@ describe('git', () => {
     fixtureName: 'git-dirty',
     git: true,
     spawnArgs: [
-      '--codemod', path.join('codemod', 'codemod.js'), 
+      '--codemod', path.join('codemod', 'codemod.js'),
       '--reset-dirty-input-files',
       '--jsonOutput',
       'source'
@@ -406,15 +406,15 @@ describe('getTransformedContentsOfSingleFile', () => {
       inputFilePath,
       {log}
     )).toMatchSnapshot();
-    
+
     expect(originalFilesContents).toEqual(
-      await fs.readFile(inputFilePath, 'utf-8') 
+      await fs.readFile(inputFilePath, 'utf-8')
     );
 
     // @ts-ignore
     const codemodCall = _.find(console.log.mock.calls, {0: 'codemod post process'});
     expect(codemodCall).toBeFalsy();
-    
+
     // @ts-ignore
     console.log.mockReset();
 
@@ -432,9 +432,9 @@ describe('getTransformedContentsOfSingleFile', () => {
       inputFilePath,
       {log}
     )).toMatchSnapshot();
-    
+
     expect(originalFilesContents).toEqual(
-      await fs.readFile(inputFilePath, 'utf-8') 
+      await fs.readFile(inputFilePath, 'utf-8')
     );
   });
 
@@ -449,9 +449,9 @@ describe('getTransformedContentsOfSingleFile', () => {
       inputFilePath,
       {log}
     )).toMatchSnapshot();
-    
+
     expect(originalFilesContents).toEqual(
-      await fs.readFile(inputFilePath, 'utf-8') 
+      await fs.readFile(inputFilePath, 'utf-8')
     );
   });
 });

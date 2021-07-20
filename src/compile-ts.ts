@@ -68,7 +68,7 @@ async function getTSConfigPath(pathToCodemod: string, specifiedTSConfig?: string
 }
 
 async function compileTS(
-  pathToCodemod: string, 
+  pathToCodemod: string,
   {tsconfig: specifiedTSConfig, tsOutDir: specifiedTSOutDir, tsc: specifiedTSC, log}: TSOptions
 ): Promise<string> {
   const tscConfigPath = await getTSConfigPath(pathToCodemod, specifiedTSConfig);

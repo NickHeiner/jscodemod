@@ -36,7 +36,7 @@ export type NonTSOptions = {
   jsonOutput?: boolean;
   codemodArgs?: string[];
   // TODO: It would be helpful to make this more powerful. A multi-phase codemod may touch multiple sets of files.
-  // Codemods in the later phase shouldn't resetDirtyInputFiles that are only dirty because they're modified by an 
+  // Codemods in the later phase shouldn't resetDirtyInputFiles that are only dirty because they're modified by an
   // earlier phase.
   resetDirtyInputFiles?: boolean;
   doPostProcess?: boolean;
@@ -46,8 +46,8 @@ export type NonTSOptions = {
 export type Options = Omit<TSOptions, 'log'> & Partial<Pick<TSOptions, 'log'>> & NonTSOptions;
 
 type FalseyDefaultOptions = 'dry' | 'porcelain' | 'codemodArgs' | 'resetDirtyInputFiles' | 'jsonOutput';
-export type InternalOptions = TSOptions 
-  & Pick<NonTSOptions, FalseyDefaultOptions> 
+export type InternalOptions = TSOptions
+  & Pick<NonTSOptions, FalseyDefaultOptions>
   & Required<Omit<NonTSOptions, FalseyDefaultOptions>>;
 
 // The rule is too broad.
@@ -70,7 +70,7 @@ function getProgressUI(logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, total
   return new ProgressBar(':bar (:current/:total, :percent)', {total: totalCount});
 }
 
-function transformCode(codemodPath: string, inputFiles: string[], writeFiles: boolean, 
+function transformCode(codemodPath: string, inputFiles: string[], writeFiles: boolean,
   logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, codemodArgs?: string[]) {
 
   const rawArgs = codemodArgs ? JSON.stringify(codemodArgs) : undefined;
@@ -108,7 +108,7 @@ async function resetDirtyInputFiles(gitRoot: string | null, filesToModify: strin
   log.debug({modifiedInputFiles: dirtyInputFiles, count: dirtyInputFiles.length});
 
   if (dirtyInputFiles.length) {
-    const spinner = 
+    const spinner =
       ora(`Restoring ${cyan(dirtyInputFiles.length.toString())} dirty files to a clean state.`).start();
     await execBigCommand(['restore', '--staged'], dirtyInputFiles, (args: string[]) => execGit(gitRoot, args), log);
     await execBigCommand(['restore'], dirtyInputFiles, (args: string[]) => execGit(gitRoot, args), log);
@@ -130,11 +130,11 @@ async function getIsIgnoredByIgnoreFile(log: TODO, ignoreFiles: string[] | undef
   }
 
   return () => false;
-} 
+}
 
 async function jscodemod(
-  pathToCodemod: string, 
-  inputFilesPatterns: string[], 
+  pathToCodemod: string,
+  inputFilesPatterns: string[],
   passedOptions: Options = {}
 ): Promise<CodemodMetaResult[] | string[]> { // TODO: encode that this return type depends on whether 'dry' is passed.
   const {
@@ -143,10 +143,10 @@ async function jscodemod(
     writeFiles,
     ...options
   }: InternalOptions = {
-    log: noOpLogger, 
-    doPostProcess: true, 
+    log: noOpLogger,
+    doPostProcess: true,
     writeFiles: true,
-    respectIgnores: true, 
+    respectIgnores: true,
     ...passedOptions
   };
 
@@ -154,31 +154,31 @@ async function jscodemod(
     ..._.pick(options, 'tsconfig', 'tsOutDir', 'tsc'),
     log
   });
-  
+
   const codemod = loadCodemod(codemodPath);
   const codemodName = getCodemodName(codemod, codemodPath);
 
   log.debug({codemodPath, codemodName, codemodKeys: Object.keys(codemod)});
-  
+
   // The next line is a bit gnarly to make TS happy.
   const codemodIgnores = _.compact(([] as (RegExp | string | undefined)[]).concat(codemod.ignore));
   const isIgnoredByIgnoreFile = await getIsIgnoredByIgnoreFile(log, codemod.ignoreFiles);
 
   log.debug({
     codemodName,
-    inputFilesPatterns, 
+    inputFilesPatterns,
     // Workaround for https://github.com/NickHeiner/nth-log/issues/12.
     codemodIgnores: codemodIgnores.map(re => re.toString()),
-    codemodIgnoreFiles: codemod.ignoreFiles,
+    codemodIgnoreFiles: codemod.ignoreFiles
   }, 'Globbing input file patterns.');
   const filesToModify = _((await globby(inputFilesPatterns, {dot: true, gitignore: true})))
     .map(filePath => path.resolve(filePath))
-    .reject(filePath => 
-      options.respectIgnores && 
+    .reject(filePath =>
+      options.respectIgnores &&
       (
-        _.some(codemodIgnores, ignorePattern => 
+        _.some(codemodIgnores, ignorePattern =>
           typeof ignorePattern === 'string' ? filePath.includes(ignorePattern) : ignorePattern.test(filePath)
-        ) || 
+        ) ||
         isIgnoredByIgnoreFile(filePath)
       )
     )
@@ -193,14 +193,14 @@ async function jscodemod(
 
   const logMethod = options.dry ? 'info' : 'debug';
   log[logMethod](
-    {filesToModify, count: filesToModify.length, inputFilesPatterns, codemodName}, 
+    {filesToModify, count: filesToModify.length, inputFilesPatterns, codemodName},
     'Found files to modify.'
   );
 
   // TODO: I don't like setting an expectation that codemods should call process.exit themselves, but it's convenient
   // because it's what yargs does by default. The codemod could also stop the process by throwing an exception, which
   // I also don't love.
-  const handleExit = () => 
+  const handleExit = () =>
     // I think bunyan is too verbose here.
     // eslint-disable-next-line no-console
     console.error("The codemod's parseArgs method called process.exit(). " +
@@ -228,9 +228,9 @@ async function jscodemod(
   if (options.resetDirtyInputFiles) {
     await resetDirtyInputFiles(gitRoot, filesToModify, log);
   }
-  
-  const codemodMetaResults = await transformCode(codemodPath, filesToModify, writeFiles, 
-    _.pick(passedOptions, 'jsonOutput', 'porcelain'), options.codemodArgs 
+
+  const codemodMetaResults = await transformCode(codemodPath, filesToModify, writeFiles,
+    _.pick(passedOptions, 'jsonOutput', 'porcelain'), options.codemodArgs
   );
   if (typeof codemod.postProcess === 'function' && doPostProcess) {
     const modifiedFiles = _(codemodMetaResults).filter('codeModified').map('filePath').value();

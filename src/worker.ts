@@ -6,9 +6,9 @@ import type {CodemodResult, TODO} from './types';
 import _ from 'lodash';
 import getCodemodName from './get-codemod-name';
 import {
-  parse as babelParse, 
-  transformSync as babelTransformSync, 
-  Visitor, 
+  parse as babelParse,
+  transformSync as babelTransformSync,
+  Visitor,
   TransformOptions
 } from '@babel/core';
 import * as recast from 'recast';
@@ -21,7 +21,7 @@ const baseLog = getLogger({
 const pFs = fs.promises;
 
 /**
- * I don't think we can share this instance across workers – I got an error that said the transform function 
+ * I don't think we can share this instance across workers – I got an error that said the transform function
  * "could not be cloned" when I tried to pass the codemod itself on `workerData`.
  */
 const codemod = loadCodemod(piscina.workerData.codemodPath);
@@ -40,14 +40,14 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
   const originalFileContents = await pFs.readFile(sourceCodeFile, 'utf-8');
   const rawArgs = piscina.workerData.codemodArgs ? JSON.parse(piscina.workerData.codemodArgs) : undefined;
   const parsedArgs = await baseLog.logPhase({
-    phase: 'parse args', 
-    level: 'trace', 
+    phase: 'parse args',
+    level: 'trace',
     codemod: codemodName
   }, () => codemod.parseArgs?.(rawArgs));
 
   const codemodOpts = {
-    source: originalFileContents, 
-    filePath: sourceCodeFile, 
+    source: originalFileContents,
+    filePath: sourceCodeFile,
     commandLineArgs: parsedArgs
   };
 
@@ -65,11 +65,11 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
     /**
      * Unfortunately, the workflow of using Recast and Babel together has some interactions that don't occur when using
      * Recast alone. I think this has to do with the setAST maneuver. In particular:
-     * 
+     *
      * 1. Leading whitespace will be dropped. (`\n\nf()` ==> `f()`)
-     * 2. If the file has a shebang, it'll be combined with the first line. 
+     * 2. If the file has a shebang, it'll be combined with the first line.
      *    (`#!/usr/bin/env node\nf()` ==> `#!/usr/bin/env nodef()`)
-     * 
+     *
      * To fix this, we manually trim out the problematic leading parts, do the recast transform, then add them back at
      * the end.
      */
@@ -86,25 +86,25 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
         fileContentsPrefixToReattachPostTransform += leadingWhitespace[0];
       }
     }
-    
-    // The impact of erroneous changes would be reduced if we detected when the AST is unchanged, and then did not 
+
+    // The impact of erroneous changes would be reduced if we detected when the AST is unchanged, and then did not
     // write new file contents. However, this proved difficult to do. Instead, we'll allow the plugin to explicitly say
     // when it changed.
 
     let pluginWillSignalWhenAstHasChanged = false;
     let pluginChangedAst = false;
 
-    let codemodPlugins; 
+    let codemodPlugins;
     try {
-      // TODO: Make a way for the codemod to cleanly say that the file should not be modified. 
+      // TODO: Make a way for the codemod to cleanly say that the file should not be modified.
       // Maybe returning undefined?
       codemodPlugins = await codemod.getPlugin({
         ...codemodOpts,
         willNotifyOnAstChange: () => {
-          pluginWillSignalWhenAstHasChanged = true; 
+          pluginWillSignalWhenAstHasChanged = true;
         },
         astDidChange: () => {
-          pluginChangedAst = true; 
+          pluginChangedAst = true;
         }
       });
     } catch (e) {
@@ -112,7 +112,7 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
       e.suggestion = 'Check your getPlugin() method for a bug.';
       throw e;
     }
-    
+
     const getBabelOpts = (plugins: Exclude<TransformOptions['plugins'], null> = []): TransformOptions => ({
       filename: sourceCodeFile,
       plugins,
@@ -127,13 +127,13 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
           // There are options that are recognized by recast but not babel. Babel errors when they're passed. To avoid
           // this, we'll omit them.
           ..._.omit(
-            opts, 
+            opts,
             'jsx', 'loc', 'locations', 'range', 'comment', 'onComment', 'tolerant', 'ecmaVersion'
           ),
           /**
-           * We must have babel emit tokens. Otherwise, recast will use esprima to tokenize, which won't have the 
+           * We must have babel emit tokens. Otherwise, recast will use esprima to tokenize, which won't have the
            * user-provided babel config.
-           * 
+           *
            * https://github.com/benjamn/recast/issues/834
            */
           parserOpts: {
@@ -145,7 +145,7 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
       }
     };
 
-    let ast: ReturnType<typeof recast.parse>; 
+    let ast: ReturnType<typeof recast.parse>;
     try {
       ast = recast.parse(fileContentsForRecast, {parser});
     } catch (e) {
@@ -162,7 +162,7 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
       }
     });
 
-    const pluginsToUse = Array.isArray(codemodPlugins) ? codemodPlugins : [codemodPlugins]; 
+    const pluginsToUse = Array.isArray(codemodPlugins) ? codemodPlugins : [codemodPlugins];
 
     // result.ast.end will be 0, and ast.end is originalFileContents.length.
     // Passing originalFileContents instead of '' solves that problem, but causes some other problem.
@@ -171,7 +171,7 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
     log.debug({pluginWillSignalWhenAstHasChanged, pluginChangedAst});
 
     if (!pluginWillSignalWhenAstHasChanged && pluginChangedAst) {
-      const err = new Error('Your plugin called astDidChange() but not willNotifyOnAstChange(). ' + 
+      const err = new Error('Your plugin called astDidChange() but not willNotifyOnAstChange(). ' +
         'This almost definitely means you have a bug.');
       Object.assign(err, {
         phase: 'your codemod babel plugin running',
@@ -194,13 +194,13 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
       throw err;
     }
 
-    let transformedCode = 
+    let transformedCode =
       fileContentsPrefixToReattachPostTransform + recast.print(result.ast as recast.types.ASTNode).code;
 
     if (originalFileContents.endsWith('\n') && !transformedCode.endsWith('\n')) {
       transformedCode += '\n';
-    }  
-    
+    }
+
     return transformedCode;
   };
 
@@ -218,7 +218,7 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
 
   const codeModified = Boolean(transformedCode && transformedCode !== originalFileContents);
 
-  const {writeFiles} = piscina.workerData; 
+  const {writeFiles} = piscina.workerData;
   if (codeModified && writeFiles) {
     // This non-null assertion is safe because `codeModified` includes a check on `transformedCode`.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -228,7 +228,7 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
   log.debug({action, writeFiles});
   return {
     action,
-    codeModified, 
+    codeModified,
     fileContents: transformedCode ? transformedCode : originalFileContents,
     filePath: sourceCodeFile
   };
