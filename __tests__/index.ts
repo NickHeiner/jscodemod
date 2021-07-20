@@ -455,7 +455,7 @@ describe('getTransformedContentsOfSingleFile', () => {
     );
   });
 
-  it.only('throws an error if the codemod throws an error', async () => {
+  it('throws an error if the codemod throws an error', async () => {
     const inputFilePath = path.resolve(__dirname, '../fixtures/will-throw-error/source/a.js');
     const originalFilesContents = await fs.readFile(inputFilePath, 'utf-8');
 

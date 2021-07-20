@@ -34,7 +34,7 @@ export type CodemodMetaResult = {
   fileContents: string;
 } | {
   action: 'error';
-  error: Error; 
+  error: Error;
 })
 
 export default async function main(sourceCodeFile: string): Promise<CodemodMetaResult> {
