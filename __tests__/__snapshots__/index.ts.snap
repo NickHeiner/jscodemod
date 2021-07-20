@@ -114,11 +114,6 @@ exports[`getTransformedContentsOfSingleFile processes codemod ignored files 1`] 
 // codemod ignored"
 `;
 
-exports[`getTransformedContentsOfSingleFile processes ignored files 1`] = `
-"/* prefix prepend string */
-// codemod ignored"
-`;
-
 exports[`getTransformedContentsOfSingleFile returns the contents of a single file 1`] = `
 "/* prefix prepend string */
 function b() {}"

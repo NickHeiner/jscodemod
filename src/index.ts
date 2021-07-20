@@ -121,6 +121,7 @@ async function getIsIgnoredByIgnoreFile(log: TODO, ignoreFiles: string[] | undef
     try {
       return await gitignore({paths: ignoreFiles});
     } catch (e) {
+      // TODO: throw an error if the ignorefile path isn't absolute.
       if (e.code === 'ENOENT') {
         log.error({invalidIgnoreFilePath: e.file}, `Ignore file "${e.file}" does not exist.`);
         throw e;

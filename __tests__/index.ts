@@ -437,9 +437,9 @@ describe('getTransformedContentsOfSingleFile', () => {
       await fs.readFile(inputFilePath, 'utf-8') 
     );
   });
-  
-  it('processes ignorefile ignored files', async () => {
-    const inputFilePath = path.resolve(__dirname, '../fixtures/ignorefiles/source/ignored-by-root.txt');
+
+  it.only('processes ignorefile ignored files', async () => {
+    const inputFilePath = path.resolve(__dirname, '../fixtures/ignorefiles/ignored-by-root.txt');
     const originalFilesContents = await fs.readFile(inputFilePath, 'utf-8');
     expect(await getTransformedContentsOfSingleFile(
       require.resolve('../fixtures/ignorefiles/codemod.js'),

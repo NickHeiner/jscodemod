@@ -4,5 +4,5 @@ module.exports = {
   transform() { 
     return 'transformed';
   },
-  ignoreFiles: [path.resolve(__dirname, 'root.ignore'), 'dir-1/nested.ignore']
+  ignoreFiles: [path.resolve(__dirname, 'root.ignore'), path.resolve(__dirname, 'dir-1/nested.ignore')]
 };

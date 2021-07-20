@@ -26,10 +26,10 @@ export type Codemod<ParsedArgs = unknown> = {
   ignore?: RegExp[] | RegExp | string[] | string;
 
   /**
-   * Use this to block the codemod from running on files ignored by .*ignore files. The elements of this array are paths
-   * to your ignore files. The ignore file will be parsed with https://www.npmjs.com/package/ignore, so only use this if
-   * your ignore file format works with it. (For instance, `.eslintignore` works, but `.npmignore` is a different
-   * spec.)
+   * Use this to block the codemod from running on files ignored by .*ignore files. The elements of this array are 
+   * absolute paths to your ignore files. The ignore file will be parsed with https://www.npmjs.com/package/ignore, so 
+   * only use this if your ignore file format works with it. (For instance, `.eslintignore` works, but `.npmignore` is a 
+   * different spec.)
    * 
    * Relative file paths will be resolved relative to the current working directory, so for robustness, you probably
    * want to pass absolute paths. (Perhaps use `path.resolve(__dirname, '../path/to/your/file')`).
