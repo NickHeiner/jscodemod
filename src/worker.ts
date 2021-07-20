@@ -27,11 +27,16 @@ const pFs = fs.promises;
 const codemod = loadCodemod(piscina.workerData.codemodPath);
 
 export type CodemodMetaResult = {
-  action: 'error' | 'modified' | 'skipped';
   filePath: string;
+} & ({
+  action: 'modified' | 'skipped';
   codeModified: boolean;
   fileContents: string;
-}
+} | {
+  action: 'error';
+  error: Error;
+})
+
 export default async function main(sourceCodeFile: string): Promise<CodemodMetaResult> {
   const log = baseLog.child({sourceCodeFile});
   const codemodName = getCodemodName(codemod, piscina.workerData.codemodPath);
@@ -205,12 +210,12 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
   };
 
   let transformedCode: CodemodResult = null;
-  let threwError = false;
+  let thrownError = null;
 
   try {
     transformedCode = await transformFile();
   } catch (e) {
-    threwError = true;
+    thrownError = e;
     log.error({
       error: _.pick(e, 'message', 'stack', 'phase')
     }, `File ${sourceCodeFile}: Codemod "${codemodName}" threw an error during ${e.phase}. ${e.suggestion}`);
@@ -224,10 +229,12 @@ export default async function main(sourceCodeFile: string): Promise<CodemodMetaR
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await pFs.writeFile(sourceCodeFile, transformedCode!);
   }
-  const action = threwError ? 'error' : codeModified ? 'modified' : 'skipped';
+  const action = thrownError ? 'error' : codeModified ? 'modified' : 'skipped';
   log.debug({action, writeFiles});
+
   return {
     action,
+    error: thrownError,
     codeModified,
     fileContents: transformedCode ? transformedCode : originalFileContents,
     filePath: sourceCodeFile
