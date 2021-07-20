@@ -459,14 +459,14 @@ describe('getTransformedContentsOfSingleFile', () => {
     const inputFilePath = path.resolve(__dirname, '../fixtures/will-throw-error/source/a.js');
     const originalFilesContents = await fs.readFile(inputFilePath, 'utf-8');
 
-    expect(() => getTransformedContentsOfSingleFile(
+    await expect(getTransformedContentsOfSingleFile(
       require.resolve('../fixtures/will-throw-error/codemod/codemod-named'),
 
       // If we use require.resolve here, then Jest will detect it as a test dependency. When the codemod modifies the
       // file, and we're in watch mode, Jest will kick off another run, continuing ad infinitum.
       inputFilePath,
       {log}
-    )).toThrowErrorMatchingSnapshot();
+    )).rejects.toMatchSnapshot();
 
     expect(originalFilesContents).toEqual(
       await fs.readFile(inputFilePath, 'utf-8')
