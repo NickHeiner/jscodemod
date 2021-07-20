@@ -40,6 +40,7 @@ export type NonTSOptions = {
   // earlier phase.
   resetDirtyInputFiles?: boolean;
   doPostProcess?: boolean;
+  respectIgnores?: boolean;
 }
 
 export type Options = Omit<TSOptions, 'log'> & Partial<Pick<TSOptions, 'log'>> & NonTSOptions;
@@ -143,7 +144,8 @@ async function jscodemod(
   }: InternalOptions = {
     log: noOpLogger, 
     doPostProcess: true, 
-    writeFiles: true, 
+    writeFiles: true,
+    respectIgnores: true, 
     ...passedOptions
   };
 
@@ -169,8 +171,11 @@ async function jscodemod(
   }, 'Globbing input file patterns.');
   const filesToModify = _((await globby(inputFilesPatterns, {dot: true, gitignore: true})))
     .map(filePath => path.resolve(filePath))
-    .reject(filePath => _.some(codemodIgnores, ignorePattern => 
-      typeof ignorePattern === 'string' ? filePath.includes(ignorePattern) : ignorePattern.test(filePath)) ||
+    .reject(filePath => 
+      options.respectIgnores && 
+      _.some(codemodIgnores, ignorePattern => 
+        typeof ignorePattern === 'string' ? filePath.includes(ignorePattern) : ignorePattern.test(filePath)
+      ) || 
       isIgnoredByIgnoreFile(filePath)
     )
     .sort()

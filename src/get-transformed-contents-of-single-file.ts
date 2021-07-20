@@ -9,7 +9,7 @@ async function getTransformedContentsOfSingleFile(
   const codemodMetaResults = await jscodemod(
     pathToCodemod,
     [inputFile],
-    {...codemodOptions, writeFiles: false, doPostProcess: false}
+    {respectIgnores: false, ...codemodOptions, writeFiles: false, doPostProcess: false}
   ) as unknown as CodemodMetaResult[];
 
   return codemodMetaResults[0].fileContents;
