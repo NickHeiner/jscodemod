@@ -421,11 +421,28 @@ describe('getTransformedContentsOfSingleFile', () => {
     /* eslint-enable no-console */
   });
 
-  it('processes ignored files', async () => {
+  it('processes codemod ignored files', async () => {
     const inputFilePath = path.resolve(__dirname, '../fixtures/prepend-string/source/codemod-ignored.js');
     const originalFilesContents = await fs.readFile(inputFilePath, 'utf-8');
     expect(await getTransformedContentsOfSingleFile(
       require.resolve('../fixtures/prepend-string/codemod/codemod.js'),
+
+      // If we use require.resolve here, then Jest will detect it as a test dependency. When the codemod modifies the
+      // file, and we're in watch mode, Jest will kick off another run, continuing ad infinitum.
+      inputFilePath,
+      {log}
+    )).toMatchSnapshot();
+    
+    expect(originalFilesContents).toEqual(
+      await fs.readFile(inputFilePath, 'utf-8') 
+    );
+  });
+  
+  it('processes ignorefile ignored files', async () => {
+    const inputFilePath = path.resolve(__dirname, '../fixtures/ignorefiles/source/ignored-by-root.txt');
+    const originalFilesContents = await fs.readFile(inputFilePath, 'utf-8');
+    expect(await getTransformedContentsOfSingleFile(
+      require.resolve('../fixtures/ignorefiles/codemod.js'),
 
       // If we use require.resolve here, then Jest will detect it as a test dependency. When the codemod modifies the
       // file, and we're in watch mode, Jest will kick off another run, continuing ad infinitum.

@@ -17,6 +17,8 @@ rules:
   # I don't use @ts comments frivolously.
   '@typescript-eslint/ban-ts-comment': off
 
+  no-mixed-operators: error
+
 env:
   es6: true
   node: true
