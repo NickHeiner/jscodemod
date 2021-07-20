@@ -121,6 +121,8 @@ exports[`getTransformedContentsOfSingleFile returns the contents of a single fil
 function b() {}"
 `;
 
+exports[`getTransformedContentsOfSingleFile throws an error if the codemod throws an error 1`] = `"Cannot find module '../fixtures/will-throw-error/codemod-named.js' from '__tests__/index.ts'"`;
+
 exports[`git Modify dirty files 1`] = `
 Object {
   "codemod/codemod.js": "module.exports = {
