@@ -438,7 +438,7 @@ describe('getTransformedContentsOfSingleFile', () => {
     );
   });
 
-  it.only('processes ignorefile ignored files', async () => {
+  it('processes ignorefile ignored files', async () => {
     const inputFilePath = path.resolve(__dirname, '../fixtures/ignorefiles/ignored-by-root.txt');
     const originalFilesContents = await fs.readFile(inputFilePath, 'utf-8');
     expect(await getTransformedContentsOfSingleFile(

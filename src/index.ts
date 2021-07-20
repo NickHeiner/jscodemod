@@ -168,16 +168,19 @@ async function jscodemod(
     codemodName,
     inputFilesPatterns, 
     // Workaround for https://github.com/NickHeiner/nth-log/issues/12.
-    codemodIgnores: codemodIgnores.map(re => re.toString())
+    codemodIgnores: codemodIgnores.map(re => re.toString()),
+    codemodIgnoreFiles: codemod.ignoreFiles,
   }, 'Globbing input file patterns.');
   const filesToModify = _((await globby(inputFilesPatterns, {dot: true, gitignore: true})))
     .map(filePath => path.resolve(filePath))
     .reject(filePath => 
       options.respectIgnores && 
-      _.some(codemodIgnores, ignorePattern => 
-        typeof ignorePattern === 'string' ? filePath.includes(ignorePattern) : ignorePattern.test(filePath)
-      ) || 
-      isIgnoredByIgnoreFile(filePath)
+      (
+        _.some(codemodIgnores, ignorePattern => 
+          typeof ignorePattern === 'string' ? filePath.includes(ignorePattern) : ignorePattern.test(filePath)
+        ) || 
+        isIgnoredByIgnoreFile(filePath)
+      )
     )
     .sort()
     .value();
