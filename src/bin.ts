@@ -15,8 +15,8 @@ const tsOnlyNote = '(Only applicable if your codemod is written in TypeScript)';
 const {argv} = yargs
   // TODO: Some of these options should be hidden.
   .command(
-    '$0 [options] <fileGlobs...>', 
-    'Run the codemod. Any arguments after "--" will be passed through to the codemod.', 
+    '$0 [options] <fileGlobs...>',
+    'Run the codemod. Any arguments after "--" will be passed through to the codemod.',
     yargs => {
       yargs.positional('fileGlobs', {
         required: true,
@@ -113,10 +113,10 @@ async function main() {
     Object.assign(opts, _.pick(argv, 'codemodArgs'));
 
     const codemodMetaResults = await jscodemod(
-      argv.codemod, 
+      argv.codemod,
       // Yarg's types are messed up.
       // @ts-expect-error
-      argv.fileGlobs, 
+      argv.fileGlobs,
       opts
     );
 
@@ -139,8 +139,8 @@ async function main() {
       // eslint-disable-next-line no-console
       console.log(err);
     }
-    log.info("If you need help, please see this project's README, or the --help output. " + 
-      "If you're filing a bug report, please re-run this command with env var 'loglevel=debug', and provide the " + 
+    log.info("If you need help, please see this project's README, or the --help output. " +
+      "If you're filing a bug report, please re-run this command with env var 'loglevel=debug', and provide the " +
       'full output.');
     process.exit(1);
   }

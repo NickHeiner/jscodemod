@@ -109,10 +109,12 @@ Missing required argument: requiredFlag
 The codemod's parseArgs method called process.exit(). This probably means the arguments you passed to it didn't validate. To pass arguments to a codemod, put them at the end of the whole command, like 'jscodemod -c codemod.js fileGlob -- -a b'."
 `;
 
-exports[`getTransformedContentsOfSingleFile processes ignored files 1`] = `
+exports[`getTransformedContentsOfSingleFile processes codemod ignored files 1`] = `
 "/* prefix prepend string */
 // codemod ignored"
 `;
+
+exports[`getTransformedContentsOfSingleFile processes ignorefile ignored files 1`] = `"transformed"`;
 
 exports[`getTransformedContentsOfSingleFile returns the contents of a single file 1`] = `
 "/* prefix prepend string */
@@ -541,7 +543,7 @@ module.exports = {
   transform() { 
     return 'transformed';
   },
-  ignoreFiles: [path.resolve(__dirname, 'root.ignore'), 'dir-1/nested.ignore']
+  ignoreFiles: [path.resolve(__dirname, 'root.ignore'), path.resolve(__dirname, 'dir-1/nested.ignore')]
 };",
   "dir-1/dir-2/ignored-by-nested.txt": "",
   "dir-1/dir-2/ignored-by-root.txt": "",

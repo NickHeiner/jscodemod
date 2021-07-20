@@ -70,24 +70,24 @@ async function runBenchmarks() {
   const jscodeshiftBinPath = await resolveBinP('jscodeshift', {executable: 'jscodeshift'});
 
   // Possible source of error: the input file patterns passed to each codemod tool return different sets of files.
-  // 
+  //
   // You may need to hit control+c multiple times to kill this script. I thought execa was supposed to propagate that
   // and automatically kill child processes, but maybe that doesn't work as well with .sync?
   const jscodemodString = execOpts => execInRepo(
-    binPath, 
+    binPath,
     [
-      '--codemod', pathFromRepoRoot('fixtures', 'prepend-string', 'codemod', 'codemod.js'), 
+      '--codemod', pathFromRepoRoot('fixtures', 'prepend-string', 'codemod', 'codemod.js'),
       '**/*.{js,ts,tsx}'
     ],
     execOpts
   );
   const jscodeshiftString = execOpts => execInRepo(
-    jscodeshiftBinPath, 
+    jscodeshiftBinPath,
     [
-      '--no-babel', 
-      '--transform', pathFromRepoRoot('fixtures', 'prepend-string', 'codemod', 'jscodeshift-codemod.js'), 
-      '--extensions', 'js,ts,tsx', 
-      '--ignore-pattern', 'node_modules', 
+      '--no-babel',
+      '--transform', pathFromRepoRoot('fixtures', 'prepend-string', 'codemod', 'jscodeshift-codemod.js'),
+      '--extensions', 'js,ts,tsx',
+      '--ignore-pattern', 'node_modules',
       '.'
     ],
     execOpts
@@ -116,7 +116,7 @@ async function runBenchmarks() {
       // This is brittle, but something more robust might be more complexity than it's worth, given Benchmark's API.
       const jscodemodStringStats = arg.currentTarget[0].stats;
       const jscodeshiftStringStats = arg.currentTarget[1].stats;
-      
+
       const table = new CliTable({
         head: ['Runner', 'Transform', 'Mean Duration (seconds)', 'Standard Deviation (seconds)', 'Sample count']
       });
@@ -124,9 +124,9 @@ async function runBenchmarks() {
       // eslint-disable-next-line no-magic-numbers
       const significantDigits = number => number.toPrecision(3);
 
-      const addTableEntry = (runnerName, transformName, stats) => 
+      const addTableEntry = (runnerName, transformName, stats) =>
         table.push([
-          runnerName, transformName, significantDigits(stats.mean), significantDigits(stats.deviation), 
+          runnerName, transformName, significantDigits(stats.mean), significantDigits(stats.deviation),
           stats.sample.length
         ]);
 

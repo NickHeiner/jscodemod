@@ -12,5 +12,5 @@ async function getGitRoot(inputFilesPaths: string[]): Promise<string | null> {
   // from the .git directory itself.
   return path.resolve(gitDir, '..');
 }
-  
+
 export default getGitRoot;

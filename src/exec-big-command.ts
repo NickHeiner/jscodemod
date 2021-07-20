@@ -3,10 +3,10 @@ import _ from 'lodash';
 import {TODO} from './types';
 
 const getShellArgMax = _.once(async () => parseInt((await execa('getconf', ['ARG_MAX'])).stdout));
-  
+
 function execBigCommand(
-  constantArgs: string[], 
-  variableArgs: string[], 
+  constantArgs: string[],
+  variableArgs: string[],
   execCommand: (args: string[]) => Promise<execa.ExecaReturnValue>,
   log: TODO
 ): Promise<void> {
@@ -14,10 +14,10 @@ function execBigCommand(
     const combinedArgs = [...constantArgs, ...variableArgs];
     const commandLengthBytes = new TextEncoder().encode(combinedArgs.join(' ')).length;
     const shellArgMaxBytes = await getShellArgMax();
-  
+
     /**
-     * My understanding is that if the commandLengthBytes < shellArgMaxBytes, then we should be safe. However, 
-     * experimentally, this was not true. I still saw E2BIG errors. I don't know if it's because I'm misinterpreting 
+     * My understanding is that if the commandLengthBytes < shellArgMaxBytes, then we should be safe. However,
+     * experimentally, this was not true. I still saw E2BIG errors. I don't know if it's because I'm misinterpreting
      * what results of TextEncoder and `ARG_MAX`. But, if I divide by 2, then it worked in my anecdotal testing.
      */
     if (commandLengthBytes > shellArgMaxBytes / 2) {
@@ -29,7 +29,7 @@ function execBigCommand(
       const midpointIndex = variableArgs.length / 2;
       const firstHalfVariableArgs = variableArgs.slice(0, midpointIndex);
       const secondHalfVariableArgs = variableArgs.slice(midpointIndex);
-  
+
       // It's probably safer to run in serial here. The caller may not expect their command to be parallelized.
       await execBigCommandRec(firstHalfVariableArgs);
       await execBigCommandRec(secondHalfVariableArgs);
