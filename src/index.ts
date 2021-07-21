@@ -164,14 +164,18 @@ async function jscodemod(
   const codemodIgnores = _.compact(([] as (RegExp | string | undefined)[]).concat(codemod.ignore));
   const isIgnoredByIgnoreFile = await getIsIgnoredByIgnoreFile(log, codemod.ignoreFiles);
 
+  const globbedFiles = await globby(inputFilesPatterns, {dot: true, gitignore: true});
+
   log.debug({
     codemodName,
     inputFilesPatterns,
     // Workaround for https://github.com/NickHeiner/nth-log/issues/12.
     codemodIgnores: codemodIgnores.map(re => re.toString()),
-    codemodIgnoreFiles: codemod.ignoreFiles
-  }, 'Globbing input file patterns.');
-  const filesToModify = _((await globby(inputFilesPatterns, {dot: true, gitignore: true})))
+    codemodIgnoreFiles: codemod.ignoreFiles,
+    globbedFiles
+  }, 'Filtering input file patterns.');
+
+  const filesToModify = _(globbedFiles)
     .map(filePath => path.resolve(filePath))
     .reject(filePath =>
       options.respectIgnores &&
