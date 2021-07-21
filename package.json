@@ -1,11 +1,12 @@
 {
   "name": "@nick.heiner/jscodemod",
-  "version": "1.0.0-11",
+  "version": "1.0.0-12",
   "description": "JS codemod runner",
   "homepage": "https://github.com/NickHeiner/jscodemod",
   "main": "build/index.js",
   "repository": "git@github.com:NickHeiner/jscodemod.git",
   "author": "Nick Heiner <nth23@cornell.edu>",
+  "files": ["build", "docs", "README.md"],
   "license": "MIT",
   "bin": "./build/bin.js",
   "scripts": {
