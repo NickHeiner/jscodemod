@@ -10,13 +10,13 @@ import ora from 'ora';
 import createLog from 'nth-log';
 import fs from 'fs';
 import compileTS from './compile-ts';
-import {TODO} from './types';
+import {Codemod, TODO} from './types';
 import execBigCommand from './exec-big-command';
 import getGitRoot from './get-git-root';
 import loadCodemod from './load-codemod';
-import {CodemodMetaResult} from './worker';
 import gitignore from './gitignore';
 import getCodemodName from './get-codemod-name';
+import runCodemodOnFile, {CodemodMetaResult} from './run-codemod-on-file';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
 
@@ -70,19 +70,49 @@ function getProgressUI(logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, total
   return new ProgressBar(':bar (:current/:total, :percent)', {total: totalCount});
 }
 
-function transformCode(codemodPath: string, inputFiles: string[], writeFiles: boolean,
-  logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, codemodArgs?: string[]) {
+/**
+ * Only use Piscina if there are at least this many files.
+ * At smaller input sizes, Piscina's fixed startup cost isn't justified by the per-file gains. In my anecdotal test,
+ * running a simple codemod on a single file took ~5 seconds with Piscina and ~2 seconds when kept in-process.
+ */
+const piscinaLowerBoundInclusive = 20;
 
+function transformCode(
+  codemod: Codemod,
+  log: TSOptions['log'],
+  codemodPath: string,
+  inputFiles: string[],
+  writeFiles: boolean,
+  logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, codemodArgs?: string[]
+) {
   const rawArgs = codemodArgs ? JSON.stringify(codemodArgs) : undefined;
-  const piscina = new Piscina({
+
+  const baseRunnerOpts = {
+    codemodArgs: rawArgs, writeFiles, codemodPath
+  };
+
+  // TODO: Maybe set the maxThreads lower to avoid eating all the CPU.
+  const getPiscina = _.once(() => new Piscina({
     filename: require.resolve('./worker'),
     argv: [codemodPath],
-    workerData: {codemodPath, codemodArgs: rawArgs, writeFiles, logOpts}
-  });
+    workerData: {...baseRunnerOpts, logOpts}
+  }));
+
+  const runCodemodOnSingleFile = (inputFile: string) => {
+    if (inputFiles.length >= piscinaLowerBoundInclusive) {
+      return getPiscina().runTask(inputFile);
+    }
+
+    return runCodemodOnFile(codemod, inputFile, log, baseRunnerOpts);
+  };
 
   const progressBar = getProgressUI(logOpts, inputFiles.length);
   return Promise.all(inputFiles.map(async inputFile => {
-    const codemodMetaResult: CodemodMetaResult = await piscina.runTask(inputFile);
+    const codemodMetaResult: CodemodMetaResult = await runCodemodOnSingleFile(inputFile);
+    log.debug({
+      ...codemodMetaResult,
+      fileContents: '<truncated file contents>'
+    });
     progressBar.tick();
     return codemodMetaResult;
   }));
@@ -236,7 +266,7 @@ async function jscodemod(
     await resetDirtyInputFiles(gitRoot, filesToModify, log);
   }
 
-  const codemodMetaResults = await transformCode(codemodPath, filesToModify, writeFiles,
+  const codemodMetaResults = await transformCode(codemod, log, codemodPath, filesToModify, writeFiles,
     _.pick(passedOptions, 'jsonOutput', 'porcelain'), options.codemodArgs
   );
   if (typeof codemod.postProcess === 'function' && doPostProcess) {

@@ -5,7 +5,7 @@ import jscodemod from './';
 import _ from 'lodash';
 import 'loud-rejection/register';
 import getLogger from './get-logger';
-import {CodemodMetaResult} from './worker';
+import {CodemodMetaResult} from './run-codemod-on-file';
 
 const tsOnlyNote = '(Only applicable if your codemod is written in TypeScript)';
 

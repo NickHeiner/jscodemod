@@ -1,5 +1,5 @@
 import jscodemod, {Options} from '.';
-import {CodemodMetaResult} from './worker';
+import {CodemodMetaResult} from './run-codemod-on-file';
 import getLogger from './get-logger';
 
 async function getTransformedContentsOfSingleFile(
