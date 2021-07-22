@@ -1,5 +1,6 @@
 import jscodemod, {Options} from '.';
 import {CodemodMetaResult} from './worker';
+import getLogger from './get-logger';
 
 async function getTransformedContentsOfSingleFile(
   pathToCodemod: string,
@@ -9,7 +10,13 @@ async function getTransformedContentsOfSingleFile(
   const codemodMetaResults = await jscodemod(
     pathToCodemod,
     [inputFile],
-    {respectIgnores: false, ...codemodOptions, writeFiles: false, doPostProcess: false}
+    {
+      respectIgnores: false,
+      log: getLogger(),
+      ...codemodOptions,
+      writeFiles: false,
+      doPostProcess: false
+    }
   ) as unknown as CodemodMetaResult[];
 
   if (codemodMetaResults[0].action === 'error') {
