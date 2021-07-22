@@ -41,11 +41,13 @@ export type NonTSOptions = {
   resetDirtyInputFiles?: boolean;
   doPostProcess?: boolean;
   respectIgnores?: boolean;
+  piscinaLowerBoundInclusive?: number;
 }
 
 export type Options = Omit<TSOptions, 'log'> & Partial<Pick<TSOptions, 'log'>> & NonTSOptions;
 
-type FalseyDefaultOptions = 'dry' | 'porcelain' | 'codemodArgs' | 'resetDirtyInputFiles' | 'jsonOutput';
+type FalseyDefaultOptions = 'dry' | 'porcelain' | 'codemodArgs' | 'resetDirtyInputFiles' | 'jsonOutput'
+  | 'piscinaLowerBoundInclusive';
 export type InternalOptions = TSOptions
   & Pick<NonTSOptions, FalseyDefaultOptions>
   & Required<Omit<NonTSOptions, FalseyDefaultOptions>>;
@@ -75,7 +77,7 @@ function getProgressUI(logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, total
  * At smaller input sizes, Piscina's fixed startup cost isn't justified by the per-file gains. In my anecdotal test,
  * running a simple codemod on a single file took ~5 seconds with Piscina and ~2 seconds when kept in-process.
  */
-const piscinaLowerBoundInclusive = 20;
+export const defaultPiscinaLowerBoundInclusive = 20;
 
 function transformCode(
   codemod: Codemod,
@@ -83,6 +85,7 @@ function transformCode(
   codemodPath: string,
   inputFiles: string[],
   writeFiles: boolean,
+  piscinaLowerBoundInclusive: NonTSOptions['piscinaLowerBoundInclusive'],
   logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, codemodArgs?: string[]
 ) {
   const rawArgs = codemodArgs ? JSON.stringify(codemodArgs) : undefined;
@@ -99,7 +102,7 @@ function transformCode(
   }));
 
   const runCodemodOnSingleFile = (inputFile: string) => {
-    if (inputFiles.length >= piscinaLowerBoundInclusive) {
+    if (inputFiles.length >= (piscinaLowerBoundInclusive ?? defaultPiscinaLowerBoundInclusive)) {
       return getPiscina().runTask(inputFile);
     }
 
@@ -267,7 +270,7 @@ async function jscodemod(
   }
 
   const codemodMetaResults = await transformCode(codemod, log, codemodPath, filesToModify, writeFiles,
-    _.pick(passedOptions, 'jsonOutput', 'porcelain'), options.codemodArgs
+    passedOptions.piscinaLowerBoundInclusive, _.pick(passedOptions, 'jsonOutput', 'porcelain', ''), options.codemodArgs
   );
   if (typeof codemod.postProcess === 'function' && doPostProcess) {
     const modifiedFiles = _(codemodMetaResults).filter('codeModified').map('filePath').value();

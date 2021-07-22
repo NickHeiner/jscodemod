@@ -531,6 +531,38 @@ exports[`happy path prepend-string 2`] = `"codemod post process [\\"<test-dir>/s
 
 exports[`happy path prepend-string 3`] = `"commandLineArgs {}"`;
 
+exports[`happy path prepend-string with piscina 1`] = `
+Object {
+  "codemod/codemod.js": "module.exports = {
+  ignore: [
+    /codemod-ignored/,
+    'omitted-via-string-pattern'
+  ],
+  postProcess: modifiedFiles => {
+    console.log('codemod post process', JSON.stringify(modifiedFiles));
+  },
+  parseArgs: rawCommandLineArgs => ({rawCommandLineArgs}),
+  transform({source, commandLineArgs}) {
+    console.log('commandLineArgs', JSON.stringify(commandLineArgs));
+    return \`/* prefix prepend string */\\\\n\${source}\`;
+  }
+};",
+  "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
+  "source/a.js": "/* prefix prepend string */
+console.log('a');",
+  "source/b.js": "/* prefix prepend string */
+function b() {}",
+  "source/blank.js": "/* prefix prepend string */
+",
+  "source/codemod-ignored.js": "// codemod ignored",
+  "source/codemod-omitted-via-string-pattern.js": "// codemod ignored",
+}
+`;
+
+exports[`happy path prepend-string with piscina 2`] = `"codemod post process [\\"<test-dir>/source/.dotfile.js\\",\\"<test-dir>/source/a.js\\",\\"<test-dir>/source/b.js\\",\\"<test-dir>/source/blank.js\\"]"`;
+
+exports[`happy path prepend-string with piscina 3`] = `"commandLineArgs {}"`;
+
 exports[`ignore files happy path 1`] = `
 Object {
   "codemod-missing-ignore-file.js": "module.exports = {

@@ -165,6 +165,31 @@ describe('happy path', () => {
       expect(commandLineArgs).toMatchSnapshot();
     }
   });
+
+  createTest({
+    testName: 'prepend-string with piscina',
+    fixtureName: 'prepend-string',
+    spawnArgs: [
+      '--codemod', path.join('codemod', 'codemod.js'),
+      '--codemodArgs', 'a b c', '.', '!codemod',
+      '--piscinaLowerBoundInclusive', '1'
+    ],
+    setUpNodeModules: false,
+    snapshot: true,
+    assert(spawnResult, testDir) {
+      const sanitizedStdout = stripAnsi(replaceAll(spawnResult.stdout, testDir, '<test-dir>'));
+      const findLine = substring => sanitizedStdout.split('\n').find(line => line.includes(substring));
+
+      const postProcessOutput = findLine('codemod post process');
+      expect(postProcessOutput).toBeTruthy();
+      expect(postProcessOutput).toMatchSnapshot();
+
+      const commandLineArgs = findLine('commandLineArgs');
+      expect(commandLineArgs).toBeTruthy();
+      expect(commandLineArgs).toMatchSnapshot();
+    }
+  });
+
   createTest({
     testName: 'dry',
     fixtureName: 'prepend-string',

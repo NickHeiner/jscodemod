@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import yargs from 'yargs';
-import jscodemod from './';
+import jscodemod, {defaultPiscinaLowerBoundInclusive} from './';
 import _ from 'lodash';
 import 'loud-rejection/register';
 import getLogger from './get-logger';
@@ -54,6 +54,13 @@ const {argv} = yargs
       type: 'boolean',
       describe: 'Print a list of files to modify, then stop.'
     },
+    piscinaLowerBoundInclusive: {
+      alias: 'b',
+      type: 'number',
+      default: defaultPiscinaLowerBoundInclusive,
+      describe: 'Only use piscina if there are at least this many files. At smaller file sizes, the fixed cost of ' +
+        'spinning up piscina outweighs the benefits.'
+    },
     porcelain: {
       alias: 'p',
       default: false,
@@ -105,7 +112,8 @@ async function main() {
   // complexity without adding much safety.
   try {
     const opts = {
-      ..._.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'resetDirtyInputFiles', 'porcelain', 'jsonOutput'),
+      ..._.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'resetDirtyInputFiles', 'porcelain', 'jsonOutput',
+        'piscinaLowerBoundInclusive'),
       log
     };
 
