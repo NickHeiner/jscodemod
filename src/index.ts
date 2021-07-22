@@ -76,7 +76,7 @@ function getProgressUI(logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, total
  * Only use Piscina if there are at least this many files.
  * At smaller input sizes, Piscina's fixed startup cost isn't justified by the per-file gains. In my anecdotal test,
  * running a simple codemod on a single file took ~5 seconds with Piscina and ~2 seconds when kept in-process.
- * 
+ *
  * Also, creating multiple piscina worker pools simultaneously seems to have a super-linear cost. I ran into this when
  * writing tests which by default ran simultaneously. 1 simultaneous worker pool took ~5 seconds, 2 took ~20, 3 took
  * ~50, etc.
