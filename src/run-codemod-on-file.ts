@@ -11,14 +11,7 @@ import {
 import * as recast from 'recast';
 import getCodemodName from './get-codemod-name';
 
-// I wonder if we could measure perf gains by trimming this import list.
-
 const pFs = fs.promises;
-
-/**
- * I don't think we can share this instance across workers – I got an error that said the transform function
- * "could not be cloned" when I tried to pass the codemod itself on `workerData`.
- */
 
 export type CodemodMetaResult = {
   filePath: string;

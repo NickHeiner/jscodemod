@@ -274,7 +274,7 @@ async function jscodemod(
   }
 
   const codemodMetaResults = await transformCode(codemod, log, codemodPath, filesToModify, writeFiles,
-    passedOptions.piscinaLowerBoundInclusive, _.pick(passedOptions, 'jsonOutput', 'porcelain', ''), options.codemodArgs
+    passedOptions.piscinaLowerBoundInclusive, _.pick(passedOptions, 'jsonOutput', 'porcelain'), options.codemodArgs
   );
   if (typeof codemod.postProcess === 'function' && doPostProcess) {
     const modifiedFiles = _(codemodMetaResults).filter('codeModified').map('filePath').value();

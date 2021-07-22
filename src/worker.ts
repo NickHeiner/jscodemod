@@ -4,6 +4,8 @@ import loadCodemod from './load-codemod';
 import _ from 'lodash';
 import runCodemodOnFile, {CodemodMetaResult} from './run-codemod-on-file';
 
+// I wonder if we could measure perf gains by trimming this import list.
+
 const baseLog = getLogger({
   name: 'jscodemod-worker',
   ...piscina.workerData.logOpts
