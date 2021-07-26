@@ -248,6 +248,19 @@ describe('happy path', () => {
     },
     snapshot: true
   });
+
+  createTest({
+    testName: 'codemodArgs parseArgs is passed to postProcess',
+    fixtureName: 'parse-args',
+    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), '*.js', '--', '--requiredFlag'],
+    assert({stdout}) {
+      const jsonLogs = getJsonLogs(stdout);
+      expect(jsonLogs).toContainEqual(expect.objectContaining({
+        message: 'from postProcess',
+        codemodArgs: expect.objectContaining({requiredFlag: ''})
+      }));
+    }
+  });
 });
 
 describe('error handling', () => {

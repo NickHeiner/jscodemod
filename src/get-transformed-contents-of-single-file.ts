@@ -14,8 +14,8 @@ async function getTransformedContentsOfSingleFile(
       respectIgnores: false,
       log: getLogger(),
       ...codemodOptions,
-      writeFiles: false,
-      doPostProcess: false
+      doPostProcess: false,
+      writeFiles: false
     }
   ) as unknown as CodemodMetaResult[];
 
