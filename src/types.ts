@@ -75,7 +75,7 @@ export type Codemod<ParsedArgs = unknown> = {
       inputFilesPatterns: string[],
       options: Partial<Options>
     ): ReturnType<typeof jscodemod>
-  }) => Promise<unknown>;
+  }) => void | Promise<unknown>;
 } & ({
   /**
    * Transform a single file. Return null or undefined to indicate that the file should not be modified.

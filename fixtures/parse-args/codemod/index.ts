@@ -17,6 +17,9 @@ const codemod: Codemod<ReturnType<typeof yargsBuilder.parse>> = {
   },
   transform() {
     return null;
+  },
+  postProcess(_changedFiles, {codemodArgs}) {
+    console.log(JSON.stringify({message: 'from postProcess', codemodArgs}));
   }
 };
 
