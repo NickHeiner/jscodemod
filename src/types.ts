@@ -69,6 +69,7 @@ export type Codemod<ParsedArgs = unknown> = {
    *                       opts.jscodemod(), `resetDirtyInputFiles` will default to true.
    */
   postProcess?: (modifiedFiles: string[], opts: {
+    codemodArgs: ParsedArgs,
     jscodemod(
       pathToCodemod: string,
       inputFilesPatterns: string[],

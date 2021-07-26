@@ -290,6 +290,7 @@ async function jscodemod(
       // have been undefined by the time this executes.
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     }, () => codemod.postProcess!(modifiedFiles, {
+      codemodArgs: parsedArgs,
       jscodemod(pathToCodemod: string, inputFilesPatterns: string[], options: Partial<Options>) {
         return jscodemod(pathToCodemod, inputFilesPatterns, {
           ...passedOptions,
