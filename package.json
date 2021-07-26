@@ -1,6 +1,6 @@
 {
   "name": "@nick.heiner/jscodemod",
-  "version": "1.0.0-14",
+  "version": "1.0.0-15",
   "description": "JS codemod runner",
   "homepage": "https://github.com/NickHeiner/jscodemod",
   "main": "build/index.js",
