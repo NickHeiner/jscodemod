@@ -10,7 +10,7 @@ import parseJson from 'parse-json';
 import stripAnsi from 'strip-ansi';
 import resolveBin from 'resolve-bin';
 import sanitizeFilename from 'sanitize-filename';
-import {getTransformedContentsOfSingleFile} from '../build';
+import {getTransformedContentsOfSingleFile, execBigCommand} from '../build';
 
 const log = createLog({name: 'test'});
 
@@ -509,5 +509,34 @@ describe('getTransformedContentsOfSingleFile', () => {
     expect(originalFilesContents).toEqual(
       await fs.readFile(inputFilePath, 'utf-8')
     );
+  });
+});
+
+describe('execBigCommand', () => {
+  it('respects maxArgCount', async () => {
+    /* eslint-disable no-magic-numbers */
+    const execCommandMock = jest.fn();
+
+    await execBigCommand(
+      ['constant arg 1', 'constant arg 2'],
+      _.range(0, 20).map(index => `arg-${index}`),
+      execCommandMock,
+      {maxArgCount: 5}
+    );
+
+    expect(execCommandMock).toHaveBeenCalledTimes(4);
+    expect(execCommandMock).toHaveBeenCalledWith(
+      ['constant arg 1', 'constant arg 2', 'arg-0', 'arg-1', 'arg-2', 'arg-3', 'arg-4']
+    );
+    expect(execCommandMock).toHaveBeenCalledWith(
+      ['constant arg 1', 'constant arg 2', 'arg-5', 'arg-6', 'arg-7', 'arg-8', 'arg-9']
+    );
+    expect(execCommandMock).toHaveBeenCalledWith(
+      ['constant arg 1', 'constant arg 2', 'arg-10', 'arg-11', 'arg-12', 'arg-13', 'arg-14']
+    );
+    expect(execCommandMock).toHaveBeenCalledWith(
+      ['constant arg 1', 'constant arg 2', 'arg-15', 'arg-16', 'arg-17', 'arg-18', 'arg-19']
+    );
+    /* eslint-enable no-magic-numbers */
   });
 });
