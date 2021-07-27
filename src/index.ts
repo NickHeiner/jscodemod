@@ -19,6 +19,7 @@ import runCodemodOnFile, {CodemodMetaResult} from './run-codemod-on-file';
 import noOpLogger from './no-op-logger';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
+export {default as execBigCommand} from './exec-big-command';
 
 export type TSOptions = {
   tsconfig?: string;

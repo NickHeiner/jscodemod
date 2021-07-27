@@ -10,10 +10,10 @@ function execBigCommand(
   execCommand: (args: string[]) => Promise<execa.ExecaReturnValue>,
   {
     log = noOpLogger,
-    maxArgSize = Infinity
+    maxArgCount = Infinity
   }: {
     log?: typeof noOpLogger,
-    maxArgSize?: number
+    maxArgCount?: number
   }
 ): Promise<void> {
   async function execBigCommandRec(variableArgs: string[]) {
@@ -26,10 +26,10 @@ function execBigCommand(
      * experimentally, this was not true. I still saw E2BIG errors. I don't know if it's because I'm misinterpreting
      * what results of TextEncoder and `ARG_MAX`. But, if I divide by 2, then it worked in my anecdotal testing.
      */
-    if (variableArgs.length > maxArgSize || commandLengthBytes > shellArgMaxBytes / 2) {
+    if (variableArgs.length > maxArgCount || commandLengthBytes > shellArgMaxBytes / 2) {
       log.debug({
         variableArgCount: variableArgs.length,
-        maxArgSize,
+        maxArgCount,
         variableArgLengthBytes: commandLengthBytes,
         shellArgMaxBytes
       }, 'Splitting command to avoid an E2BIG error.');
