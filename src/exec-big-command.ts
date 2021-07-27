@@ -14,7 +14,7 @@ function execBigCommand(
   }: {
     log?: typeof noOpLogger,
     maxArgCount?: number
-  }
+  } = {}
 ): Promise<void> {
   async function execBigCommandRec(variableArgs: string[]) {
     const combinedArgs = [...constantArgs, ...variableArgs];

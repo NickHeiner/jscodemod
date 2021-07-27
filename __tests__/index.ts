@@ -539,4 +539,16 @@ describe('execBigCommand', () => {
     );
     /* eslint-enable no-magic-numbers */
   });
+
+  it('has defaults for options', async () => {
+    const execCommandMock = jest.fn();
+
+    await execBigCommand(
+      ['constant arg 1', 'constant arg 2'],
+      ['variable arg'],
+      execCommandMock
+    );
+
+    expect(execCommandMock).toHaveBeenCalledTimes(1);
+  });
 });
