@@ -8,7 +8,6 @@ import ProgressBar from 'progress';
 import {cyan} from 'ansi-colors';
 import ora from 'ora';
 import createLog from 'nth-log';
-import fs from 'fs';
 import compileTS from './compile-ts';
 import {Codemod, TODO} from './types';
 import execBigCommand from './exec-big-command';
@@ -17,10 +16,9 @@ import loadCodemod from './load-codemod';
 import gitignore from './gitignore';
 import getCodemodName from './get-codemod-name';
 import runCodemodOnFile, {CodemodMetaResult} from './run-codemod-on-file';
+import noOpLogger from './no-op-logger';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
-
-const noOpLogger = createLog({name: 'no-op', stream: fs.createWriteStream('/dev/null')});
 
 export type TSOptions = {
   tsconfig?: string;
