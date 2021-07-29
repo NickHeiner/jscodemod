@@ -160,6 +160,10 @@ describe('happy path', () => {
       expect(postProcessOutput).toBeTruthy();
       expect(postProcessOutput).toMatchSnapshot();
 
+      const resultsMetaOutput = findLine('resultMeta as passed to post process');
+      expect(resultsMetaOutput).toBeTruthy();
+      expect(resultsMetaOutput).toMatchSnapshot();
+
       const commandLineArgs = findLine('commandLineArgs');
       expect(commandLineArgs).toBeTruthy();
       expect(commandLineArgs).toMatchSnapshot();
@@ -183,6 +187,10 @@ describe('happy path', () => {
       const postProcessOutput = findLine('codemod post process');
       expect(postProcessOutput).toBeTruthy();
       expect(postProcessOutput).toMatchSnapshot();
+
+      const resultsMetaOutput = findLine('resultMeta as passed to post process');
+      expect(resultsMetaOutput).toBeTruthy();
+      expect(resultsMetaOutput).toMatchSnapshot();
 
       const commandLineArgs = findLine('commandLineArgs');
       expect(commandLineArgs).toBeTruthy();
