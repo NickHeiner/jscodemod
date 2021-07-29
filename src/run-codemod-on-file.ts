@@ -217,7 +217,7 @@ export default async function runCodemodOnFile(
 
   const ostensiblyTransformedCode = typeof codemodResult === 'string' ? codemodResult : codemodResult?.code;
 
-  const codeModified = ostensiblyTransformedCode !== originalFileContents;
+  const codeModified = Boolean(ostensiblyTransformedCode) && ostensiblyTransformedCode !== originalFileContents;
 
   if (codeModified && writeFiles) {
     // This non-null assertion is safe because `codeModified` includes a check on `transformedCode`.

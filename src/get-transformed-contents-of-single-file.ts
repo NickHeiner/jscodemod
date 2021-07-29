@@ -17,7 +17,7 @@ async function getTransformedContentsOfSingleFile(
       doPostProcess: false,
       writeFiles: false
     }
-  ) as unknown as CodemodMetaResult[];
+  ) as unknown as CodemodMetaResult<unknown>[];
 
   if (codemodMetaResults[0].action === 'error') {
     throw codemodMetaResults[0].error;

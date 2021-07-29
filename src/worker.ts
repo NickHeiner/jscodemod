@@ -17,7 +17,7 @@ const baseLog = getLogger({
  */
 const codemod = loadCodemod(piscina.workerData.codemodPath);
 
-export default function main(sourceCodeFile: string): Promise<CodemodMetaResult> {
+export default function main(sourceCodeFile: string): Promise<CodemodMetaResult<unknown>> {
   return runCodemodOnFile(
     codemod,
     sourceCodeFile,
