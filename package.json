@@ -6,7 +6,11 @@
   "main": "build/index.js",
   "repository": "git@github.com:NickHeiner/jscodemod.git",
   "author": "Nick Heiner <nth23@cornell.edu>",
-  "files": ["build", "docs", "README.md"],
+  "files": [
+    "build",
+    "docs",
+    "README.md"
+  ],
   "license": "MIT",
   "bin": "./build/bin.js",
   "scripts": {
@@ -40,6 +44,7 @@
     "resolve-bin": "0.4.0",
     "sanitize-filename": "1.6.3",
     "strip-ansi": "6.0.0",
+    "type-fest": "1.2.3",
     "typescript": "4.1.5",
     "utility-types": "3.10.0"
   },

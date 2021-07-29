@@ -104,7 +104,7 @@ function transformCode(
     workerData: {...baseRunnerOpts, logOpts}
   }));
 
-  const runCodemodOnSingleFile = (inputFile: string) => {
+  const runCodemodOnSingleFile = (inputFile: string): Promise<CodemodMetaResult<unknown>> => {
     if (inputFiles.length >= (piscinaLowerBoundInclusive ?? defaultPiscinaLowerBoundInclusive)) {
       return getPiscina().runTask(inputFile);
     }
@@ -114,7 +114,7 @@ function transformCode(
 
   const progressBar = getProgressUI(logOpts, inputFiles.length);
   return Promise.all(inputFiles.map(async inputFile => {
-    const codemodMetaResult: CodemodMetaResult = await runCodemodOnSingleFile(inputFile);
+    const codemodMetaResult = await runCodemodOnSingleFile(inputFile);
     log.debug({
       ...codemodMetaResult,
       fileContents: '<truncated file contents>'
@@ -172,7 +172,8 @@ async function jscodemod(
   pathToCodemod: string,
   inputFilesPatterns: string[],
   passedOptions: Options = {}
-): Promise<CodemodMetaResult[] | string[]> { // TODO: encode that this return type depends on whether 'dry' is passed.
+// TODO: encode that this return type depends on whether 'dry' is passed.
+): Promise<CodemodMetaResult<unknown>[] | string[]> {
   const {
     log,
     doPostProcess,
@@ -278,6 +279,10 @@ async function jscodemod(
   if (typeof codemod.postProcess === 'function' && doPostProcess) {
     const modifiedFiles = _(codemodMetaResults).filter('codeModified').map('filePath').value();
 
+    const codemodMeta = new Map(
+      codemodMetaResults.map(({filePath, meta}) => [filePath, meta])
+    );
+
     // TODO: if the postProcess phase fails, there's no way for that to propagate back up to the caller, which means
     // we can't exit with a non-zero code.
     await log.logPhase({
@@ -290,6 +295,7 @@ async function jscodemod(
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     }, () => codemod.postProcess!(modifiedFiles, {
       codemodArgs: parsedArgs,
+      resultMeta: codemodMeta,
       jscodemod(pathToCodemod: string, inputFilesPatterns: string[], options: Partial<Options>) {
         return jscodemod(pathToCodemod, inputFilesPatterns, {
           ...passedOptions,
