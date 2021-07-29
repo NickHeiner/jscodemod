@@ -29,3 +29,17 @@ After inspecting the changes, if you want to discard the commit, use this one-li
 ```
 $ git rebase -r --onto <SHA>~1 <SHA>
 ```
+
+## Run multiple codemods sequentially
+If you want to implement your codemod in multiple phases, use the `postProcess` hook:
+
+```js
+const codemod = {
+    async postProcess(changedFiles, { jscodemod, }) {
+        await jscodemod(require.resolve('./second-phase'), changedFiles);
+        await jscodemod(require.resolve('./third-phase'), 'custom/pattern/**/*.js');
+    }
+}
+```
+
+**Note:** Unfortunately, passing flag `--resetDirtyInputFiles` won't work with a multi-step codemod like this. `jscodemod` will reset the dirty input files before each phase, so if you touch the same files in multiple phases, the later phases will clobber the results of the earlier phases.
