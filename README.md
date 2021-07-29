@@ -12,7 +12,7 @@ Yes. I've used jscodeshift, which was created in 2015, in the past. However, I w
 * When writing a complex transform with jscodeshift, you end up wrapping it in a bash script, which becomes painful.
 * This tool allows you to use a babel plugin directly.
 
-For more detail, see [Comparison with JSCodeshift](docs/comparison-with-jscodeshift.md).
+For more detail, see [Comparison with JSCodeshift](docs/comparison-with-jscodeshift.md). To see more things that you can do easily with jscodemod that you can't do easily with jscodeshift, see [Recipes](docs/recipes.md).
 
 ## CLI Usage
 To specify which files to run on, pass a set of [globby](https://www.npmjs.com/package/globby) patterns. Depending on your shell, you may need to wrap the patterns in single quotes to prevent shell expansion:
