@@ -1,4 +1,5 @@
-export type CodemodResult = string | undefined | null;
+export type TransformedCode = string | undefined | null;
+export type CodemodResult<TransformResultMeta> = TransformedCode | {code: TransformedCode, meta: TransformResultMeta};
 import {PluginTarget, TransformOptions} from '@babel/core';
 
 type ScalarOrPromise<T> = T | Promise<T>;
@@ -11,7 +12,7 @@ export type BaseCodemodArgs<ParsedArgs> = {
   commandLineArgs?: ParsedArgs;
 }
 
-export type Codemod<ParsedArgs = unknown> = {
+export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
   /**
    * A name for the codemod, like "transform-cjs-to-esm". Defaults to the file name. Used for logging.
    */
@@ -67,9 +68,13 @@ export type Codemod<ParsedArgs = unknown> = {
    *                       default to the options derived from the original command line invocation of jscodemod. For
    *                       example, if the user passed --resetDirtyInputFiles to the command line, then when you call
    *                       opts.jscodemod(), `resetDirtyInputFiles` will default to true.
+   * @param opts.codemodArgs The codemod args returned by codemod.parseArgs(), if that method is defined.
+   * @param opts.resultMeta A map from absolute file path to any TransformResultMeta that was returned by the transform
+   *                        function.
    */
   postProcess?: (modifiedFiles: string[], opts: {
     codemodArgs: ParsedArgs,
+    resultMeta: Map<string, TransformResultMeta>,
     jscodemod(
       pathToCodemod: string,
       inputFilesPatterns: string[],
@@ -87,7 +92,7 @@ export type Codemod<ParsedArgs = unknown> = {
    */
   transform(opts: {
     source: string;
-  } & BaseCodemodArgs<ParsedArgs>): CodemodResult | Promise<CodemodResult>;
+  } & BaseCodemodArgs<ParsedArgs>): CodemodResult<TransformResultMeta> | Promise<CodemodResult<TransformResultMeta>>;
 
   presets?: never;
   getPlugin?: never;

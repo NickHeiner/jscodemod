@@ -130,7 +130,7 @@ async function main() {
 
     const erroredFiles = _(codemodMetaResults)
       .filter({action: 'error'})
-      .map((result: CodemodMetaResult) => _.omit(result, 'fileContents'))
+      .map((result: CodemodMetaResult<unknown>) => _.omit(result, 'fileContents'))
       .value();
     if (erroredFiles.length) {
       log.error({erroredFiles}, 'The codemod threw errors for some files.');

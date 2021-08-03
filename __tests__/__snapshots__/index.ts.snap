@@ -279,13 +279,17 @@ Object {
     /codemod-ignored/,
     'omitted-via-string-pattern'
   ],
-  postProcess: modifiedFiles => {
+  postProcess: (modifiedFiles, {resultMeta}) => {
     console.log('codemod post process', JSON.stringify(modifiedFiles));
+    console.log('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
   },
   parseArgs: rawCommandLineArgs => ({rawCommandLineArgs}),
-  transform({source, commandLineArgs}) {
+  transform({source, commandLineArgs, filePath}) {
     console.log('commandLineArgs', JSON.stringify(commandLineArgs));
-    return \`/* prefix prepend string */\\\\n\${source}\`;
+    return {
+      meta: \`meta for \${filePath}\`,
+      code: \`/* prefix prepend string */\\\\n\${source}\`
+    };
   }
 };",
   "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
@@ -304,13 +308,17 @@ Object {
     /codemod-ignored/,
     'omitted-via-string-pattern'
   ],
-  postProcess: modifiedFiles => {
+  postProcess: (modifiedFiles, {resultMeta}) => {
     console.log('codemod post process', JSON.stringify(modifiedFiles));
+    console.log('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
   },
   parseArgs: rawCommandLineArgs => ({rawCommandLineArgs}),
-  transform({source, commandLineArgs}) {
+  transform({source, commandLineArgs, filePath}) {
     console.log('commandLineArgs', JSON.stringify(commandLineArgs));
-    return \`/* prefix prepend string */\\\\n\${source}\`;
+    return {
+      meta: \`meta for \${filePath}\`,
+      code: \`/* prefix prepend string */\\\\n\${source}\`
+    };
   }
 };",
   "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
@@ -506,13 +514,17 @@ Object {
     /codemod-ignored/,
     'omitted-via-string-pattern'
   ],
-  postProcess: modifiedFiles => {
+  postProcess: (modifiedFiles, {resultMeta}) => {
     console.log('codemod post process', JSON.stringify(modifiedFiles));
+    console.log('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
   },
   parseArgs: rawCommandLineArgs => ({rawCommandLineArgs}),
-  transform({source, commandLineArgs}) {
+  transform({source, commandLineArgs, filePath}) {
     console.log('commandLineArgs', JSON.stringify(commandLineArgs));
-    return \`/* prefix prepend string */\\\\n\${source}\`;
+    return {
+      meta: \`meta for \${filePath}\`,
+      code: \`/* prefix prepend string */\\\\n\${source}\`
+    };
   }
 };",
   "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
@@ -529,7 +541,9 @@ function b() {}",
 
 exports[`happy path prepend-string 2`] = `"codemod post process [\\"<test-dir>/source/.dotfile.js\\",\\"<test-dir>/source/a.js\\",\\"<test-dir>/source/b.js\\",\\"<test-dir>/source/blank.js\\"]"`;
 
-exports[`happy path prepend-string 3`] = `"commandLineArgs {}"`;
+exports[`happy path prepend-string 3`] = `"resultMeta as passed to post process [[\\"<test-dir>/source/.dotfile.js\\",\\"meta for <test-dir>/source/.dotfile.js\\"],[\\"<test-dir>/source/a.js\\",\\"meta for <test-dir>/source/a.js\\"],[\\"<test-dir>/source/b.js\\",\\"meta for <test-dir>/source/b.js\\"],[\\"<test-dir>/source/blank.js\\",\\"meta for <test-dir>/source/blank.js\\"]]"`;
+
+exports[`happy path prepend-string 4`] = `"commandLineArgs {}"`;
 
 exports[`happy path prepend-string with piscina 1`] = `
 Object {
@@ -538,13 +552,17 @@ Object {
     /codemod-ignored/,
     'omitted-via-string-pattern'
   ],
-  postProcess: modifiedFiles => {
+  postProcess: (modifiedFiles, {resultMeta}) => {
     console.log('codemod post process', JSON.stringify(modifiedFiles));
+    console.log('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
   },
   parseArgs: rawCommandLineArgs => ({rawCommandLineArgs}),
-  transform({source, commandLineArgs}) {
+  transform({source, commandLineArgs, filePath}) {
     console.log('commandLineArgs', JSON.stringify(commandLineArgs));
-    return \`/* prefix prepend string */\\\\n\${source}\`;
+    return {
+      meta: \`meta for \${filePath}\`,
+      code: \`/* prefix prepend string */\\\\n\${source}\`
+    };
   }
 };",
   "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
@@ -561,7 +579,9 @@ function b() {}",
 
 exports[`happy path prepend-string with piscina 2`] = `"codemod post process [\\"<test-dir>/source/.dotfile.js\\",\\"<test-dir>/source/a.js\\",\\"<test-dir>/source/b.js\\",\\"<test-dir>/source/blank.js\\"]"`;
 
-exports[`happy path prepend-string with piscina 3`] = `"commandLineArgs {}"`;
+exports[`happy path prepend-string with piscina 3`] = `"resultMeta as passed to post process [[\\"<test-dir>/source/.dotfile.js\\",\\"meta for <test-dir>/source/.dotfile.js\\"],[\\"<test-dir>/source/a.js\\",\\"meta for <test-dir>/source/a.js\\"],[\\"<test-dir>/source/b.js\\",\\"meta for <test-dir>/source/b.js\\"],[\\"<test-dir>/source/blank.js\\",\\"meta for <test-dir>/source/blank.js\\"]]"`;
+
+exports[`happy path prepend-string with piscina 4`] = `"commandLineArgs {}"`;
 
 exports[`ignore files happy path 1`] = `
 Object {

@@ -1,6 +1,7 @@
 import type {NTHLogger} from 'nth-log';
 import fs from 'fs';
-import type {CodemodResult, Codemod, TODO} from './types';
+import type {Codemod, TODO} from './types';
+import {PromiseValue} from 'type-fest';
 import _ from 'lodash';
 import {
   parse as babelParse,
@@ -13,7 +14,8 @@ import getCodemodName from './get-codemod-name';
 
 const pFs = fs.promises;
 
-export type CodemodMetaResult = {
+export type CodemodMetaResult<TransformResultMeta> = {
+  meta: TransformResultMeta
   filePath: string;
 } & ({
   action: 'modified' | 'skipped';
@@ -27,7 +29,7 @@ export type CodemodMetaResult = {
 export default async function runCodemodOnFile(
   codemod: Codemod, sourceCodeFile: string, baseLog: NTHLogger,
   {codemodArgs, codemodPath, writeFiles}: {codemodArgs?: string, writeFiles: boolean; codemodPath: string}
-): Promise<CodemodMetaResult> {
+): Promise<CodemodMetaResult<unknown>> {
   const log = baseLog.child({sourceCodeFile});
   const codemodName = getCodemodName(codemod, codemodPath);
   log.debug({action: 'start', codemod: codemodName});
@@ -46,7 +48,7 @@ export default async function runCodemodOnFile(
     commandLineArgs: parsedArgs
   };
 
-  const transformFile = async (): Promise<CodemodResult> => {
+  const transformFile = async () => {
     if (codemod.transform) {
       try {
         return codemod.transform(codemodOpts);
@@ -93,6 +95,8 @@ export default async function runCodemodOnFile(
     try {
       // TODO: Make a way for the codemod to cleanly say that the file should not be modified.
       // Maybe returning undefined?
+      //
+      // This is sort of accomplished by allowing a codemod to call willNotifyOnAstChange() and never astDidChange().
       codemodPlugins = await codemod.getPlugin({
         ...codemodOpts,
         willNotifyOnAstChange: () => {
@@ -199,11 +203,11 @@ export default async function runCodemodOnFile(
     return transformedCode;
   };
 
-  let transformedCode: CodemodResult = null;
+  let codemodResult: PromiseValue<ReturnType<typeof transformFile>> = null;
   let thrownError = null;
 
   try {
-    transformedCode = await transformFile();
+    codemodResult = await transformFile();
   } catch (e) {
     thrownError = e;
     log.error({
@@ -211,12 +215,14 @@ export default async function runCodemodOnFile(
     }, `File ${sourceCodeFile}: Codemod "${codemodName}" threw an error during ${e.phase}. ${e.suggestion}`);
   }
 
-  const codeModified = Boolean(transformedCode && transformedCode !== originalFileContents);
+  const ostensiblyTransformedCode = typeof codemodResult === 'string' ? codemodResult : codemodResult?.code;
+
+  const codeModified = Boolean(ostensiblyTransformedCode) && ostensiblyTransformedCode !== originalFileContents;
 
   if (codeModified && writeFiles) {
     // This non-null assertion is safe because `codeModified` includes a check on `transformedCode`.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    await pFs.writeFile(sourceCodeFile, transformedCode!);
+    await pFs.writeFile(sourceCodeFile, ostensiblyTransformedCode!);
   }
   const action = thrownError ? 'error' : codeModified ? 'modified' : 'skipped';
   log.debug({action, writeFiles});
@@ -225,7 +231,9 @@ export default async function runCodemodOnFile(
     action,
     error: thrownError,
     codeModified,
-    fileContents: transformedCode ? transformedCode : originalFileContents,
+    // if codeModified is true, we know ostensiblyTransformedCode is a string.
+    fileContents: codeModified ? (ostensiblyTransformedCode as string) : originalFileContents,
+    meta: typeof codemodResult === 'string' ? undefined : codemodResult?.meta,
     filePath: sourceCodeFile
   };
 }
