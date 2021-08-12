@@ -15,11 +15,10 @@ const tsOnlyNote = '(Only applicable if your codemod is written in TypeScript)';
 const {argv} = yargs
   // TODO: Some of these options should be hidden.
   .command(
-    '$0 [options] <fileGlobs...>',
+    '$0 [inputFilesPatterns...]',
     'Run the codemod. Any arguments after "--" will be passed through to the codemod.',
     yargs => {
-      yargs.positional('fileGlobs', {
-        required: true,
+      yargs.positional('inputFilesPatterns', {
         type: 'string'
       });
     })
@@ -33,6 +32,11 @@ const {argv} = yargs
       type: 'string',
       required: true,
       describe: 'Path to the codemod to run'
+    },
+    inputFileList: {
+      alias: 'l',
+      type: 'string',
+      describe: 'A file containing a newline-delimited set of file paths to run on'
     },
     // TODO: allow arbitrary TS arg passthrough at your own risk.
     tsconfig: {
@@ -86,14 +90,17 @@ const {argv} = yargs
         ' of this tool from another tool, or process the logs using your own Bunyan log processor/formatter.'
     }
   })
-  .group(['codemod', 'dry', 'resetDirtyInputFiles'], 'Primary')
+  .group(['codemod', 'dry', 'resetDirtyInputFiles', 'inputFileList'], 'Primary')
   .group(['tsconfig', 'tsOutDir', 'tsc'], 'TypeScript')
   .group(['jsonOutput', 'porcelain'], 'Rarely Useful')
   .check(argv => {
+    const log = getLogger(_.pick(argv, 'jsonOutput', 'porcelain'));
+    log.debug({argv});
+
     // Yarg's types are messed up.
     // @ts-expect-error
-    if (!argv.fileGlobs.length) {
-      throw new Error('You must pass at least one globby pattern of files to transform.');
+    if (!((argv.inputFilesPatterns && argv.inputFilesPatterns.length) || argv.inputFileList)) {
+      throw new Error('You must pass at least one globby pattern of files to transform, or an --inputFileList.');
     }
     if (argv.porcelain && !argv.dry) {
       throw new Error('Porcelain is only supported for dry mode.');
@@ -106,14 +113,12 @@ const {argv} = yargs
 async function main() {
   const log = getLogger(_.pick(argv, 'jsonOutput', 'porcelain'));
 
-  log.debug({argv});
-
   // This is not an exhaustive error wrapper, but I think it's ok for now. Making it catch more cases would introduce
   // complexity without adding much safety.
   try {
     const opts = {
       ..._.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'resetDirtyInputFiles', 'porcelain', 'jsonOutput',
-        'piscinaLowerBoundInclusive'),
+        'piscinaLowerBoundInclusive', 'inputFileList', 'inputFilesPatterns'),
       log
     };
 
@@ -124,7 +129,6 @@ async function main() {
       argv.codemod,
       // Yarg's types are messed up.
       // @ts-expect-error
-      argv.fileGlobs,
       opts
     );
 

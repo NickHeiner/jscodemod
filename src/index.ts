@@ -17,6 +17,8 @@ import gitignore from './gitignore';
 import getCodemodName from './get-codemod-name';
 import runCodemodOnFile, {CodemodMetaResult} from './run-codemod-on-file';
 import noOpLogger from './no-op-logger';
+import {promises as fs} from 'fs';
+import {EOL} from 'os';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
 export {default as execBigCommand} from './exec-big-command';
@@ -41,12 +43,21 @@ export type NonTSOptions = {
   doPostProcess?: boolean;
   respectIgnores?: boolean;
   piscinaLowerBoundInclusive?: number;
+  inputFileList?: string;
+  inputFilesPatterns?: string[];
 }
+/* & ({
+  inputFileList: string;
+  inputFilesPatterns: never;
+} | {
+  inputFileList: never;
+  inputFilesPatterns: string[];
+}) */
 
 export type Options = Omit<TSOptions, 'log'> & Partial<Pick<TSOptions, 'log'>> & NonTSOptions;
 
 type FalseyDefaultOptions = 'dry' | 'porcelain' | 'codemodArgs' | 'resetDirtyInputFiles' | 'jsonOutput'
-  | 'piscinaLowerBoundInclusive';
+  | 'piscinaLowerBoundInclusive' | 'inputFileList' | 'inputFilesPatterns';
 export type InternalOptions = TSOptions
   & Pick<NonTSOptions, FalseyDefaultOptions>
   & Required<Omit<NonTSOptions, FalseyDefaultOptions>>;
@@ -170,7 +181,6 @@ async function getIsIgnoredByIgnoreFile(log: TODO, ignoreFiles: string[] | undef
 
 async function jscodemod(
   pathToCodemod: string,
-  inputFilesPatterns: string[],
   passedOptions: Options = {}
 // TODO: encode that this return type depends on whether 'dry' is passed.
 ): Promise<CodemodMetaResult<unknown>[] | string[]> {
@@ -178,6 +188,8 @@ async function jscodemod(
     log,
     doPostProcess,
     writeFiles,
+    inputFilesPatterns,
+    inputFileList,
     ...options
   }: InternalOptions = {
     log: noOpLogger,
@@ -201,21 +213,34 @@ async function jscodemod(
   const codemodIgnores = _.compact(([] as (RegExp | string | undefined)[]).concat(codemod.ignore));
   const isIgnoredByIgnoreFile = await getIsIgnoredByIgnoreFile(log, codemod.ignoreFiles);
 
-  const globbedFiles = await log.logPhase({
-    phase: 'globbing',
-    level: 'debug',
-    inputFilesPatterns
-  }, () => globby(inputFilesPatterns, {dot: true, gitignore: true}));
+  async function getInputFilesBeforeIgnores() {
+    if (inputFilesPatterns) {
+      return log.logPhase({
+        phase: 'globbing',
+        level: 'debug',
+        inputFilesPatterns
+      }, () => globby(inputFilesPatterns, {dot: true, gitignore: true}));
+    }
+
+    if (inputFileList) {
+      const fileContents = await fs.readFile(inputFileList, 'utf8');
+      return _.compact(fileContents.trim().split(EOL));
+    }
+
+    throw new Error('You must specify one of these options: `inputFilesPatterns` or `inputFileList`');
+  }
+
+  const inputFilesBeforeIgnores = await getInputFilesBeforeIgnores();
 
   log.debug({
     codemodName,
     // Workaround for https://github.com/NickHeiner/nth-log/issues/12.
     codemodIgnores: codemodIgnores.map(re => re.toString()),
     codemodIgnoreFiles: codemod.ignoreFiles,
-    globbedFiles
+    inputFilesBeforeIgnores
   }, 'Filtering input file patterns.');
 
-  const filesToModify = _(globbedFiles)
+  const filesToModify = _(inputFilesBeforeIgnores)
     .map(filePath => path.resolve(filePath))
     .reject(filePath =>
       options.respectIgnores &&
@@ -296,8 +321,8 @@ async function jscodemod(
     }, () => codemod.postProcess!(modifiedFiles, {
       codemodArgs: parsedArgs,
       resultMeta: codemodMeta,
-      jscodemod(pathToCodemod: string, inputFilesPatterns: string[], options: Partial<Options>) {
-        return jscodemod(pathToCodemod, inputFilesPatterns, {
+      jscodemod(pathToCodemod: string, options: Partial<Options>) {
+        return jscodemod(pathToCodemod, {
           ...passedOptions,
           ...options
         });

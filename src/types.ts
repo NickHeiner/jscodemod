@@ -77,7 +77,6 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
     resultMeta: Map<string, TransformResultMeta>,
     jscodemod(
       pathToCodemod: string,
-      inputFilesPatterns: string[],
       options: Partial<Options>
     ): ReturnType<typeof jscodemod>
   }) => void | Promise<unknown>;

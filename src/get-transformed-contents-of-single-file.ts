@@ -9,8 +9,8 @@ async function getTransformedContentsOfSingleFile(
 ): Promise<string> {
   const codemodMetaResults = await jscodemod(
     pathToCodemod,
-    [inputFile],
     {
+      inputFilesPatterns: [inputFile],
       respectIgnores: false,
       log: getLogger(),
       ...codemodOptions,
