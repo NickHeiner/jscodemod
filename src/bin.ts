@@ -102,6 +102,11 @@ const {argv} = yargs
     if (!((argv.inputFilesPatterns && argv.inputFilesPatterns.length) || argv.inputFileList)) {
       throw new Error('You must pass at least one globby pattern of files to transform, or an --inputFileList.');
     }
+    // Yarg's types are messed up.
+    // @ts-expect-error
+    if (argv.inputFilesPatterns && argv.inputFilesPatterns.length && argv.inputFileList) {
+      throw new Error("You can't pass both an --inputFileList and a globby pattern.");
+    }
     if (argv.porcelain && !argv.dry) {
       throw new Error('Porcelain is only supported for dry mode.');
     }

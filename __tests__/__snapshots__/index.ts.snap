@@ -109,6 +109,55 @@ Missing required argument: requiredFlag
 The codemod's parseArgs method called process.exit(). This probably means the arguments you passed to it didn't validate. To pass arguments to a codemod, put them at the end of the whole command, like 'jscodemod -c codemod.js fileGlob -- -a b'."
 `;
 
+exports[`error handling passing both --inputFileList and glob pattern 1`] = `
+"bin.js [inputFilesPatterns...]
+
+Run the codemod. Any arguments after \\"--\\" will be passed through to the codemod.
+
+Positionals:
+  inputFilesPatterns                                                    [string]
+
+Primary
+  -c, --codemod               Path to the codemod to run     [string] [required]
+  -d, --dry                   Print a list of files to modify, then stop.
+                                                                       [boolean]
+  -r, --resetDirtyInputFiles  Use git to restore dirty files to a clean state
+                              before running the codemod. This assumes that all
+                              input files have the same .git root. If you use
+                              submodules, this may not work.
+                                                      [boolean] [default: false]
+  -l, --inputFileList         A file containing a newline-delimited set of file
+                              paths to run on                           [string]
+
+TypeScript
+      --tsconfig  (Only applicable if your codemod is written in TypeScript)
+                  path to the tsconfig.json                             [string]
+      --tsOutDir  (Only applicable if your codemod is written in TypeScript)
+                  directory in which to compile your codemod to. Defaults to a
+                  temporary directory.                                  [string]
+      --tsc       (Only applicable if your codemod is written in TypeScript)
+                  path to a \\"tsc\\" executable to compile your codemod. Defaults
+                  to looking for a \\"tsc\\" bin accessible from the current working
+                  directory.                                            [string]
+
+Rarely Useful
+      --jsonOutput  Output logs as JSON, instead of human-readable formatting.
+                    Useful if you want to consume the output  of this tool from
+                    another tool, or process the logs using your own Bunyan log
+                    processor/formatter.              [boolean] [default: false]
+  -p, --porcelain   Produce machine-readable output.  [boolean] [default: false]
+
+Options:
+      --version                     Show version number                [boolean]
+  -b, --piscinaLowerBoundInclusive  Only use piscina if there are at least this
+                                    many files. At smaller file sizes, the fixed
+                                    cost of spinning up piscina outweighs the
+                                    benefits.             [number] [default: 20]
+      --help                        Show help                          [boolean]
+
+You can't pass both an --inputFileList and a globby pattern."
+`;
+
 exports[`getTransformedContentsOfSingleFile processes codemod ignored files 1`] = `
 "/* prefix prepend string */
 // codemod ignored"
@@ -544,6 +593,38 @@ exports[`happy path prepend-string 2`] = `"codemod post process [\\"<test-dir>/s
 exports[`happy path prepend-string 3`] = `"resultMeta as passed to post process [[\\"<test-dir>/source/.dotfile.js\\",\\"meta for <test-dir>/source/.dotfile.js\\"],[\\"<test-dir>/source/a.js\\",\\"meta for <test-dir>/source/a.js\\"],[\\"<test-dir>/source/b.js\\",\\"meta for <test-dir>/source/b.js\\"],[\\"<test-dir>/source/blank.js\\",\\"meta for <test-dir>/source/blank.js\\"]]"`;
 
 exports[`happy path prepend-string 4`] = `"commandLineArgs {}"`;
+
+exports[`happy path prepend-string 5`] = `
+Object {
+  "codemod/codemod.js": "module.exports = {
+  ignore: [
+    /codemod-ignored/,
+    'omitted-via-string-pattern'
+  ],
+  postProcess: (modifiedFiles, {resultMeta}) => {
+    console.log('codemod post process', JSON.stringify(modifiedFiles));
+    console.log('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
+  },
+  parseArgs: rawCommandLineArgs => ({rawCommandLineArgs}),
+  transform({source, commandLineArgs, filePath}) {
+    console.log('commandLineArgs', JSON.stringify(commandLineArgs));
+    return {
+      meta: \`meta for \${filePath}\`,
+      code: \`/* prefix prepend string */\\\\n\${source}\`
+    };
+  }
+};",
+  "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
+  "input-file-list.txt": "source/a.js
+source/codemod-ignored.js",
+  "source/a.js": "/* prefix prepend string */
+console.log('a');",
+  "source/b.js": "function b() {}",
+  "source/blank.js": "",
+  "source/codemod-ignored.js": "// codemod ignored",
+  "source/codemod-omitted-via-string-pattern.js": "// codemod ignored",
+}
+`;
 
 exports[`happy path prepend-string with piscina 1`] = `
 Object {

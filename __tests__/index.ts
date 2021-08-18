@@ -149,7 +149,9 @@ jest.setTimeout(15 * 1000);
 describe('happy path', () => {
   createTest({
     fixtureName: 'prepend-string',
-    spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), '--codemodArgs', 'a b c', '.', '!codemod'],
+    spawnArgs: [
+      '--codemod', path.join('codemod', 'codemod.js'), '--codemodArgs', 'a b c', '.', '{!codemod,!input-file-list.txt}'
+    ],
     setUpNodeModules: false,
     snapshot: true,
     assert(spawnResult, testDir) {
@@ -171,11 +173,18 @@ describe('happy path', () => {
   });
 
   createTest({
+    fixtureName: 'prepend-string',
+    spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), '--inputFileList', 'input-file-list.txt'],
+    setUpNodeModules: false,
+    snapshot: true
+  });
+
+  createTest({
     testName: 'prepend-string with piscina',
     fixtureName: 'prepend-string',
     spawnArgs: [
       '--codemod', path.join('codemod', 'codemod.js'),
-      '--codemodArgs', 'a b c', '.', '!codemod',
+      '--codemodArgs', 'a b c', '.', '{!codemod,!input-file-list.txt}',
       '--piscinaLowerBoundInclusive', '1'
     ],
     setUpNodeModules: false,
@@ -290,6 +299,16 @@ describe('error handling', () => {
     testName: 'missing required argument to codemod',
     fixtureName: 'parse-args',
     spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), '*.js'],
+    expectedExitCode: 1,
+    assert({stderr}) {
+      expect(stderr).toMatchSnapshot();
+    }
+  });
+
+  createTest({
+    testName: 'passing both --inputFileList and glob pattern',
+    fixtureName: 'prepend-string',
+    spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), '--inputFileList', 'input_files.txt', 'source/*.js'],
     expectedExitCode: 1,
     assert({stderr}) {
       expect(stderr).toMatchSnapshot();
