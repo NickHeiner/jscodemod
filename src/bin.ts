@@ -15,12 +15,25 @@ const tsOnlyNote = '(Only applicable if your codemod is written in TypeScript)';
 const {argv} = yargs
   // TODO: Some of these options should be hidden.
   .command(
+    /**
+     * I feel like '$0 [options] [inputFilePatterns...] is what want, but that breaks things. It's not obvious how yargs
+     * parses this string.
+     */
     '$0 [inputFilesPatterns...]',
     'Run the codemod. Any arguments after "--" will be passed through to the codemod.',
     yargs => {
       yargs.positional('inputFilesPatterns', {
         type: 'string'
-      });
+      })
+      // Yargs' types are wrong.
+      // @ts-expect-error
+        .example([
+          ['$0 --codemod codemod.js "source/**/*.js"', 'Run codemod.js against JS files in source'],
+          [
+            '$0 --codemod codemod.js --inputFileList files-to-modify.txt',
+            'Run the codemod against a set of files listed in the text file.'
+          ]
+        ]);
     })
   .middleware(argv => {
     argv.codemodArgs = argv['--'];
