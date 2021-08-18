@@ -7,7 +7,7 @@ module.exports = {
     console.log(JSON.stringify({modifiedFiles}));
     await jscodemod(
       require.resolve('./second-codemod'),
-      require.resolve('../source/dirty-transformed-by-second-codemod'),
-    )
+      {inputFilesPatterns: [require.resolve('../source/dirty-transformed-by-second-codemod')]}
+    );
   }
 };

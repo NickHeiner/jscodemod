@@ -171,6 +171,14 @@ describe('happy path', () => {
   });
 
   createTest({
+    testName: '--inputFileList',
+    fixtureName: 'prepend-string',
+    spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), '--inputFileList', 'input-file-list.txt'],
+    setUpNodeModules: false,
+    snapshot: true
+  });
+
+  createTest({
     testName: 'prepend-string with piscina',
     fixtureName: 'prepend-string',
     spawnArgs: [
@@ -290,6 +298,16 @@ describe('error handling', () => {
     testName: 'missing required argument to codemod',
     fixtureName: 'parse-args',
     spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), '*.js'],
+    expectedExitCode: 1,
+    assert({stderr}) {
+      expect(stderr).toMatchSnapshot();
+    }
+  });
+
+  createTest({
+    testName: 'passing both --inputFileList and glob pattern',
+    fixtureName: 'prepend-string',
+    spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), '--inputFileList', 'input_files.txt', 'source/*.js'],
     expectedExitCode: 1,
     assert({stderr}) {
       expect(stderr).toMatchSnapshot();
