@@ -43,16 +43,14 @@ export type NonTSOptions = {
   doPostProcess?: boolean;
   respectIgnores?: boolean;
   piscinaLowerBoundInclusive?: number;
-  inputFileList?: string;
-  inputFilesPatterns?: string[];
 }
-/* & ({
+& ({
   inputFileList: string;
-  inputFilesPatterns: never;
+  inputFilesPatterns?: never;
 } | {
-  inputFileList: never;
+  inputFileList?: never;
   inputFilesPatterns: string[];
-}) */
+})
 
 export type Options = Omit<TSOptions, 'log'> & Partial<Pick<TSOptions, 'log'>> & NonTSOptions;
 
@@ -181,7 +179,7 @@ async function getIsIgnoredByIgnoreFile(log: TODO, ignoreFiles: string[] | undef
 
 async function jscodemod(
   pathToCodemod: string,
-  passedOptions: Options = {}
+  passedOptions: Options
 // TODO: encode that this return type depends on whether 'dry' is passed.
 ): Promise<CodemodMetaResult<unknown>[] | string[]> {
   const {
@@ -321,10 +319,17 @@ async function jscodemod(
     }, () => codemod.postProcess!(modifiedFiles, {
       codemodArgs: parsedArgs,
       resultMeta: codemodMeta,
-      jscodemod(pathToCodemod: string, options: Partial<Options>) {
+      jscodemod(pathToCodemod: string, optionsFromPostProcess: Partial<Options>) {
+        /**
+         * I'm pretty sure this is complaining because it's possible for `passedOptions` to include one of
+         * `inputFileList` and `inputFilesPattern`, and `optionsFromPostProcess` to include the other, which is not
+         * permitted by the typings. I'll trust that the caller handles that case, passing `null` if they need to
+         * override `passedOptions`.
+         */
+        // @ts-expect-error
         return jscodemod(pathToCodemod, {
           ...passedOptions,
-          ...options
+          ...optionsFromPostProcess
         });
       }
     }));

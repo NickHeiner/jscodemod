@@ -1,6 +1,7 @@
 import jscodemod, {Options} from '.';
 import {CodemodMetaResult} from './run-codemod-on-file';
 import getLogger from './get-logger';
+import _ from 'lodash';
 
 async function getTransformedContentsOfSingleFile(
   pathToCodemod: string,
@@ -10,10 +11,10 @@ async function getTransformedContentsOfSingleFile(
   const codemodMetaResults = await jscodemod(
     pathToCodemod,
     {
-      inputFilesPatterns: [inputFile],
       respectIgnores: false,
       log: getLogger(),
-      ...codemodOptions,
+      ..._.omit(codemodOptions, 'inputFileList'),
+      inputFilesPatterns: [inputFile],
       doPostProcess: false,
       writeFiles: false
     }
