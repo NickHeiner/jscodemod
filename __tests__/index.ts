@@ -149,9 +149,7 @@ jest.setTimeout(15 * 1000);
 describe('happy path', () => {
   createTest({
     fixtureName: 'prepend-string',
-    spawnArgs: [
-      '--codemod', path.join('codemod', 'codemod.js'), '--codemodArgs', 'a b c', '.', '{!codemod,!input-file-list.txt}'
-    ],
+    spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), '--codemodArgs', 'a b c', '.', '!codemod'],
     setUpNodeModules: false,
     snapshot: true,
     assert(spawnResult, testDir) {
@@ -173,7 +171,6 @@ describe('happy path', () => {
   });
 
   createTest({
-    modifier: 'only',
     testName: '--inputFileList',
     fixtureName: 'prepend-string',
     spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), '--inputFileList', 'input-file-list.txt'],
@@ -186,7 +183,7 @@ describe('happy path', () => {
     fixtureName: 'prepend-string',
     spawnArgs: [
       '--codemod', path.join('codemod', 'codemod.js'),
-      '--codemodArgs', 'a b c', '.', '{!codemod,!input-file-list.txt}',
+      '--codemodArgs', 'a b c', '.', '!codemod',
       '--piscinaLowerBoundInclusive', '1'
     ],
     setUpNodeModules: false,

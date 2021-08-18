@@ -1,6 +1,7 @@
 module.exports = {
   ignore: [
     /codemod-ignored/,
+    'input-file-list.txt',
     'omitted-via-string-pattern'
   ],
   postProcess: (modifiedFiles, {resultMeta}) => {
