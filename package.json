@@ -49,7 +49,7 @@
     "utility-types": "3.10.0"
   },
   "dependencies": {
-    "@babel/core": "7.14.6",
+    "@babel/core": "^7.15.0",
     "ansi-colors": "4.1.1",
     "find-up": "5.0.0",
     "globby": "11.0.1",
