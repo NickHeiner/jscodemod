@@ -240,6 +240,38 @@ const x = 'starting state';",
 }
 `;
 
+exports[`happy path --inputFileList 1`] = `
+Object {
+  "codemod/codemod.js": "module.exports = {
+  ignore: [
+    /codemod-ignored/,
+    'omitted-via-string-pattern'
+  ],
+  postProcess: (modifiedFiles, {resultMeta}) => {
+    console.log('codemod post process', JSON.stringify(modifiedFiles));
+    console.log('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
+  },
+  parseArgs: rawCommandLineArgs => ({rawCommandLineArgs}),
+  transform({source, commandLineArgs, filePath}) {
+    console.log('commandLineArgs', JSON.stringify(commandLineArgs));
+    return {
+      meta: \`meta for \${filePath}\`,
+      code: \`/* prefix prepend string */\\\\n\${source}\`
+    };
+  }
+};",
+  "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
+  "input-file-list.txt": "source/a.js
+source/codemod-ignored.js",
+  "source/a.js": "/* prefix prepend string */
+console.log('a');",
+  "source/b.js": "function b() {}",
+  "source/blank.js": "",
+  "source/codemod-ignored.js": "// codemod ignored",
+  "source/codemod-omitted-via-string-pattern.js": "// codemod ignored",
+}
+`;
+
 exports[`happy path TS without manually specifying any of the args determining how to compile 1`] = `
 Object {
   "codemod/index.ts": "import {Codemod} from '@nick.heiner/jscodemod';

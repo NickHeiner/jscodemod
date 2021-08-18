@@ -173,6 +173,8 @@ describe('happy path', () => {
   });
 
   createTest({
+    modifier: 'only',
+    testName: '--inputFileList',
     fixtureName: 'prepend-string',
     spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), '--inputFileList', 'input-file-list.txt'],
     setUpNodeModules: false,
