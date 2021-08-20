@@ -122,6 +122,8 @@ function transformCode(
   };
 
   const progressBar = getProgressUI(logOpts, inputFiles.length);
+  // We might be doing something to hurt perf here.
+  // https://github.com/piscinajs/piscina/issues/145
   return Promise.all(inputFiles.map(async inputFile => {
     const codemodMetaResult = await runCodemodOnSingleFile(inputFile);
     log.debug({
