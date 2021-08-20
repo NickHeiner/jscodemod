@@ -1,6 +1,6 @@
 {
   "name": "@nick.heiner/jscodemod",
-  "version": "1.0.0-20",
+  "version": "1.0.0-21",
   "description": "JS codemod runner",
   "homepage": "https://github.com/NickHeiner/jscodemod",
   "main": "build/index.js",
@@ -62,6 +62,7 @@
     "piscina": "1.6.3",
     "progress": "2.0.3",
     "recast": "0.20.4",
-    "tempy": "0.7.1"
+    "tempy": "0.7.1",
+    "yargs": "17.1.1"
   }
 }
