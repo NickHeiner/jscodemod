@@ -37,3 +37,9 @@ Benefits to this include:
 1. If you have a complicated codemod in a large codebase with many committers, you can end up playing whackamole, where you fix some edge case, only to see new ones emerge. If you commit the codemod results in chunks, then there's no whackamole, because once a codebase section is transformed, it's permanently removed from your input set.
 1. If your codemod handles some input code cases but not all, you can start making migration progress before reaching 100% coverage. Just apply the codemod to the cases it can handle already.
 1. Applying the codemod in chunks lets you learn as you go, and possibly tweak the codemod in response to feedback. A single-shot migration doesn't give you that opportunity.
+
+## If your codemod is for a single repo, check it in to that repo.
+This maximizes historical context for later devs. It also gives other devs the ability to run your codemod against their branches, which may be an easier way to resolve merge conflicts than hand editing. And, if you make more codemods later, you'll often find that there are bits to copy/paste or share with older codemods.
+
+The downside is that it's annoying to have test/lint/typecheck failures on code that's not actively run. If that happens, you can just comment out or delete the codemod at that point.
+
