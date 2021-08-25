@@ -5,7 +5,7 @@ module.exports = {
     return ({}) => ({
       visitor: {
         CallExpression(path) {
-          if (path.node.callee.type === 'Identifier' && path.node.callee.name === 'f') {
+          if (path.node.callee.type === 'Identifier' && path.node.callee.name === 'g') {
             setMetaResult(path.node.arguments.length);
           }
         }

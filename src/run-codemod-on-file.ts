@@ -185,6 +185,9 @@ export default async function runCodemodOnFile(
     }
 
     if (pluginWillSignalWhenAstHasChanged && !pluginChangedAst) {
+      if (metaResult !== undefined) {
+        return {meta: metaResult, code: originalFileContents};
+      }
       return originalFileContents;
     }
 
@@ -204,7 +207,7 @@ export default async function runCodemodOnFile(
       transformedCode += '\n';
     }
 
-    if (metaResult) {
+    if (metaResult !== undefined) {
       return {meta: metaResult, code: transformedCode};
     }
 

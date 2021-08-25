@@ -518,9 +518,9 @@ const f = () => {
 
 exports[`happy path getPlugin returns a meta 1`] = `
 "Map {
-  '<test-dir>/source/a.js' => undefined,
-  '<test-dir>/source/b.js' => undefined,
-  '<test-dir>/source/c.js' => undefined
+  '<test-dir>/source/a.js' => 3,
+  '<test-dir>/source/b.js' => 1,
+  '<test-dir>/source/c.js' => 7
 }"
 `;
 
