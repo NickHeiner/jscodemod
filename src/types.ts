@@ -1,10 +1,11 @@
-export type TransformedCode = string | undefined | null;
-export type CodemodResult<TransformResultMeta> = TransformedCode | {code: TransformedCode, meta: TransformResultMeta};
+import type {Promisable} from 'type-fest';
+
 import {PluginTarget, TransformOptions} from '@babel/core';
 
-type ScalarOrPromise<T> = T | Promise<T>;
-
 import jscodemod, {Options} from './';
+
+export type TransformedCode = string | undefined | null;
+export type CodemodResult<TransformResultMeta> = TransformedCode | {code: TransformedCode, meta: TransformResultMeta};
 
 export type BaseCodemodArgs<ParsedArgs> = {
   filePath: string;
@@ -57,7 +58,7 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
    *
    * @param rawCommandLineArgs a string of passed arguments, like "--args --to --pass-through"
    */
-  parseArgs?: (rawCommandLineArgs?: string[]) => ScalarOrPromise<ParsedArgs>
+  parseArgs?: (rawCommandLineArgs?: string[]) => Promisable<ParsedArgs>
 
   /**
    * After all transforms have been run, this function will be invoked once with an array of files there were modified.
@@ -69,11 +70,15 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
    *                       example, if the user passed --resetDirtyInputFiles to the command line, then when you call
    *                       opts.jscodemod(), `resetDirtyInputFiles` will default to true.
    * @param opts.codemodArgs The codemod args returned by codemod.parseArgs(), if that method is defined.
-   * @param opts.resultMeta A map from absolute file path to any TransformResultMeta that was returned by the transform
-   *                        function.
    */
   postProcess?: (modifiedFiles: string[], opts: {
     codemodArgs: ParsedArgs,
+
+    /**
+     * A map from absolute file path to any TransformResultMeta that was returned by the transform
+     * function. If no TransformResultMeta was returned for a file, then `resultMeta.get(filePath)`
+     * will be undefined.
+     */
     resultMeta: Map<string, TransformResultMeta>,
     jscodemod(
       pathToCodemod: string,
@@ -134,6 +139,16 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
    * always transform the file. If your usecase is narrow enough, this could be fine. But if you're making a broad
    * change, and you're getting noisy changes like those listed above, then consider this API.
    *
+   * getPlugin() will be called separately for each file to be processed. So, variables you keep in the closure of the
+   * method body will only be accessible from that file:
+   *
+   *    getPlugin({filePath}) {
+   *      let variableScopedToThisOneFile;
+   *      return ({types}) => ({
+   *        visitor: // ...
+   *      })
+   *    }
+   *
    * jscodemod bundles @babel/core and recast. If those bundled versions don't work for your project, then the
    * getPlugin() codemod API won't work for you. Use transform() instead.
    *
@@ -141,13 +156,17 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
    * @param opts.source the contents of the file to transform.
    * @param opts.filePath the path to the file to transform.
    * @param opts.commandLineArgs parsed arguments returned by `yourCodemod.parseArgs()`, if any.
-   * @param opts.willNotifyOnAstChange Call this if you plan to call astDidChange().
-   * @param opts.astDidChange Call this if you modified the AST.
    */
   getPlugin: (opts: BaseCodemodArgs<ParsedArgs> & {
+    /** Call this if you plan to call astDidChange(). */
     willNotifyOnAstChange: () => void;
+
+    /** Call this if you modified the AST, and you previously called willNotifyOnAstChange(). */
     astDidChange: () => void;
-  }) => ScalarOrPromise<PluginTarget>;
+
+    /** Set a meta result to be associated with this file. This value will be passed to the postProcess hook. */
+    setMetaResult: (meta: TransformResultMeta) => void;
+  }) => Promisable<PluginTarget>;
 })
 
 // The `any` here is intentional.

@@ -90,6 +90,7 @@ export default async function runCodemodOnFile(
 
     let pluginWillSignalWhenAstHasChanged = false;
     let pluginChangedAst = false;
+    let metaResult;
 
     let codemodPlugins;
     try {
@@ -104,6 +105,9 @@ export default async function runCodemodOnFile(
         },
         astDidChange: () => {
           pluginChangedAst = true;
+        },
+        setMetaResult: meta => {
+          metaResult = meta;
         }
       });
     } catch (e) {
@@ -165,7 +169,14 @@ export default async function runCodemodOnFile(
 
     // result.ast.end will be 0, and ast.end is originalFileContents.length.
     // Passing originalFileContents instead of '' solves that problem, but causes some other problem.
-    const result = babelTransformSync('', getBabelOpts([setAst, pluginsToUse]));
+    let result: ReturnType<typeof babelTransformSync>;
+    try {
+      result = babelTransformSync('', getBabelOpts([setAst, pluginsToUse]));
+    } catch (e) {
+      e.phase = "babelTransformSync using the plugin returned by your codemod's getPlugin()";
+      e.suggestion = 'Check your babel plugin for runtime errors.';
+      throw e;
+    }
 
     log.debug({pluginWillSignalWhenAstHasChanged, pluginChangedAst});
 
@@ -181,6 +192,9 @@ export default async function runCodemodOnFile(
     }
 
     if (pluginWillSignalWhenAstHasChanged && !pluginChangedAst) {
+      if (metaResult !== undefined) {
+        return {meta: metaResult, code: originalFileContents};
+      }
       return originalFileContents;
     }
 
@@ -198,6 +212,10 @@ export default async function runCodemodOnFile(
 
     if (originalFileContents.endsWith('\n') && !transformedCode.endsWith('\n')) {
       transformedCode += '\n';
+    }
+
+    if (metaResult !== undefined) {
+      return {meta: metaResult, code: transformedCode};
     }
 
     return transformedCode;

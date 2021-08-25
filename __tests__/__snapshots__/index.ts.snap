@@ -155,12 +155,6 @@ Options:
                                     benefits.             [number] [default: 20]
       --help                        Show help                          [boolean]
 
-Examples:
-  bin.js --codemod codemod.js               Run codemod.js against JS files in
-  \\"source/**/*.js\\"                          source
-  bin.js --codemod codemod.js               Run the codemod against a set of
-  --inputFileList files-to-modify.txt       files listed in the text file.
-
 You can't pass both an --inputFileList and a globby pattern."
 `;
 
@@ -283,6 +277,7 @@ exports[`happy path TS without manually specifying any of the args determining h
 Object {
   "codemod/index.ts": "import {Codemod} from '@nick.heiner/jscodemod';
 import _ from 'lodash';
+import path from 'path';
 import * as BabelTypes from '@babel/types';
 import type {Visitor} from '@babel/traverse';
 
@@ -291,7 +286,7 @@ import type {Visitor} from '@babel/traverse';
 export type TODO = any;
 
 const codemod: Codemod = {
-  getPlugin: ({willNotifyOnAstChange, astDidChange}) => {
+  getPlugin: ({willNotifyOnAstChange, astDidChange, filePath}) => {
     if (process.env.CALL_WILL_NOTIFY_ON_AST_CHANGE) {
       willNotifyOnAstChange();
     }
@@ -311,6 +306,13 @@ const codemod: Codemod = {
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               path.get('body').replaceWith(path.node.body.body[0].argument!);  
             }
+          },
+          Literal(literalPath) {
+            // This tests to make sure that getPlugin is called for each file, and is not reused between files.
+            if (literalPath.node.type === 'StringLiteral') {
+              literalPath.replaceWith(t.stringLiteral(path.basename(filePath)));
+              literalPath.skip();
+            }
           }
         }
       });
@@ -319,6 +321,8 @@ const codemod: Codemod = {
 };
 
 export default codemod;",
+  "source/change-string-literal-0.js": "const a = \\"change-string-literal-0.js\\";",
+  "source/change-string-literal-1.js": "const a = \\"change-string-literal-1.js\\";",
   "source/commented-out.js": "// const g = a => {
 //   return a?.b?.c?.d
 // };",
@@ -435,6 +439,7 @@ exports[`happy path getPlugin calls astDidChange() but forgot to call willNotify
 Object {
   "codemod/index.ts": "import {Codemod} from '@nick.heiner/jscodemod';
 import _ from 'lodash';
+import path from 'path';
 import * as BabelTypes from '@babel/types';
 import type {Visitor} from '@babel/traverse';
 
@@ -443,7 +448,7 @@ import type {Visitor} from '@babel/traverse';
 export type TODO = any;
 
 const codemod: Codemod = {
-  getPlugin: ({willNotifyOnAstChange, astDidChange}) => {
+  getPlugin: ({willNotifyOnAstChange, astDidChange, filePath}) => {
     if (process.env.CALL_WILL_NOTIFY_ON_AST_CHANGE) {
       willNotifyOnAstChange();
     }
@@ -463,6 +468,13 @@ const codemod: Codemod = {
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               path.get('body').replaceWith(path.node.body.body[0].argument!);  
             }
+          },
+          Literal(literalPath) {
+            // This tests to make sure that getPlugin is called for each file, and is not reused between files.
+            if (literalPath.node.type === 'StringLiteral') {
+              literalPath.replaceWith(t.stringLiteral(path.basename(filePath)));
+              literalPath.skip();
+            }
           }
         }
       });
@@ -471,6 +483,8 @@ const codemod: Codemod = {
 };
 
 export default codemod;",
+  "source/change-string-literal-0.js": "const a = 'replace with file name';",
+  "source/change-string-literal-1.js": "const a = 'replace with file name';",
   "source/commented-out.js": "// const g = a => {
 //   return a?.b?.c?.d
 // };",
@@ -516,10 +530,19 @@ const f = () => {
 }
 `;
 
+exports[`happy path getPlugin returns a meta 1`] = `
+"Map {
+  '<test-dir>/source/a.js' => 3,
+  '<test-dir>/source/b.js' => 1,
+  '<test-dir>/source/c.js' => 7
+}"
+`;
+
 exports[`happy path getPlugin uses the willNotifyOnAstChange API 1`] = `
 Object {
   "codemod/index.ts": "import {Codemod} from '@nick.heiner/jscodemod';
 import _ from 'lodash';
+import path from 'path';
 import * as BabelTypes from '@babel/types';
 import type {Visitor} from '@babel/traverse';
 
@@ -528,7 +551,7 @@ import type {Visitor} from '@babel/traverse';
 export type TODO = any;
 
 const codemod: Codemod = {
-  getPlugin: ({willNotifyOnAstChange, astDidChange}) => {
+  getPlugin: ({willNotifyOnAstChange, astDidChange, filePath}) => {
     if (process.env.CALL_WILL_NOTIFY_ON_AST_CHANGE) {
       willNotifyOnAstChange();
     }
@@ -548,6 +571,13 @@ const codemod: Codemod = {
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               path.get('body').replaceWith(path.node.body.body[0].argument!);  
             }
+          },
+          Literal(literalPath) {
+            // This tests to make sure that getPlugin is called for each file, and is not reused between files.
+            if (literalPath.node.type === 'StringLiteral') {
+              literalPath.replaceWith(t.stringLiteral(path.basename(filePath)));
+              literalPath.skip();
+            }
           }
         }
       });
@@ -556,6 +586,8 @@ const codemod: Codemod = {
 };
 
 export default codemod;",
+  "source/change-string-literal-0.js": "const a = 'replace with file name';",
+  "source/change-string-literal-1.js": "const a = 'replace with file name';",
   "source/commented-out.js": "// const g = a => {
 //   return a?.b?.c?.d
 // };",

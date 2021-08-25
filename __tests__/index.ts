@@ -241,6 +241,8 @@ describe('happy path', () => {
     snapshot: true
   });
 
+  // This test also verifies that, even if the babel plugin changes the AST, if it doesn't call astDidChange(),
+  // then the file will not be updated.
   createTest({
     testName: 'getPlugin uses the willNotifyOnAstChange API',
     fixtureName: 'arrow-function-inline-return',
@@ -263,6 +265,16 @@ describe('happy path', () => {
       ...process.env
     },
     snapshot: true
+  });
+
+  createTest({
+    testName: 'getPlugin returns a meta',
+    fixtureName: 'return-meta-from-plugin',
+    spawnArgs: ['--codemod', 'codemod.js', 'source'],
+    assert(spawnResult, testDir) {
+      const sanitizedStdout = replaceAll(spawnResult.stdout, testDir, '<test-dir>');
+      expect(sanitizedStdout).toMatchSnapshot();
+    }
   });
 
   createTest({
