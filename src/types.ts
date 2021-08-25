@@ -69,11 +69,15 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
    *                       example, if the user passed --resetDirtyInputFiles to the command line, then when you call
    *                       opts.jscodemod(), `resetDirtyInputFiles` will default to true.
    * @param opts.codemodArgs The codemod args returned by codemod.parseArgs(), if that method is defined.
-   * @param opts.resultMeta A map from absolute file path to any TransformResultMeta that was returned by the transform
-   *                        function.
    */
   postProcess?: (modifiedFiles: string[], opts: {
     codemodArgs: ParsedArgs,
+
+    /**
+     * A map from absolute file path to any TransformResultMeta that was returned by the transform
+     * function. If no TransformResultMeta was returned for a file, then `resultMeta.get(filePath)`
+     * will be undefined.
+     */
     resultMeta: Map<string, TransformResultMeta>,
     jscodemod(
       pathToCodemod: string,
