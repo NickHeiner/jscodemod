@@ -266,7 +266,6 @@ describe('happy path', () => {
   });
 
   createTest({
-    modifier: 'only',
     testName: 'getPlugin returns a meta',
     fixtureName: 'return-meta-from-plugin',
     spawnArgs: ['--codemod', 'codemod.js', 'source'],

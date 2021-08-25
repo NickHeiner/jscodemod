@@ -1,10 +1,11 @@
-export type TransformedCode = string | undefined | null;
-export type CodemodResult<TransformResultMeta> = TransformedCode | {code: TransformedCode, meta: TransformResultMeta};
+import type {Promisable} from 'type-fest';
+
 import {PluginTarget, TransformOptions} from '@babel/core';
 
-type ScalarOrPromise<T> = T | Promise<T>;
-
 import jscodemod, {Options} from './';
+
+export type TransformedCode = string | undefined | null;
+export type CodemodResult<TransformResultMeta> = TransformedCode | {code: TransformedCode, meta: TransformResultMeta};
 
 export type BaseCodemodArgs<ParsedArgs> = {
   filePath: string;
@@ -57,7 +58,7 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
    *
    * @param rawCommandLineArgs a string of passed arguments, like "--args --to --pass-through"
    */
-  parseArgs?: (rawCommandLineArgs?: string[]) => ScalarOrPromise<ParsedArgs>
+  parseArgs?: (rawCommandLineArgs?: string[]) => Promisable<ParsedArgs>
 
   /**
    * After all transforms have been run, this function will be invoked once with an array of files there were modified.
@@ -155,7 +156,7 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
 
     /** Set a meta result to be associated with this file. This value will be passed to the postProcess hook. */
     setMetaResult: (meta: TransformResultMeta) => void;
-  }) => ScalarOrPromise<PluginTarget>;
+  }) => Promisable<PluginTarget>;
 })
 
 // The `any` here is intentional.
