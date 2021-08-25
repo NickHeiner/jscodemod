@@ -49,37 +49,39 @@ Sometimes, you might not want to make any changes, but do want to use Babel's po
 
 ```js
 module.exports = {
-  presets: [],
-  getPlugin({willNotifyOnAstChange, setMetaResult}) {
-    // Because we don't plan to modify the AST, call this function, then never call astDidChange(). That way, jscodemod
-    // won't change the file.
-    willNotifyOnAstChange();
+    presets: [],
+    getPlugin({ willNotifyOnAstChange, setMetaResult }) {
+        // Because we don't plan to modify the AST, call this function, then never call astDidChange(). That way, jscodemod
+        // won't change the file.
+        willNotifyOnAstChange();
 
-    let mostArgumentsSeen = -Infinity;
+        let mostArgumentsSeen = -Infinity;
 
-    return ({}) => ({
-      visitor: {
-        CallExpression(path) {
-          // CallExpression with callee.type = 'Identifier' and callee.name = 'g' matches: 
-          //   g(a, b, c);
-          if (path.node.callee.type === 'Identifier' && path.node.callee.name === 'g') {
-            // Record how many arguments there are.
-            mostArgumentsSeen = Math.max(mostArgumentsSeen, path.node.arguments.length);
-          }
-        },
-        'Program:exit': {
-            setMetaResult(mostArgumentsSeen);
-        }
-      }
-    });
-  },
-  postProcess(_, {resultMeta}) {
-    // resultMeta will be a Map where the key is the absolute file path, and the value is whatever we called 
-    // setMetaResult with. For example:
-    // 
-    //  { '/path/to/a.js': 1, '/path/to/b.js': 23 }
-    console.log(resultMeta);
-  }
+        return () => ({
+            visitor: {
+                CallExpression(path) {
+                    // CallExpression with callee.type = 'Identifier' and callee.name = 'g' matches:
+                    //   g(a, b, c);
+                    if (path.node.callee.type === 'Identifier' && path.node.callee.name === 'g') {
+                        // Record how many arguments there are.
+                        mostArgumentsSeen = Math.max(mostArgumentsSeen, path.node.arguments.length);
+                    }
+                },
+                Program: {
+                    exit() {
+                        setMetaResult(mostArgumentsSeen);
+                    },
+                },
+            },
+        });
+    },
+    postProcess(_, { resultMeta }) {
+        // resultMeta will be a Map where the key is the absolute file path, and the value is whatever we called
+        // setMetaResult with. For example:
+        //
+        //  { '/path/to/a.js': 1, '/path/to/b.js': 23 }
+        console.log(resultMeta);
+    },
 };
 ```
 
