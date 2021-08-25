@@ -266,6 +266,17 @@ describe('happy path', () => {
   });
 
   createTest({
+    modifier: 'only',
+    testName: 'getPlugin returns a meta',
+    fixtureName: 'return-meta-from-plugin',
+    spawnArgs: ['--codemod', 'codemod.js', 'source'],
+    assert(spawnResult, testDir) {
+      const sanitizedStdout = replaceAll(spawnResult.stdout, testDir, '<test-dir>');
+      expect(sanitizedStdout).toMatchSnapshot();
+    }
+  });
+
+  createTest({
     testName: 'codemodArgs parseArgs is passed to postProcess',
     fixtureName: 'parse-args',
     spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), '*.js', '--', '--requiredFlag'],

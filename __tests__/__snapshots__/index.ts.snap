@@ -516,6 +516,14 @@ const f = () => {
 }
 `;
 
+exports[`happy path getPlugin returns a meta 1`] = `
+"Map {
+  '<test-dir>/source/a.js' => undefined,
+  '<test-dir>/source/b.js' => undefined,
+  '<test-dir>/source/c.js' => undefined
+}"
+`;
+
 exports[`happy path getPlugin uses the willNotifyOnAstChange API 1`] = `
 Object {
   "codemod/index.ts": "import {Codemod} from '@nick.heiner/jscodemod';
