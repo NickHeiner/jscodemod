@@ -141,12 +141,16 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
    * @param opts.source the contents of the file to transform.
    * @param opts.filePath the path to the file to transform.
    * @param opts.commandLineArgs parsed arguments returned by `yourCodemod.parseArgs()`, if any.
-   * @param opts.willNotifyOnAstChange Call this if you plan to call astDidChange().
-   * @param opts.astDidChange Call this if you modified the AST.
    */
   getPlugin: (opts: BaseCodemodArgs<ParsedArgs> & {
+    /** Call this if you plan to call astDidChange(). */
     willNotifyOnAstChange: () => void;
+
+    /** Call this if you modified the AST, and you previously called willNotifyOnAstChange(). */
     astDidChange: () => void;
+
+    /** Set a meta result to be associated with this file. This value will be passed to the postProcess hook. */
+    setMetaResult: (meta: TransformResultMeta) => void;
   }) => ScalarOrPromise<PluginTarget>;
 })
 

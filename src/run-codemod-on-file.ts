@@ -90,6 +90,7 @@ export default async function runCodemodOnFile(
 
     let pluginWillSignalWhenAstHasChanged = false;
     let pluginChangedAst = false;
+    let metaResult;
 
     let codemodPlugins;
     try {
@@ -104,6 +105,9 @@ export default async function runCodemodOnFile(
         },
         astDidChange: () => {
           pluginChangedAst = true;
+        },
+        setMetaResult: meta => {
+          metaResult = meta;
         }
       });
     } catch (e) {
@@ -198,6 +202,10 @@ export default async function runCodemodOnFile(
 
     if (originalFileContents.endsWith('\n') && !transformedCode.endsWith('\n')) {
       transformedCode += '\n';
+    }
+
+    if (metaResult) {
+      return {meta: metaResult, code: transformedCode};
     }
 
     return transformedCode;

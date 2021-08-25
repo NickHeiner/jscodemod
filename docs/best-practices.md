@@ -41,5 +41,5 @@ Benefits to this include:
 ## If your codemod is for a single repo, check it in to that repo.
 This maximizes historical context for later devs. It also gives other devs the ability to run your codemod against their branches, which may be an easier way to resolve merge conflicts than hand editing. And, if you make more codemods later, you'll often find that there are bits to copy/paste or share with older codemods.
 
-The downside is that it's annoying to have test/lint/typecheck failures on code that's not actively run. If that happens, you can just comment out or delete the codemod at that point.
+The downside is that it's annoying to have test/lint/typecheck failures on code that's not actively run. If that happens, you can just comment out or delete the codemod at that
 
