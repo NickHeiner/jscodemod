@@ -155,12 +155,6 @@ Options:
                                     benefits.             [number] [default: 20]
       --help                        Show help                          [boolean]
 
-Examples:
-  bin.js --codemod codemod.js               Run codemod.js against JS files in
-  \\"source/**/*.js\\"                          source
-  bin.js --codemod codemod.js               Run the codemod against a set of
-  --inputFileList files-to-modify.txt       files listed in the text file.
-
 You can't pass both an --inputFileList and a globby pattern."
 `;
 
