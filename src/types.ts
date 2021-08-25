@@ -139,6 +139,16 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
    * always transform the file. If your usecase is narrow enough, this could be fine. But if you're making a broad
    * change, and you're getting noisy changes like those listed above, then consider this API.
    *
+   * getPlugin() will be called separately for each file to be processed. So, variables you keep in the closure of the
+   * method body will only be accessible from that file:
+   *
+   *    getPlugin({filePath}) {
+   *      let variableScopedToThisOneFile;
+   *      return ({types}) => ({
+   *        visitor: // ...
+   *      })
+   *    }
+   *
    * jscodemod bundles @babel/core and recast. If those bundled versions don't work for your project, then the
    * getPlugin() codemod API won't work for you. Use transform() instead.
    *

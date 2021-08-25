@@ -169,7 +169,14 @@ export default async function runCodemodOnFile(
 
     // result.ast.end will be 0, and ast.end is originalFileContents.length.
     // Passing originalFileContents instead of '' solves that problem, but causes some other problem.
-    const result = babelTransformSync('', getBabelOpts([setAst, pluginsToUse]));
+    let result: ReturnType<typeof babelTransformSync>;
+    try {
+      result = babelTransformSync('', getBabelOpts([setAst, pluginsToUse]));
+    } catch (e) {
+      e.phase = "babelTransformSync using the plugin returned by your codemod's getPlugin()";
+      e.suggestion = 'Check your babel plugin for runtime errors.';
+      throw e;
+    }
 
     log.debug({pluginWillSignalWhenAstHasChanged, pluginChangedAst});
 

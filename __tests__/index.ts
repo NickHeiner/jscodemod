@@ -241,6 +241,8 @@ describe('happy path', () => {
     snapshot: true
   });
 
+  // This test also verifies that, even if the babel plugin changes the AST, if it doesn't call astDidChange(),
+  // then the file will not be updated.
   createTest({
     testName: 'getPlugin uses the willNotifyOnAstChange API',
     fixtureName: 'arrow-function-inline-return',
