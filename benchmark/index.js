@@ -28,6 +28,8 @@ const resolveBinP = promisify(resolveBin);
  *        if you run this locally, and during one suite, you're doing nothing else on your machine, and on the next
  *        suite, you launch a bitcoin miner, that will make the comparison invalid.)
  *  4. In the output, include environment info (OS, Node version, hardware configuration, background utilization levels)
+ * 
+ * Also, this will make a lot of spammy output on the console. Sorry.
  */
 
 const {argv} = yargs
@@ -156,27 +158,33 @@ async function runBenchmarks() {
       const jscodemodBabelPiscinaStats = arg.currentTarget[2].stats;
       const jscodemodBabelSingleThreadStats = arg.currentTarget[3].stats;
 
-      const table = new CliTable({
+      // TODO: It would actually be nicer to render markdown, so it can easily paste into the docs.
+      const makeTable = () => new CliTable({
         head: ['Runner', 'Transform', 'Mean Duration (seconds)', 'Standard Deviation (seconds)', 'Sample count']
       });
+
+      const stringTable = makeTable();
+      const babelTable = makeTable();
 
       // eslint-disable-next-line no-magic-numbers
       const significantDigits = number => number.toPrecision(3);
 
-      const addTableEntry = (runnerName, transformName, stats) =>
+      const addTableEntry = (table, runnerName, transformName, stats) =>
         table.push([
           runnerName, transformName, significantDigits(stats.mean), significantDigits(stats.deviation),
           stats.sample.length
         ]);
 
-      addTableEntry('jscodemod', 'string', jscodemodStringStats);
-      addTableEntry('jscodeshift', 'string', jscodeshiftStringStats);
-      addTableEntry('jscodemod', 'babelPiscina', jscodemodBabelPiscinaStats);
-      addTableEntry('jscodemod', 'babelSingleThread', jscodemodBabelSingleThreadStats);
+      addTableEntry(stringTable, 'jscodemod', 'string', jscodemodStringStats);
+      addTableEntry(stringTable, 'jscodeshift', 'string', jscodeshiftStringStats);
+      addTableEntry(babelTable, 'jscodemod', 'babelPiscina', jscodemodBabelPiscinaStats);
+      addTableEntry(babelTable, 'jscodemod', 'babelSingleThread', jscodemodBabelSingleThreadStats);
 
       // This is intentional.
       // eslint-disable-next-line no-console
-      console.log(table.toString());
+      console.log(stringTable.toString());
+      // eslint-disable-next-line no-console
+      console.log(babelTable.toString());
       // eslint-disable-next-line no-console
       console.log(envInfoMd);
     })
