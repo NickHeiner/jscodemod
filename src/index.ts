@@ -19,6 +19,8 @@ import runCodemodOnFile, {CodemodMetaResult} from './run-codemod-on-file';
 import noOpLogger from './no-op-logger';
 import {promises as fs} from 'fs';
 import {EOL} from 'os';
+import prettyMs from 'pretty-ms';
+import pLimit from 'p-limit';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
 export {default as execBigCommand} from './exec-big-command';
@@ -90,6 +92,9 @@ function getProgressUI(logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, total
  * ~50, etc.
  */
 export const defaultPiscinaLowerBoundInclusive = 20;
+const codemodWorkerConcurrencyLimit = 20;
+
+const limitedConcurrency = pLimit(codemodWorkerConcurrencyLimit);
 
 function transformCode(
   codemod: Codemod,
@@ -106,12 +111,19 @@ function transformCode(
     codemodArgs: rawArgs, writeFiles, codemodPath
   };
 
-  // TODO: Maybe set the maxThreads lower to avoid eating all the CPU.
-  const getPiscina = _.once(() => new Piscina({
-    filename: require.resolve('./worker'),
-    argv: [codemodPath],
-    workerData: {...baseRunnerOpts, logOpts}
-  }));
+  const getPiscina = _.once(() => {
+    const piscina = new Piscina({
+      filename: require.resolve('./worker'),
+      argv: [codemodPath],
+      workerData: {...baseRunnerOpts, logOpts}
+    });
+
+    piscina.on('drain', () => {
+      log.info(_.pick(piscina, 'runTime', 'waitTime', 'duration', 'completed', 'utilization'), 'Piscina pool drained.');
+    });
+
+    return piscina;
+  });
 
   const runCodemodOnSingleFile = (inputFile: string): Promise<CodemodMetaResult<unknown>> => {
     if (inputFiles.length >= (piscinaLowerBoundInclusive ?? defaultPiscinaLowerBoundInclusive)) {
@@ -124,15 +136,29 @@ function transformCode(
   const progressBar = getProgressUI(logOpts, inputFiles.length);
   // We might be doing something to hurt perf here.
   // https://github.com/piscinajs/piscina/issues/145
-  return Promise.all(inputFiles.map(async inputFile => {
+
+  const codemodStartTimeMs = Date.now();
+  const logTimeToChangeFirstFile = _.once(() => {
+    const timeToChangeFirstFile = Date.now() - codemodStartTimeMs;
+    log.info({
+      durationMs: timeToChangeFirstFile,
+      durationMsPretty: prettyMs(timeToChangeFirstFile)
+    }, 'The first codemod worker to return has done so.');
+  });
+  let concurrency = 0;
+  return Promise.all(inputFiles.map(inputFile => limitedConcurrency(async () => {
+    concurrency++;
     const codemodMetaResult = await runCodemodOnSingleFile(inputFile);
+    log.info({concurrency});
+    concurrency--;
+    logTimeToChangeFirstFile();
     log.debug({
       ...codemodMetaResult,
       fileContents: '<truncated file contents>'
     });
     progressBar.tick();
     return codemodMetaResult;
-  }));
+  })));
 }
 
 function execGit(gitRoot: string, args: string[]): Promise<execa.ExecaReturnValue> {
