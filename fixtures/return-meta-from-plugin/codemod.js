@@ -1,5 +1,13 @@
+const silenceableLog = (...args) => {
+  if (process.env.SILENT === 'true') {
+    return;
+  }
+
+  console.log(...args);
+}
+
 module.exports = {
-  presets: [],
+  presets: ['@babel/preset-env'],
   getPlugin({willNotifyOnAstChange, setMetaResult}) {
     willNotifyOnAstChange();
     return ({}) => ({
@@ -13,6 +21,6 @@ module.exports = {
     });
   },
   postProcess(_, {resultMeta}) {
-    console.log(resultMeta);
+    silenceableLog(resultMeta);
   }
 };

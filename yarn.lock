@@ -2042,6 +2042,11 @@ ansi-escapes@^4.2.1:
   dependencies:
     type-fest "^0.11.0"
 
+ansi-regex@^2.0.0:
+  version "2.1.1"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/ansi-regex/-/ansi-regex-2.1.1.tgz#c3b33ab5ee360d86e0e628f0468ae7ef27d654df"
+  integrity sha1-w7M6te42DYbg5ijwRorn7yfWVN8=
+
 ansi-regex@^4.1.0:
   version "4.1.0"
   resolved "https://registry.yarnpkg.com/ansi-regex/-/ansi-regex-4.1.0.tgz#8b9f8f08cf1acb843756a839ca8c7e3168c51997"
@@ -2383,6 +2388,11 @@ benchmark@2.1.4:
     lodash "^4.17.4"
     platform "^1.3.3"
 
+boolbase@^1.0.0:
+  version "1.0.0"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/boolbase/-/boolbase-1.0.0.tgz#68dff5fbe60c51eb37725ea9e3ed310dcc1e776e"
+  integrity sha1-aN/1++YMUes3cl6p4+0xDcwed24=
+
 brace-expansion@^1.1.7:
   version "1.1.11"
   resolved "https://registry.yarnpkg.com/brace-expansion/-/brace-expansion-1.1.11.tgz#3c7fcbf529d87226f3d2f52b966ff5271eb441dd"
@@ -2501,15 +2511,9 @@ camelcase@^6.2.0:
   resolved "https://registry.yarnpkg.com/camelcase/-/camelcase-6.2.0.tgz#924af881c9d525ac9d87f40d964e5cea982a1809"
   integrity sha512-c7wVvbw3f37nuobQNtgsgG9POC9qMbNuMQmTCqZv23b6MIz0fcYpBiOlv9gEN/hdLdnZTDQhg6e9Dq5M1vKvfg==
 
-caniuse-lite@^1.0.30001135:
-  version "1.0.30001137"
-  resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001137.tgz#6f0127b1d3788742561a25af3607a17fc778b803"
-  integrity sha512-54xKQZTqZrKVHmVz0+UvdZR6kQc7pJDgfhsMYDG19ID1BWoNnDMFm5Q3uSBSU401pBvKYMsHAt9qhEDcxmk8aw==
-
-caniuse-lite@^1.0.30001219:
-  version "1.0.30001239"
-  resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001239.tgz#66e8669985bb2cb84ccb10f68c25ce6dd3e4d2b8"
-  integrity sha512-cyBkXJDMeI4wthy8xJ2FvDU6+0dtcZSJW3voUF8+e9f1bBeuvyZfc3PNbkOETyhbR+dGCPzn9E7MA3iwzusOhQ==
+caniuse-lite@^1.0.30001135, caniuse-lite@^1.0.30001219:
+  version "1.0.30001252"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/caniuse-lite/-/caniuse-lite-1.0.30001252.tgz"
 
 capture-exit@^2.0.0:
   version "2.0.0"
@@ -2748,6 +2752,22 @@ crypto-random-string@^2.0.0:
   resolved "https://registry.yarnpkg.com/crypto-random-string/-/crypto-random-string-2.0.0.tgz#ef2a7a966ec11083388369baa02ebead229b30d5"
   integrity sha512-v1plID3y9r/lPhviJ1wrXpLeyUIGAZ2SHNYTEapm7/8A9nLPoyvVp3RK/EPFqn5kEznyWgYZNsRtYYIWbuG8KA==
 
+css-select@^4.1.3:
+  version "4.1.3"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/css-select/-/css-select-4.1.3.tgz#a70440f70317f2669118ad74ff105e65849c7067"
+  integrity sha1-pwRA9wMX8maRGK10/xBeZYSccGc=
+  dependencies:
+    boolbase "^1.0.0"
+    css-what "^5.0.0"
+    domhandler "^4.2.0"
+    domutils "^2.6.0"
+    nth-check "^2.0.0"
+
+css-what@^5.0.0:
+  version "5.0.1"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/css-what/-/css-what-5.0.1.tgz#3efa820131f4669a8ac2408f9c32e7c7de9f4cad"
+  integrity sha1-PvqCATH0ZpqKwkCPnDLnx96fTK0=
+
 cssom@^0.4.4:
   version "0.4.4"
   resolved "https://registry.yarnpkg.com/cssom/-/cssom-0.4.4.tgz#5a66cf93d2d0b661d80bf6a44fb65f5c2e4e0a10"
@@ -2931,12 +2951,49 @@ doctrine@^3.0.0:
   dependencies:
     esutils "^2.0.2"
 
+dom-converter@^0.2.0:
+  version "0.2.0"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/dom-converter/-/dom-converter-0.2.0.tgz#6721a9daee2e293682955b6afe416771627bb768"
+  integrity sha1-ZyGp2u4uKTaClVtq/kFncWJ7t2g=
+  dependencies:
+    utila "~0.4"
+
+dom-serializer@^1.0.1:
+  version "1.3.2"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/dom-serializer/-/dom-serializer-1.3.2.tgz#6206437d32ceefaec7161803230c7a20bc1b4d91"
+  integrity sha1-YgZDfTLO767HFhgDIwx6ILwbTZE=
+  dependencies:
+    domelementtype "^2.0.1"
+    domhandler "^4.2.0"
+    entities "^2.0.0"
+
+domelementtype@^2.0.1, domelementtype@^2.2.0:
+  version "2.2.0"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/domelementtype/-/domelementtype-2.2.0.tgz#9a0b6c2782ed6a1c7323d42267183df9bd8b1d57"
+  integrity sha1-mgtsJ4LtahxzI9QiZxg9+b2LHVc=
+
 domexception@^2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/domexception/-/domexception-2.0.1.tgz#fb44aefba793e1574b0af6aed2801d057529f304"
   integrity sha512-yxJ2mFy/sibVQlu5qHjOkf9J3K6zgmCxgJ94u2EdvDOV09H+32LtRswEcUsmUWN72pVLOEnTSRaIVVzVQgS0dg==
   dependencies:
     webidl-conversions "^5.0.0"
+
+domhandler@^4.0.0, domhandler@^4.2.0:
+  version "4.2.2"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/domhandler/-/domhandler-4.2.2.tgz#e825d721d19a86b8c201a35264e226c678ee755f"
+  integrity sha1-6CXXIdGahrjCAaNSZOImxnjudV8=
+  dependencies:
+    domelementtype "^2.2.0"
+
+domutils@^2.5.2, domutils@^2.6.0:
+  version "2.8.0"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/domutils/-/domutils-2.8.0.tgz#4437def5db6e2d1f5d6ee859bd95ca7d02048135"
+  integrity sha1-RDfe9dtuLR9dbuhZvZXKfQIEgTU=
+  dependencies:
+    dom-serializer "^1.0.1"
+    domelementtype "^2.2.0"
+    domhandler "^4.2.0"
 
 dtrace-provider@~0.8:
   version "0.8.8"
@@ -2988,6 +3045,16 @@ enquirer@^2.3.5:
   integrity sha512-yjNnPr315/FjS4zIsUxYguYUPP2e1NK4d7E7ZOLiyYCcbFBiTMyID+2wvm2w6+pZ/odMA7cRkjhsPbltwBOrLg==
   dependencies:
     ansi-colors "^4.1.1"
+
+entities@^2.0.0:
+  version "2.2.0"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/entities/-/entities-2.2.0.tgz#098dc90ebb83d8dffa089d55256b351d34c4da55"
+  integrity sha1-CY3JDruD2N/6CJ1VJWs1HTTE2lU=
+
+envinfo@7.8.1:
+  version "7.8.1"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/envinfo/-/envinfo-7.8.1.tgz#06377e3e5f4d379fea7ac592d5ad8927e0c4d475"
+  integrity sha1-Bjd+Pl9NN5/qesWS1a2JJ+DE1HU=
 
 error-ex@^1.2.0, error-ex@^1.3.1:
   version "1.3.2"
@@ -3744,6 +3811,16 @@ html-escaper@^2.0.0:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/html-escaper/-/html-escaper-2.0.2.tgz#dfd60027da36a36dfcbe236262c00a5822681453"
   integrity sha512-H2iMtd0I4Mt5eYiapRdIDjp+XzelXQ0tFE4JS7YFwFevXXMmOp9myNrUvCg0D6ws8iqkRPBfKHgbwig1SmlLfg==
+
+htmlparser2@^6.1.0:
+  version "6.1.0"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/htmlparser2/-/htmlparser2-6.1.0.tgz#c4d762b6c3371a05dbe65e94ae43a9f845fb8fb7"
+  integrity sha1-xNditsM3GgXb5l6UrkOp+EX7j7c=
+  dependencies:
+    domelementtype "^2.0.1"
+    domhandler "^4.0.0"
+    domutils "^2.5.2"
+    entities "^2.0.0"
 
 http-proxy-agent@^4.0.1:
   version "4.0.1"
@@ -4842,7 +4919,7 @@ lodash@4.17.20, lodash@^4.17.14, lodash@^4.17.15, lodash@^4.17.19, lodash@^4.17.
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.20.tgz#b44a9b6297bcb698f1c51a3545a2b3b368d59c52"
   integrity sha512-PlhdFcillOINfeV7Ni6oF1TAEayyZBoZ8bcshTHqOYJYlrqzRK5hagpagky5o4HfCzzd1TRkXPMFq6cKk9rGmA==
 
-lodash@^4.7.0:
+lodash@^4.17.21, lodash@^4.7.0:
   version "4.17.21"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.21.tgz#679591c564c3bffaae8454cf0b3df370c3d6911c"
   integrity sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==
@@ -5143,6 +5220,13 @@ npm-run-path@^4.0.1:
   integrity sha512-S48WzZW777zhNIrn7gxOlISNAqi9ZC/uQFnRdbeIHhZhCA6UqpkOT8T1G7BvfdgP4Er8gF4sUbaS0i7QvIfCWw==
   dependencies:
     path-key "^3.0.0"
+
+nth-check@^2.0.0:
+  version "2.0.0"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/nth-check/-/nth-check-2.0.0.tgz#1bb4f6dac70072fc313e8c9cd1417b5074c0a125"
+  integrity sha1-G7T22scAcvwxPoyc0UF7UHTAoSU=
+  dependencies:
+    boolbase "^1.0.0"
 
 nth-log@2.0.0:
   version "2.0.0"
@@ -5534,6 +5618,14 @@ prelude-ls@~1.1.2:
   resolved "https://registry.yarnpkg.com/prelude-ls/-/prelude-ls-1.1.2.tgz#21932a549f5e52ffd9a827f570e04be62a97da54"
   integrity sha1-IZMqVJ9eUv/ZqCf1cOBL5iqX2lQ=
 
+pretty-error@3.0.4:
+  version "3.0.4"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/pretty-error/-/pretty-error-3.0.4.tgz#94b1d54f76c1ed95b9c604b9de2194838e5b574e"
+  integrity sha1-lLHVT3bB7ZW5xgS53iGUg45bV04=
+  dependencies:
+    lodash "^4.17.20"
+    renderkid "^2.0.6"
+
 pretty-format@^25.2.1, pretty-format@^25.5.0:
   version "25.5.0"
   resolved "https://registry.yarnpkg.com/pretty-format/-/pretty-format-25.5.0.tgz#7873c1d774f682c34b8d48b6743a2bf2ac55791a"
@@ -5727,6 +5819,17 @@ remove-trailing-separator@^1.0.1:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/remove-trailing-separator/-/remove-trailing-separator-1.1.0.tgz#c24bce2a283adad5bc3f58e0d48249b92379d8ef"
   integrity sha1-wkvOKig62tW8P1jg1IJJuSN52O8=
+
+renderkid@^2.0.6:
+  version "2.0.7"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/renderkid/-/renderkid-2.0.7.tgz#464f276a6bdcee606f4a15993f9b29fc74ca8609"
+  integrity sha1-Rk8namvc7mBvShWZP5sp/HTKhgk=
+  dependencies:
+    css-select "^4.1.3"
+    dom-converter "^0.2.0"
+    htmlparser2 "^6.1.0"
+    lodash "^4.17.21"
+    strip-ansi "^3.0.1"
 
 repeat-element@^1.1.2:
   version "1.1.3"
@@ -6156,6 +6259,13 @@ strip-ansi@6.0.0, strip-ansi@^6.0.0:
   dependencies:
     ansi-regex "^5.0.0"
 
+strip-ansi@^3.0.1:
+  version "3.0.1"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/strip-ansi/-/strip-ansi-3.0.1.tgz#6a385fb8853d952d5ff05d0e8aaf94278dc63dcf"
+  integrity sha1-ajhfuIU9lS1f8F0Oiq+UJ43GPc8=
+  dependencies:
+    ansi-regex "^2.0.0"
+
 strip-ansi@^5.1.0:
   version "5.2.0"
   resolved "https://registry.yarnpkg.com/strip-ansi/-/strip-ansi-5.2.0.tgz#8c9a536feb6afc962bdfa5b104a5091c1ad9c0ae"
@@ -6511,6 +6621,11 @@ utf8-byte-length@^1.0.1:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/utf8-byte-length/-/utf8-byte-length-1.0.4.tgz#f45f150c4c66eee968186505ab93fcbb8ad6bf61"
   integrity sha1-9F8VDExm7uloGGUFq5P8u4rWv2E=
+
+utila@~0.4:
+  version "0.4.0"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/utila/-/utila-0.4.0.tgz#8a16a05d445657a3aea5eecc5b12a4fa5379772c"
+  integrity sha1-ihagXURWV6Oupe7MWxKk+lN5dyw=
 
 utility-types@3.10.0:
   version "3.10.0"
