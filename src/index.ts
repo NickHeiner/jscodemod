@@ -92,11 +92,11 @@ function getProgressUI(logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, total
  * ~50, etc.
  */
 export const defaultPiscinaLowerBoundInclusive = 20;
-const codemodWorkerConcurrencyLimit = 20;
+const codemodWorkerConcurrencyLimit = Infinity;
 
 const limitedConcurrency = pLimit(codemodWorkerConcurrencyLimit);
 
-function transformCode(
+async function transformCode(
   codemod: Codemod,
   log: TSOptions['log'],
   codemodPath: string,
@@ -111,6 +111,8 @@ function transformCode(
     codemodArgs: rawArgs, writeFiles, codemodPath
   };
 
+  let destroyPiscinaIfNecessary = () => {};
+
   const getPiscina = _.once(() => {
     const piscina = new Piscina({
       filename: require.resolve('./worker'),
@@ -122,15 +124,20 @@ function transformCode(
       log.info(_.pick(piscina, 'runTime', 'waitTime', 'duration', 'completed', 'utilization'), 'Piscina pool drained.');
     });
 
+    destroyPiscinaIfNecessary = piscina.destroy.bind(piscina);
+
     return piscina;
   });
 
+  // For next time: see what happens if we put all IO in the main thread. Perhaps limit it there too.
+
   const runCodemodOnSingleFile = (inputFile: string): Promise<CodemodMetaResult<unknown>> => {
+    const runStartTimeMs = Date.now();
     if (inputFiles.length >= (piscinaLowerBoundInclusive ?? defaultPiscinaLowerBoundInclusive)) {
-      return getPiscina().runTask(inputFile);
+      return getPiscina().runTask({inputFile, runStartTimeMs});
     }
 
-    return runCodemodOnFile(codemod, inputFile, log, baseRunnerOpts);
+    return runCodemodOnFile(codemod, inputFile, log, baseRunnerOpts, runStartTimeMs);
   };
 
   const progressBar = getProgressUI(logOpts, inputFiles.length);
@@ -145,12 +152,8 @@ function transformCode(
       durationMsPretty: prettyMs(timeToChangeFirstFile)
     }, 'The first codemod worker to return has done so.');
   });
-  let concurrency = 0;
-  return Promise.all(inputFiles.map(inputFile => limitedConcurrency(async () => {
-    concurrency++;
+  const allFilesCodemodded = await Promise.all(inputFiles.map(inputFile => limitedConcurrency(async () => {
     const codemodMetaResult = await runCodemodOnSingleFile(inputFile);
-    log.info({concurrency});
-    concurrency--;
     logTimeToChangeFirstFile();
     log.debug({
       ...codemodMetaResult,
@@ -159,6 +162,10 @@ function transformCode(
     progressBar.tick();
     return codemodMetaResult;
   })));
+
+  destroyPiscinaIfNecessary();
+
+  return allFilesCodemodded;
 }
 
 function execGit(gitRoot: string, args: string[]): Promise<execa.ExecaReturnValue> {
@@ -343,6 +350,7 @@ async function jscodemod(
       level: 'debug'
       // This non-null assertion is safe because if we verififed above that `postProcess` is defined, it will not
       // have been undefined by the time this executes.
+      // @ts-expect-error TODO clean this up
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     }, () => codemod.postProcess!(modifiedFiles, {
       codemodArgs: parsedArgs,

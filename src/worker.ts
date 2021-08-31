@@ -17,11 +17,14 @@ const baseLog = getLogger({
  */
 const codemod = loadCodemod(piscina.workerData.codemodPath);
 
-export default function main(sourceCodeFile: string): Promise<CodemodMetaResult<unknown>> {
+export default function main(
+  {inputFile, runStartTimeMs}: {inputFile: string, runStartTimeMs: number}
+): Promise<CodemodMetaResult<unknown>> {
   return runCodemodOnFile(
     codemod,
-    sourceCodeFile,
+    inputFile,
     baseLog,
-    _.pick(piscina.workerData, 'codemodArgs', 'writeFiles', 'codemodPath')
+    _.pick(piscina.workerData, 'codemodArgs', 'writeFiles', 'codemodPath'),
+    runStartTimeMs
   );
 }

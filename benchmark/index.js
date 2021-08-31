@@ -28,17 +28,17 @@ const resolveBinP = promisify(resolveBin);
  *        if you run this locally, and during one suite, you're doing nothing else on your machine, and on the next
  *        suite, you launch a bitcoin miner, that will make the comparison invalid.)
  *  4. In the output, include environment info (OS, Node version, hardware configuration, background utilization levels)
- * 
+ *
  * Also, this will make a lot of spammy output on the console. Sorry.
  */
 
 const {argv} = yargs
   .strict()
-  .usage('$0 <repoToTransform>', 'Run the benchmark against a repo', (yargs) => {
+  .usage('$0 <repoToTransform>', 'Run the benchmark against a repo', yargs => {
     yargs.positional('repoToTransform', {
       type: 'string',
       describe: 'An absolute path to a repo to run against'
-    })
+    });
   })
   .options({
     testRun: {
