@@ -11,7 +11,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [12.x, 14.x, 15.x, 16.x]
+        node-version: [12.x, 14.x, 16.x]
 
     steps:
     - uses: actions/checkout@v1
@@ -21,7 +21,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - name: Install
       run: yarn --frozen-lockfile
-    - name: Test
+    - name: Build and Lint
     # I wanted to run "yarn test" here, but it fails: https://github.com/NickHeiner/jscodemod/runs/1171428834
     # It looks like there are no input files found, which makes me wonder if the `cp -r` isn't working as expected
     # in the GH Actions environment.

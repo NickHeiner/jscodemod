@@ -16,6 +16,13 @@ If `otherFilePath` also refers to a file being transformed, you won't know if yo
 
 There is no current workaround for this, but this issue is more likely to occur when using the in-process transform, rather than the Piscina worker pool. To force use of Piscina, pass flag `--piscinaLowerBoundInclusive=1`. It'll make your codemod slower, but may change the timing such that your race conditions don't appear.
 
+## Performance
+Some codemods will cause 30-40 second delays as the Piscina pool starts up. I've investigated but I'm not able to definitively say what the trigger is; it seems related to your codemod `require`ing a lot of JS code, and/or spawning subshells.
+
+To get around this, pass flag `--piscinaLowerBoundInclusive=<some number higher than the number of files you have>`. It'll put you at risk for the "transforming files simultaneously" issue above, but it'll improve the perf.
+
+Or, if possible, refactor your codemod to `require` or spawn subshells less.
+
 ## Babel Parse v. Transform
 If: 
 1. You're using the low-level `transform` API

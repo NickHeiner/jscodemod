@@ -1,3 +1,11 @@
+const silenceableLog = (...args) => {
+  if (process.env.SILENT === 'true') {
+    return;
+  }
+
+  console.log(...args);
+}
+
 module.exports = {
   presets: [],
   getPlugin({willNotifyOnAstChange, setMetaResult}) {
@@ -13,6 +21,6 @@ module.exports = {
     });
   },
   postProcess(_, {resultMeta}) {
-    console.log(resultMeta);
+    silenceableLog(JSON.stringify(Object.fromEntries(resultMeta.entries()), null, 2));
   }
 };

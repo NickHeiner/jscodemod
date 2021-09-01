@@ -49,7 +49,7 @@ The main reason for this performance difference is jscodemod uses Node's worker 
 Use the included `./benchmark/index.js` script to run your own benchmarks. Here's a result of mine, running against [Nodejs](https://github.com/nodejs/node):
 
 ```
-$ λ ./benchmark/index.js ~/code/node/
+$ ./benchmark/index.js ~/code/node/
 ┌─────────────┬───────────┬─────────────────────────┬──────────────────────────────┬──────────────┐
 │ Runner      │ Transform │ Mean Duration (seconds) │ Standard Deviation (seconds) │ Sample count │
 ├─────────────┼───────────┼─────────────────────────┼──────────────────────────────┼──────────────┤

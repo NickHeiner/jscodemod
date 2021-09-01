@@ -11,6 +11,7 @@ import {
 } from '@babel/core';
 import * as recast from 'recast';
 import getCodemodName from './get-codemod-name';
+import prettyMs from 'pretty-ms';
 
 const pFs = fs.promises;
 
@@ -28,18 +29,29 @@ export type CodemodMetaResult<TransformResultMeta> = {
 
 export default async function runCodemodOnFile(
   codemod: Codemod, sourceCodeFile: string, baseLog: NTHLogger,
-  {codemodArgs, codemodPath, writeFiles}: {codemodArgs?: string, writeFiles: boolean; codemodPath: string}
+  {codemodArgs, codemodPath, writeFiles}: {codemodArgs?: string, writeFiles: boolean; codemodPath: string},
+  runStartTimeMs: number
 ): Promise<CodemodMetaResult<unknown>> {
   const log = baseLog.child({sourceCodeFile});
   const codemodName = getCodemodName(codemod, codemodPath);
-  log.debug({action: 'start', codemod: codemodName});
+  const timeSinceRunStart = Date.now() - runStartTimeMs;
+  log.trace({
+    action: 'Codemod ready to start',
+    codemod: codemodName,
+    timeSinceRunStart,
+    timeSinceRunStartPretty: prettyMs(timeSinceRunStart)
+  });
 
-  const originalFileContents = await pFs.readFile(sourceCodeFile, 'utf-8');
+  const originalFileContents = await log.logPhase(
+    {phase: 'read file', level: 'trace'},
+    () => pFs.readFile(sourceCodeFile, 'utf-8')
+  );
   const rawArgs = codemodArgs ? JSON.parse(codemodArgs) : undefined;
-  const parsedArgs = await baseLog.logPhase({
+  const parsedArgs = await log.logPhase({
     phase: 'parse args',
-    level: 'trace',
-    codemod: codemodName
+    level: 'trace'
+    // TODO The types are messed up. A sync return to this method is fine.
+    // @ts-expect-error
   }, () => codemod.parseArgs?.(rawArgs));
 
   const codemodOpts = {
@@ -225,7 +237,7 @@ export default async function runCodemodOnFile(
   let thrownError = null;
 
   try {
-    codemodResult = await transformFile();
+    codemodResult = await log.logPhase({phase: 'transform file', level: 'trace'}, transformFile);
   } catch (e) {
     thrownError = e;
     log.error({

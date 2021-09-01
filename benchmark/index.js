@@ -7,6 +7,7 @@ const benchmark = require('benchmark');
 const resolveBin = require('resolve-bin');
 const {promisify} = require('util');
 const execa = require('execa');
+const envInfo = require('envinfo');
 const packageJson = require('../package');
 const CliTable = require('cli-table3');
 const createLogger = require('nth-log').default;
@@ -27,11 +28,18 @@ const resolveBinP = promisify(resolveBin);
  *        if you run this locally, and during one suite, you're doing nothing else on your machine, and on the next
  *        suite, you launch a bitcoin miner, that will make the comparison invalid.)
  *  4. In the output, include environment info (OS, Node version, hardware configuration, background utilization levels)
+ *
+ * Also, this will make a lot of spammy output on the console. Sorry.
  */
 
 const {argv} = yargs
-  .usage('$0 <repo directory path>')
   .strict()
+  .usage('$0 <repoToTransform>', 'Run the benchmark against a repo', yargs => {
+    yargs.positional('repoToTransform', {
+      type: 'string',
+      describe: 'An absolute path to a repo to run against'
+    });
+  })
   .options({
     testRun: {
       type: 'boolean',
@@ -41,19 +49,15 @@ const {argv} = yargs
       'comparison will be invalid.'
     }
   })
-  .check(argv => {
-    if (argv._.length !== 1) {
-      throw new Error('You must pass a repo to run on.');
-    }
-    return true;
-  })
   .help();
 
 async function runBenchmarks() {
-  const repoToTransform = argv._[0];
+  const {repoToTransform} = argv;
   const execInRepo = (binPath, args, opts) => {
     log.debug({binPath, args, fullCommand: `${binPath} ${args.join(' ')}`});
-    // execa.sync(binPath, args, {...opts, cwd: repoToTransform});
+    execa.sync(binPath, args, {...opts, cwd: repoToTransform, env: {
+      SILENT: 'true'
+    }});
   };
 
   log.info('For a valid comparison, make sure that both codemods run on the same set of input files.');
@@ -93,17 +97,46 @@ async function runBenchmarks() {
     execOpts
   );
 
+  const jscodemodBabelPiscina = execOpts => execInRepo(
+    binPath,
+    [
+      '--piscinaLowerBoundInclusive', '1',
+      '--codemod', pathFromRepoRoot('fixtures', 'return-meta-from-plugin', 'codemod.js'),
+      '**/*.{js,ts,tsx}'
+    ],
+    execOpts
+  );
+
+  const jscodemodBabelSingleThread = execOpts => execInRepo(
+    binPath,
+    [
+      '--piscinaLowerBoundInclusive', String(Number.MAX_SAFE_INTEGER),
+      '--codemod', pathFromRepoRoot('fixtures', 'return-meta-from-plugin', 'codemod.js'),
+      '**/*.{js,ts,tsx}'
+    ],
+    execOpts
+  );
+
   if (argv.testRun) {
     await resetChanges();
     jscodemodString({stdio: 'inherit'});
     await resetChanges();
     jscodeshiftString({stdio: 'inherit'});
+    await resetChanges();
+    jscodemodBabelPiscina({stdio: 'inherit'});
+    await resetChanges();
+    jscodemodBabelSingleThread({stdio: 'inherit'});
     return;
   }
 
   const codemodBenchmark = benchmark.Suite({
     setup: resetChanges
   });
+
+  const envInfoMd = await envInfo.run({
+    System: ['OS', 'CPU'],
+    Binaries: ['Node']
+  }, {markdown: true});
 
   codemodBenchmark
     .add('jscodemod#string', () => {
@@ -112,30 +145,48 @@ async function runBenchmarks() {
     .add('jscodeshift#string', () => {
       jscodeshiftString({stdio: 'inherit'});
     })
+    .add('jscodemod#babelPiscina', () => {
+      jscodemodBabelPiscina({stdio: 'inherit'});
+    })
+    .add('jscodemod#babelSingleThread', () => {
+      jscodemodBabelSingleThread({stdio: 'inherit'});
+    })
     .on('complete', arg => {
       // This is brittle, but something more robust might be more complexity than it's worth, given Benchmark's API.
       const jscodemodStringStats = arg.currentTarget[0].stats;
       const jscodeshiftStringStats = arg.currentTarget[1].stats;
+      const jscodemodBabelPiscinaStats = arg.currentTarget[2].stats;
+      const jscodemodBabelSingleThreadStats = arg.currentTarget[3].stats;
 
-      const table = new CliTable({
+      // TODO: It would actually be nicer to render markdown, so it can easily paste into the docs.
+      const makeTable = () => new CliTable({
         head: ['Runner', 'Transform', 'Mean Duration (seconds)', 'Standard Deviation (seconds)', 'Sample count']
       });
+
+      const stringTable = makeTable();
+      const babelTable = makeTable();
 
       // eslint-disable-next-line no-magic-numbers
       const significantDigits = number => number.toPrecision(3);
 
-      const addTableEntry = (runnerName, transformName, stats) =>
+      const addTableEntry = (table, runnerName, transformName, stats) =>
         table.push([
           runnerName, transformName, significantDigits(stats.mean), significantDigits(stats.deviation),
           stats.sample.length
         ]);
 
-      addTableEntry('jscodemod', 'string', jscodemodStringStats);
-      addTableEntry('jscodeshift', 'string', jscodeshiftStringStats);
+      addTableEntry(stringTable, 'jscodemod', 'string', jscodemodStringStats);
+      addTableEntry(stringTable, 'jscodeshift', 'string', jscodeshiftStringStats);
+      addTableEntry(babelTable, 'jscodemod', 'babelPiscina', jscodemodBabelPiscinaStats);
+      addTableEntry(babelTable, 'jscodemod', 'babelSingleThread', jscodemodBabelSingleThreadStats);
 
       // This is intentional.
       // eslint-disable-next-line no-console
-      console.log(table.toString());
+      console.log(stringTable.toString());
+      // eslint-disable-next-line no-console
+      console.log(babelTable.toString());
+      // eslint-disable-next-line no-console
+      console.log(envInfoMd);
     })
     .run();
 }

@@ -242,19 +242,27 @@ const x = 'starting state';",
 
 exports[`happy path --inputFileList 1`] = `
 Object {
-  "codemod/codemod.js": "module.exports = {
+  "codemod/codemod.js": "const silenceableLog = (...args) => {
+  if (process.env.SILENT === 'true') {
+    return;
+  }
+
+  console.log(...args);
+}
+
+module.exports = {
   ignore: [
     /codemod-ignored/,
     'input-file-list.txt',
     'omitted-via-string-pattern'
   ],
   postProcess: (modifiedFiles, {resultMeta}) => {
-    console.log('codemod post process', JSON.stringify(modifiedFiles));
-    console.log('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
+    silenceableLog('codemod post process', JSON.stringify(modifiedFiles));
+    silenceableLog('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
   },
   parseArgs: rawCommandLineArgs => ({rawCommandLineArgs}),
   transform({source, commandLineArgs, filePath}) {
-    console.log('commandLineArgs', JSON.stringify(commandLineArgs));
+    silenceableLog('commandLineArgs', JSON.stringify(commandLineArgs));
     return {
       meta: \`meta for \${filePath}\`,
       code: \`/* prefix prepend string */\\\\n\${source}\`
@@ -271,6 +279,347 @@ console.log('a');",
   "source/codemod-ignored.js": "// codemod ignored",
   "source/codemod-omitted-via-string-pattern.js": "// codemod ignored",
 }
+`;
+
+exports[`happy path All logging enabled 1`] = `
+Object {
+  "codemod/codemod.js": "const silenceableLog = (...args) => {
+  if (process.env.SILENT === 'true') {
+    return;
+  }
+
+  console.log(...args);
+}
+
+module.exports = {
+  ignore: [
+    /codemod-ignored/,
+    'input-file-list.txt',
+    'omitted-via-string-pattern'
+  ],
+  postProcess: (modifiedFiles, {resultMeta}) => {
+    silenceableLog('codemod post process', JSON.stringify(modifiedFiles));
+    silenceableLog('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
+  },
+  parseArgs: rawCommandLineArgs => ({rawCommandLineArgs}),
+  transform({source, commandLineArgs, filePath}) {
+    silenceableLog('commandLineArgs', JSON.stringify(commandLineArgs));
+    return {
+      meta: \`meta for \${filePath}\`,
+      code: \`/* prefix prepend string */\\\\n\${source}\`
+    };
+  }
+};",
+  "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
+  "input-file-list.txt": "source/a.js
+source/codemod-ignored.js",
+  "source/a.js": "/* prefix prepend string */
+console.log('a');",
+  "source/b.js": "function b() {}",
+  "source/blank.js": "",
+  "source/codemod-ignored.js": "// codemod ignored",
+  "source/codemod-omitted-via-string-pattern.js": "// codemod ignored",
+}
+`;
+
+exports[`happy path All logging enabled 2`] = `
+Array [
+  Object {
+    "argv": Object {
+      "$0": "<git-root>/build/bin.js",
+      "_": Array [],
+      "b": 20,
+      "c": "codemod/codemod.js",
+      "codemod": "codemod/codemod.js",
+      "input-file-list": "input-file-list.txt",
+      "inputFileList": "input-file-list.txt",
+      "json-output": true,
+      "jsonOutput": true,
+      "l": "input-file-list.txt",
+      "p": false,
+      "piscina-lower-bound-inclusive": 20,
+      "piscinaLowerBoundInclusive": 20,
+      "porcelain": false,
+      "r": false,
+      "reset-dirty-input-files": false,
+      "resetDirtyInputFiles": false,
+    },
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 20,
+    "msg": "",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "codemodKeys": Array [
+      "ignore",
+      "postProcess",
+      "parseArgs",
+      "transform",
+    ],
+    "codemodName": "codemod.js",
+    "codemodPath": "<test-dir>/codemod/codemod.js",
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 20,
+    "msg": "",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "codemodIgnores": Array [
+      "/codemod-ignored/",
+      "input-file-list.txt",
+      "omitted-via-string-pattern",
+    ],
+    "codemodName": "codemod.js",
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "inputFilesBeforeIgnores": Array [
+      "source/a.js",
+      "source/codemod-ignored.js",
+    ],
+    "level": 20,
+    "msg": "Filtering input file patterns.",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "codemodName": "codemod.js",
+    "count": 1,
+    "durationMs": 117,
+    "filesToModify": Array [
+      "<test-dir>/source/a.js",
+    ],
+    "hostname": "<hostname placeholder>",
+    "level": 20,
+    "msg": "Found files to modify.",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "codemodName": "codemod.js",
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 20,
+    "msg": "",
+    "name": "jscodemod-coordinator",
+    "parsedArgs": Object {},
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "codemodName": "codemod.js",
+    "durationMs": 117,
+    "gitRoot": null,
+    "hostname": "<hostname placeholder>",
+    "level": 20,
+    "msg": "",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "action": "Codemod ready to start",
+    "codemod": "codemod.js",
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 10,
+    "msg": "",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "sourceCodeFile": "<test-dir>/source/a.js",
+    "time": 2012-01-01T00:00:00.000Z,
+    "timeSinceRunStart": 0,
+    "timeSinceRunStartPretty": "0ms",
+    "v": 0,
+  },
+  Object {
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 10,
+    "msg": "Starting read file",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "sourceCodeFile": "<test-dir>/source/a.js",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 10,
+    "msg": "Completed read file",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "sourceCodeFile": "<test-dir>/source/a.js",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 10,
+    "msg": "Starting parse args",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "sourceCodeFile": "<test-dir>/source/a.js",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 10,
+    "msg": "Completed parse args",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "sourceCodeFile": "<test-dir>/source/a.js",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 10,
+    "msg": "Starting transform file",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "sourceCodeFile": "<test-dir>/source/a.js",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 10,
+    "msg": "Completed transform file",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "sourceCodeFile": "<test-dir>/source/a.js",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "action": "modified",
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 20,
+    "msg": "",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "sourceCodeFile": "<test-dir>/source/a.js",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+    "writeFiles": true,
+  },
+  Object {
+    "durationMs": 117,
+    "durationMsPretty": "4ms",
+    "hostname": "<hostname placeholder>",
+    "level": 20,
+    "msg": "The first codemod worker to return has done so.",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "action": "modified",
+    "codeModified": true,
+    "durationMs": 117,
+    "error": null,
+    "fileContents": "<truncated file contents>",
+    "filePath": "<test-dir>/source/a.js",
+    "hostname": "<hostname placeholder>",
+    "level": 20,
+    "meta": "meta for <test-dir>/source/a.js",
+    "msg": "",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "codemodName": "codemod.js",
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 20,
+    "modifiedFiles": Array [
+      "<test-dir>/source/a.js",
+    ],
+    "msg": "Starting postProcess",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "codemodName": "codemod.js",
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 20,
+    "modifiedFiles": Array [
+      "<test-dir>/source/a.js",
+    ],
+    "msg": "Completed postProcess",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "codemodMetaResults": Array [
+      Object {
+        "action": "modified",
+        "codeModified": true,
+        "error": null,
+        "fileContents": "/* prefix prepend string */
+console.log('a');",
+        "filePath": "<test-dir>/source/a.js",
+        "meta": "meta for <test-dir>/source/a.js",
+      },
+    ],
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 20,
+    "msg": "",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+]
 `;
 
 exports[`happy path TS without manually specifying any of the args determining how to compile 1`] = `
@@ -366,19 +715,27 @@ const f = () => 1;",
 
 exports[`happy path dry 1`] = `
 Object {
-  "codemod/codemod.js": "module.exports = {
+  "codemod/codemod.js": "const silenceableLog = (...args) => {
+  if (process.env.SILENT === 'true') {
+    return;
+  }
+
+  console.log(...args);
+}
+
+module.exports = {
   ignore: [
     /codemod-ignored/,
     'input-file-list.txt',
     'omitted-via-string-pattern'
   ],
   postProcess: (modifiedFiles, {resultMeta}) => {
-    console.log('codemod post process', JSON.stringify(modifiedFiles));
-    console.log('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
+    silenceableLog('codemod post process', JSON.stringify(modifiedFiles));
+    silenceableLog('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
   },
   parseArgs: rawCommandLineArgs => ({rawCommandLineArgs}),
   transform({source, commandLineArgs, filePath}) {
-    console.log('commandLineArgs', JSON.stringify(commandLineArgs));
+    silenceableLog('commandLineArgs', JSON.stringify(commandLineArgs));
     return {
       meta: \`meta for \${filePath}\`,
       code: \`/* prefix prepend string */\\\\n\${source}\`
@@ -398,19 +755,27 @@ source/codemod-ignored.js",
 
 exports[`happy path dry porcelain 1`] = `
 Object {
-  "codemod/codemod.js": "module.exports = {
+  "codemod/codemod.js": "const silenceableLog = (...args) => {
+  if (process.env.SILENT === 'true') {
+    return;
+  }
+
+  console.log(...args);
+}
+
+module.exports = {
   ignore: [
     /codemod-ignored/,
     'input-file-list.txt',
     'omitted-via-string-pattern'
   ],
   postProcess: (modifiedFiles, {resultMeta}) => {
-    console.log('codemod post process', JSON.stringify(modifiedFiles));
-    console.log('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
+    silenceableLog('codemod post process', JSON.stringify(modifiedFiles));
+    silenceableLog('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
   },
   parseArgs: rawCommandLineArgs => ({rawCommandLineArgs}),
   transform({source, commandLineArgs, filePath}) {
-    console.log('commandLineArgs', JSON.stringify(commandLineArgs));
+    silenceableLog('commandLineArgs', JSON.stringify(commandLineArgs));
     return {
       meta: \`meta for \${filePath}\`,
       code: \`/* prefix prepend string */\\\\n\${source}\`
@@ -531,10 +896,10 @@ const f = () => {
 `;
 
 exports[`happy path getPlugin returns a meta 1`] = `
-"Map {
-  '<test-dir>/source/a.js' => 3,
-  '<test-dir>/source/b.js' => 1,
-  '<test-dir>/source/c.js' => 7
+"{
+  \\"<test-dir>/source/a.js\\": 3,
+  \\"<test-dir>/source/b.js\\": 1,
+  \\"<test-dir>/source/c.js\\": 7
 }"
 `;
 
@@ -635,19 +1000,27 @@ const f = () => {
 
 exports[`happy path prepend-string 1`] = `
 Object {
-  "codemod/codemod.js": "module.exports = {
+  "codemod/codemod.js": "const silenceableLog = (...args) => {
+  if (process.env.SILENT === 'true') {
+    return;
+  }
+
+  console.log(...args);
+}
+
+module.exports = {
   ignore: [
     /codemod-ignored/,
     'input-file-list.txt',
     'omitted-via-string-pattern'
   ],
   postProcess: (modifiedFiles, {resultMeta}) => {
-    console.log('codemod post process', JSON.stringify(modifiedFiles));
-    console.log('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
+    silenceableLog('codemod post process', JSON.stringify(modifiedFiles));
+    silenceableLog('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
   },
   parseArgs: rawCommandLineArgs => ({rawCommandLineArgs}),
   transform({source, commandLineArgs, filePath}) {
-    console.log('commandLineArgs', JSON.stringify(commandLineArgs));
+    silenceableLog('commandLineArgs', JSON.stringify(commandLineArgs));
     return {
       meta: \`meta for \${filePath}\`,
       code: \`/* prefix prepend string */\\\\n\${source}\`
@@ -676,19 +1049,27 @@ exports[`happy path prepend-string 4`] = `"commandLineArgs {}"`;
 
 exports[`happy path prepend-string with piscina 1`] = `
 Object {
-  "codemod/codemod.js": "module.exports = {
+  "codemod/codemod.js": "const silenceableLog = (...args) => {
+  if (process.env.SILENT === 'true') {
+    return;
+  }
+
+  console.log(...args);
+}
+
+module.exports = {
   ignore: [
     /codemod-ignored/,
     'input-file-list.txt',
     'omitted-via-string-pattern'
   ],
   postProcess: (modifiedFiles, {resultMeta}) => {
-    console.log('codemod post process', JSON.stringify(modifiedFiles));
-    console.log('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
+    silenceableLog('codemod post process', JSON.stringify(modifiedFiles));
+    silenceableLog('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
   },
   parseArgs: rawCommandLineArgs => ({rawCommandLineArgs}),
   transform({source, commandLineArgs, filePath}) {
-    console.log('commandLineArgs', JSON.stringify(commandLineArgs));
+    silenceableLog('commandLineArgs', JSON.stringify(commandLineArgs));
     return {
       meta: \`meta for \${filePath}\`,
       code: \`/* prefix prepend string */\\\\n\${source}\`

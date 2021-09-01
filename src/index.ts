@@ -19,6 +19,7 @@ import runCodemodOnFile, {CodemodMetaResult} from './run-codemod-on-file';
 import noOpLogger from './no-op-logger';
 import {promises as fs} from 'fs';
 import {EOL} from 'os';
+import prettyMs from 'pretty-ms';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
 export {default as execBigCommand} from './exec-big-command';
@@ -91,7 +92,7 @@ function getProgressUI(logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, total
  */
 export const defaultPiscinaLowerBoundInclusive = 20;
 
-function transformCode(
+async function transformCode(
   codemod: Codemod,
   log: TSOptions['log'],
   codemodPath: string,
@@ -106,26 +107,58 @@ function transformCode(
     codemodArgs: rawArgs, writeFiles, codemodPath
   };
 
+  // We intentionally want a noop.
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  let destroyPiscinaIfNecessary = () => {};
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  let registerForPiscinaDrain = () => {};
+
   // TODO: Maybe set the maxThreads lower to avoid eating all the CPU.
-  const getPiscina = _.once(() => new Piscina({
-    filename: require.resolve('./worker'),
-    argv: [codemodPath],
-    workerData: {...baseRunnerOpts, logOpts}
-  }));
+  const getPiscina = _.once(() => {
+    const piscina = new Piscina({
+      filename: require.resolve('./worker'),
+      argv: [codemodPath],
+      workerData: {...baseRunnerOpts, logOpts}
+    });
+
+    registerForPiscinaDrain = () => {
+      piscina.on('drain', () => {
+        log.debug(
+          _.pick(piscina, 'runTime', 'waitTime', 'duration', 'completed', 'utilization'),
+          'Piscina pool drained.'
+        );
+      });
+    };
+
+    destroyPiscinaIfNecessary = piscina.destroy.bind(piscina);
+
+    return piscina;
+  });
 
   const runCodemodOnSingleFile = (inputFile: string): Promise<CodemodMetaResult<unknown>> => {
+    const runStartTimeMs = Date.now();
     if (inputFiles.length >= (piscinaLowerBoundInclusive ?? defaultPiscinaLowerBoundInclusive)) {
-      return getPiscina().runTask(inputFile);
+      return getPiscina().runTask({inputFile, runStartTimeMs});
     }
 
-    return runCodemodOnFile(codemod, inputFile, log, baseRunnerOpts);
+    return runCodemodOnFile(codemod, inputFile, log, baseRunnerOpts, runStartTimeMs);
   };
 
   const progressBar = getProgressUI(logOpts, inputFiles.length);
   // We might be doing something to hurt perf here.
   // https://github.com/piscinajs/piscina/issues/145
-  return Promise.all(inputFiles.map(async inputFile => {
+
+  const codemodStartTimeMs = Date.now();
+  const logTimeToChangeFirstFile = _.once(() => {
+    const timeToChangeFirstFile = Date.now() - codemodStartTimeMs;
+    log.debug({
+      durationMs: timeToChangeFirstFile,
+      durationMsPretty: prettyMs(timeToChangeFirstFile)
+    }, 'The first codemod worker to return has done so.');
+  });
+  const allFilesCodemoddedPromise = Promise.all(inputFiles.map(async inputFile => {
     const codemodMetaResult = await runCodemodOnSingleFile(inputFile);
+    logTimeToChangeFirstFile();
     log.debug({
       ...codemodMetaResult,
       fileContents: '<truncated file contents>'
@@ -133,6 +166,14 @@ function transformCode(
     progressBar.tick();
     return codemodMetaResult;
   }));
+
+  registerForPiscinaDrain();
+
+  const allFilesCodemodded = await allFilesCodemoddedPromise;
+
+  destroyPiscinaIfNecessary();
+
+  return allFilesCodemodded;
 }
 
 function execGit(gitRoot: string, args: string[]): Promise<execa.ExecaReturnValue> {
@@ -317,6 +358,7 @@ async function jscodemod(
       level: 'debug'
       // This non-null assertion is safe because if we verififed above that `postProcess` is defined, it will not
       // have been undefined by the time this executes.
+      // @ts-expect-error TODO clean this up
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     }, () => codemod.postProcess!(modifiedFiles, {
       codemodArgs: parsedArgs,
