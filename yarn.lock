@@ -5235,10 +5235,10 @@ nth-check@^2.0.0:
   dependencies:
     boolbase "^1.0.0"
 
-nth-log@2.0.2:
-  version "2.0.2"
-  resolved "https://registry.yarnpkg.com/nth-log/-/nth-log-2.0.2.tgz#a89865ff32b9fdf772bfb5f6afb5bad3c3d77dca"
-  integrity sha512-nY8Lf1BNRIz6JS1uFx7xZDY2gZRhqlkTJ0/r/zxH1lF4l8aGBTdVhPnDbXFx3BfYdDIbT0w9yl+DHr7yvm7LuA==
+nth-log@2.0.3:
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/nth-log/-/nth-log-2.0.3.tgz#5f1c2ba9f784bfcab399001dbae1a9dd9f5d95b8"
+  integrity sha512-/S+A180F68PMrY6K9YWO9wVOMJ3BAsJHGUnBXvl/6/JmdGRlQPOW4pyzqhi6IzwqFCmJlq7ev9U5eKZMdiWcbw==
   dependencies:
     "@types/bunyan" "^1.8.6"
     bunyan "^1.8.12"

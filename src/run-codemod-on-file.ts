@@ -42,18 +42,16 @@ export default async function runCodemodOnFile(
     timeSinceRunStartPretty: prettyMs(timeSinceRunStart)
   });
 
-  // TODO The nth-log types are messed up.
-  // @ts-expect-error
   const originalFileContents = await log.logPhase(
     {phase: 'read file', level: 'trace'},
     () => pFs.readFile(sourceCodeFile, 'utf-8')
   );
   const rawArgs = codemodArgs ? JSON.parse(codemodArgs) : undefined;
-  // TODO The nth-log types are messed up.
-  // @ts-expect-error
   const parsedArgs = await log.logPhase({
     phase: 'parse args',
     level: 'trace'
+    // TODO The types are messed up. A sync return to this method is fine.
+    // @ts-expect-error
   }, () => codemod.parseArgs?.(rawArgs));
 
   const codemodOpts = {
@@ -239,8 +237,6 @@ export default async function runCodemodOnFile(
   let thrownError = null;
 
   try {
-    // TODO The nth-log types are messed up.
-    // @ts-expect-error
     codemodResult = await log.logPhase({phase: 'transform file', level: 'trace'}, transformFile);
   } catch (e) {
     thrownError = e;
