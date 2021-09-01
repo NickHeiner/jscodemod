@@ -197,7 +197,7 @@ describe('happy path', () => {
     ],
     setUpNodeModules: false,
     processOverrides: {
-      SILENT: 'true', 
+      SILENT: 'true',
       loglevel: 'trace'
     },
     snapshot: true,

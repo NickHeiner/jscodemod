@@ -123,7 +123,7 @@ async function transformCode(
 
     registerForPiscinaDrain = () => {
       piscina.on('drain', () => {
-        log.info(
+        log.debug(
           _.pick(piscina, 'runTime', 'waitTime', 'duration', 'completed', 'utilization'),
           'Piscina pool drained.'
         );
@@ -134,8 +134,6 @@ async function transformCode(
 
     return piscina;
   });
-
-  // For next time: see what happens if we put all IO in the main thread. Perhaps limit it there too.
 
   const runCodemodOnSingleFile = (inputFile: string): Promise<CodemodMetaResult<unknown>> => {
     const runStartTimeMs = Date.now();
