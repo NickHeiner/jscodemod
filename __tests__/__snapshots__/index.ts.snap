@@ -323,96 +323,303 @@ console.log('a');",
 `;
 
 exports[`happy path All logging enabled 2`] = `
-"21:19:00.547Z DEBUG jscodemod-coordinator: 
-  argv: {
-    \\"_\\": [],
-    \\"codemod\\": \\"codemod/codemod.js\\",
-    \\"c\\": \\"codemod/codemod.js\\",
-    \\"inputFileList\\": \\"input-file-list.txt\\",
-    \\"l\\": \\"input-file-list.txt\\",
-    \\"input-file-list\\": \\"input-file-list.txt\\",
-    \\"piscinaLowerBoundInclusive\\": 20,
-    \\"b\\": 20,
-    \\"piscina-lower-bound-inclusive\\": 20,
-    \\"porcelain\\": false,
-    \\"p\\": false,
-    \\"resetDirtyInputFiles\\": false,
-    \\"r\\": false,
-    \\"reset-dirty-input-files\\": false,
-    \\"jsonOutput\\": false,
-    \\"json-output\\": false,
-    \\"$0\\": \\"<git-root>/build/bin.js\\"
-  }
-21:19:00.549Z DEBUG jscodemod-coordinator:  (codemodName=codemod.js)
-  codemodPath: <test-dir>/codemod/codemod.js
-  --
-  codemodKeys: [
-    \\"ignore\\",
-    \\"postProcess\\",
-    \\"parseArgs\\",
-    \\"transform\\"
-  ]
-21:19:00.551Z DEBUG jscodemod-coordinator: Filtering input file patterns. (codemodName=codemod.js)
-  codemodIgnores: [
-    \\"/codemod-ignored/\\",
-    \\"input-file-list.txt\\",
-    \\"omitted-via-string-pattern\\"
-  ]
-  --
-  inputFilesBeforeIgnores: [
-    \\"source/a.js\\",
-    \\"source/codemod-ignored.js\\"
-  ]
-21:19:00.551Z DEBUG jscodemod-coordinator: Found files to modify. (count=1, codemodName=codemod.js)
-  filesToModify: [
-    \\"<test-dir>/source/a.js\\"
-  ]
-21:19:00.552Z DEBUG jscodemod-coordinator:  (codemodName=codemod.js, parsedArgs={})
-21:19:00.554Z DEBUG jscodemod-coordinator:  (gitRoot=null, codemodName=codemod.js)
-21:19:00.555Z TRACE jscodemod-coordinator:  (action=\\"Codemod ready to start\\", codemod=codemod.js, timeSinceRunStart=0, timeSinceRunStartPretty=0ms)
-  sourceCodeFile: <test-dir>/source/a.js
-21:19:00.556Z TRACE jscodemod-coordinator: Starting read file
-  sourceCodeFile: <test-dir>/source/a.js
-21:19:00.558Z TRACE jscodemod-coordinator: Completed read file (durationMs=2, prettyDuration=2ms)
-  sourceCodeFile: <test-dir>/source/a.js
-21:19:00.558Z TRACE jscodemod-coordinator: Starting parse args
-  sourceCodeFile: <test-dir>/source/a.js
-21:19:00.558Z TRACE jscodemod-coordinator: Completed parse args (durationMs=0, prettyDuration=0ms)
-  sourceCodeFile: <test-dir>/source/a.js
-21:19:00.558Z TRACE jscodemod-coordinator: Starting transform file
-  sourceCodeFile: <test-dir>/source/a.js
-commandLineArgs {}
-21:19:00.559Z TRACE jscodemod-coordinator: Completed transform file (durationMs=1, prettyDuration=1ms)
-  sourceCodeFile: <test-dir>/source/a.js
-21:19:00.559Z DEBUG jscodemod-coordinator:  (action=modified, writeFiles=true)
-  sourceCodeFile: <test-dir>/source/a.js
-21:19:00.559Z DEBUG jscodemod-coordinator: The first codemod worker to return has done so. (durationMs=4, durationMsPretty=4ms)
-21:19:00.560Z DEBUG jscodemod-coordinator:  (action=modified, error=null, codeModified=true, fileContents=\\"<truncated file contents>\\")
-  meta: meta for <test-dir>/source/a.js
-  --
-  filePath: <test-dir>/source/a.js
-21:19:00.560Z DEBUG jscodemod-coordinator: Starting postProcess (codemodName=codemod.js)
-  modifiedFiles: [
-    \\"<test-dir>/source/a.js\\"
-  ]
-codemod post process [\\"<test-dir>/source/a.js\\"]
-resultMeta as passed to post process [[\\"<test-dir>/source/a.js\\",\\"meta for <test-dir>/source/a.js\\"]]
-21:19:00.560Z DEBUG jscodemod-coordinator: Completed postProcess (codemodName=codemod.js, durationMs=0, prettyDuration=0ms)
-  modifiedFiles: [
-    \\"<test-dir>/source/a.js\\"
-  ]
-21:19:00.560Z DEBUG jscodemod-coordinator: 
-  codemodMetaResults: [
-    {
-      \\"action\\": \\"modified\\",
-      \\"error\\": null,
-      \\"codeModified\\": true,
-      \\"fileContents\\": \\"/* prefix prepend string */\\\\nconsole.log('a');\\",
-      \\"meta\\": \\"meta for <test-dir>/source/a.js\\",
-      \\"filePath\\": \\"<test-dir>/source/a.js\\"
-    }
-  ]
-"
+Array [
+  Object {
+    "argv": Object {
+      "$0": "<git-root>/build/bin.js",
+      "_": Array [],
+      "b": 20,
+      "c": "codemod/codemod.js",
+      "codemod": "codemod/codemod.js",
+      "input-file-list": "input-file-list.txt",
+      "inputFileList": "input-file-list.txt",
+      "json-output": true,
+      "jsonOutput": true,
+      "l": "input-file-list.txt",
+      "p": false,
+      "piscina-lower-bound-inclusive": 20,
+      "piscinaLowerBoundInclusive": 20,
+      "porcelain": false,
+      "r": false,
+      "reset-dirty-input-files": false,
+      "resetDirtyInputFiles": false,
+    },
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 20,
+    "msg": "",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "codemodKeys": Array [
+      "ignore",
+      "postProcess",
+      "parseArgs",
+      "transform",
+    ],
+    "codemodName": "codemod.js",
+    "codemodPath": "<test-dir>/codemod/codemod.js",
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 20,
+    "msg": "",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "codemodIgnores": Array [
+      "/codemod-ignored/",
+      "input-file-list.txt",
+      "omitted-via-string-pattern",
+    ],
+    "codemodName": "codemod.js",
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "inputFilesBeforeIgnores": Array [
+      "source/a.js",
+      "source/codemod-ignored.js",
+    ],
+    "level": 20,
+    "msg": "Filtering input file patterns.",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "codemodName": "codemod.js",
+    "count": 1,
+    "durationMs": 117,
+    "filesToModify": Array [
+      "<test-dir>/source/a.js",
+    ],
+    "hostname": "<hostname placeholder>",
+    "level": 20,
+    "msg": "Found files to modify.",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "codemodName": "codemod.js",
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 20,
+    "msg": "",
+    "name": "jscodemod-coordinator",
+    "parsedArgs": Object {},
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "codemodName": "codemod.js",
+    "durationMs": 117,
+    "gitRoot": null,
+    "hostname": "<hostname placeholder>",
+    "level": 20,
+    "msg": "",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "action": "Codemod ready to start",
+    "codemod": "codemod.js",
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 10,
+    "msg": "",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "sourceCodeFile": "<test-dir>/source/a.js",
+    "time": 2012-01-01T00:00:00.000Z,
+    "timeSinceRunStart": 0,
+    "timeSinceRunStartPretty": "0ms",
+    "v": 0,
+  },
+  Object {
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 10,
+    "msg": "Starting read file",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "sourceCodeFile": "<test-dir>/source/a.js",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 10,
+    "msg": "Completed read file",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "sourceCodeFile": "<test-dir>/source/a.js",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 10,
+    "msg": "Starting parse args",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "sourceCodeFile": "<test-dir>/source/a.js",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 10,
+    "msg": "Completed parse args",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "sourceCodeFile": "<test-dir>/source/a.js",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 10,
+    "msg": "Starting transform file",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "sourceCodeFile": "<test-dir>/source/a.js",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 10,
+    "msg": "Completed transform file",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "sourceCodeFile": "<test-dir>/source/a.js",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "action": "modified",
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 20,
+    "msg": "",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "sourceCodeFile": "<test-dir>/source/a.js",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+    "writeFiles": true,
+  },
+  Object {
+    "durationMs": 117,
+    "durationMsPretty": "4ms",
+    "hostname": "<hostname placeholder>",
+    "level": 20,
+    "msg": "The first codemod worker to return has done so.",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "action": "modified",
+    "codeModified": true,
+    "durationMs": 117,
+    "error": null,
+    "fileContents": "<truncated file contents>",
+    "filePath": "<test-dir>/source/a.js",
+    "hostname": "<hostname placeholder>",
+    "level": 20,
+    "meta": "meta for <test-dir>/source/a.js",
+    "msg": "",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "codemodName": "codemod.js",
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 20,
+    "modifiedFiles": Array [
+      "<test-dir>/source/a.js",
+    ],
+    "msg": "Starting postProcess",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "codemodName": "codemod.js",
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 20,
+    "modifiedFiles": Array [
+      "<test-dir>/source/a.js",
+    ],
+    "msg": "Completed postProcess",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "codemodMetaResults": Array [
+      Object {
+        "action": "modified",
+        "codeModified": true,
+        "error": null,
+        "fileContents": "/* prefix prepend string */
+console.log('a');",
+        "filePath": "<test-dir>/source/a.js",
+        "meta": "meta for <test-dir>/source/a.js",
+      },
+    ],
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 20,
+    "msg": "",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+]
 `;
 
 exports[`happy path TS without manually specifying any of the args determining how to compile 1`] = `

@@ -5,7 +5,7 @@ import execa from 'execa';
 import type {ExecaReturnValue} from 'execa';
 import path from 'path';
 import 'loud-rejection/register';
-import createLog from 'nth-log';
+import createLog, {constantizeLogEntryForTest} from 'nth-log';
 import _ from 'lodash';
 import globby from 'globby';
 import {promises as fs} from 'fs';
@@ -131,10 +131,6 @@ function createTest({
   /* eslint-enable jest/no-conditional-expect */
 }
 
-const sanitizeLogLine = (logEntry: {msg: string} & Record<string, unknown>) => ({
-  ..._.omit(logEntry, ['name', 'hostname', 'pid', 'time', 'v'])
-});
-
 const getJsonLogs = (stdout: string) => stdout.split('\n').map(line => {
   let parsedLine;
   try {
@@ -143,7 +139,7 @@ const getJsonLogs = (stdout: string) => stdout.split('\n').map(line => {
     log.error({line}, 'Could not parse line');
     throw e;
   }
-  const logLine = sanitizeLogLine(parsedLine);
+  const logLine = constantizeLogEntryForTest(parsedLine);
   if (logLine.msg) {
     logLine.msg = stripAnsi(logLine.msg as string);
   }
@@ -196,14 +192,17 @@ describe('happy path', () => {
   createTest({
     testName: 'All logging enabled',
     fixtureName: 'prepend-string',
-    spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), '--inputFileList', 'input-file-list.txt'],
+    spawnArgs: [
+      '--json-output', '--codemod', path.join('codemod', 'codemod.js'), '--inputFileList', 'input-file-list.txt'
+    ],
     setUpNodeModules: false,
     processOverrides: {
+      SILENT: 'true', 
       loglevel: 'trace'
     },
     snapshot: true,
     assert(spawnResult, testDir) {
-      const sanitizedStdout = sanitizeOutput(spawnResult, testDir);
+      const sanitizedStdout = getJsonLogs(sanitizeOutput(spawnResult, testDir));
       expect(sanitizedStdout).toMatchSnapshot();
     }
   });
