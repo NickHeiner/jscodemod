@@ -2527,7 +2527,8 @@ camelcase@^6.2.0:
 
 caniuse-lite@^1.0.30001135, caniuse-lite@^1.0.30001219:
   version "1.0.30001252"
-  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/caniuse-lite/-/caniuse-lite-1.0.30001252.tgz"
+  resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001252.tgz#cb16e4e3dafe948fc4a9bb3307aea054b912019a"
+  integrity sha512-I56jhWDGMtdILQORdusxBOH+Nl/KgQSdDmpJezYddnAkVOmnoU8zwjTV9xAjMIYxr0iPreEAVylCGcmHCjfaOw==
 
 capture-exit@^2.0.0:
   version "2.0.0"
