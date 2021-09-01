@@ -7,7 +7,7 @@ const silenceableLog = (...args) => {
 }
 
 module.exports = {
-  presets: ['@babel/preset-env'],
+  presets: [],
   getPlugin({willNotifyOnAstChange, setMetaResult}) {
     willNotifyOnAstChange();
     return ({}) => ({
@@ -21,6 +21,6 @@ module.exports = {
     });
   },
   postProcess(_, {resultMeta}) {
-    silenceableLog(resultMeta);
+    silenceableLog(JSON.stringify(Object.fromEntries(resultMeta.entries()), null, 2));
   }
 };

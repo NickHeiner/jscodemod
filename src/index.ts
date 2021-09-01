@@ -20,7 +20,6 @@ import noOpLogger from './no-op-logger';
 import {promises as fs} from 'fs';
 import {EOL} from 'os';
 import prettyMs from 'pretty-ms';
-import pLimit from 'p-limit';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
 export {default as execBigCommand} from './exec-big-command';
@@ -92,9 +91,6 @@ function getProgressUI(logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, total
  * ~50, etc.
  */
 export const defaultPiscinaLowerBoundInclusive = 20;
-const codemodWorkerConcurrencyLimit = Infinity;
-
-const limitedConcurrency = pLimit(codemodWorkerConcurrencyLimit);
 
 async function transformCode(
   codemod: Codemod,
@@ -111,8 +107,13 @@ async function transformCode(
     codemodArgs: rawArgs, writeFiles, codemodPath
   };
 
+  // We intentionally want a noop.
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   let destroyPiscinaIfNecessary = () => {};
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  let registerForPiscinaDrain = () => {};
 
+  // TODO: Maybe set the maxThreads lower to avoid eating all the CPU.
   const getPiscina = _.once(() => {
     const piscina = new Piscina({
       filename: require.resolve('./worker'),
@@ -120,9 +121,14 @@ async function transformCode(
       workerData: {...baseRunnerOpts, logOpts}
     });
 
-    piscina.on('drain', () => {
-      log.info(_.pick(piscina, 'runTime', 'waitTime', 'duration', 'completed', 'utilization'), 'Piscina pool drained.');
-    });
+    registerForPiscinaDrain = () => {
+      piscina.on('drain', () => {
+        log.info(
+          _.pick(piscina, 'runTime', 'waitTime', 'duration', 'completed', 'utilization'), 
+          'Piscina pool drained.'
+        );
+      });
+    }
 
     destroyPiscinaIfNecessary = piscina.destroy.bind(piscina);
 
@@ -147,12 +153,12 @@ async function transformCode(
   const codemodStartTimeMs = Date.now();
   const logTimeToChangeFirstFile = _.once(() => {
     const timeToChangeFirstFile = Date.now() - codemodStartTimeMs;
-    log.info({
+    log.debug({
       durationMs: timeToChangeFirstFile,
       durationMsPretty: prettyMs(timeToChangeFirstFile)
     }, 'The first codemod worker to return has done so.');
   });
-  const allFilesCodemodded = await Promise.all(inputFiles.map(inputFile => limitedConcurrency(async () => {
+  const allFilesCodemoddedPromise = Promise.all(inputFiles.map(async inputFile => {
     const codemodMetaResult = await runCodemodOnSingleFile(inputFile);
     logTimeToChangeFirstFile();
     log.debug({
@@ -161,7 +167,11 @@ async function transformCode(
     });
     progressBar.tick();
     return codemodMetaResult;
-  })));
+  }));
+
+  registerForPiscinaDrain();
+
+  const allFilesCodemodded = await allFilesCodemoddedPromise;
 
   destroyPiscinaIfNecessary();
 
