@@ -1,5 +1,8 @@
 import tempy from 'tempy';
-import execa, {ExecaReturnValue} from 'execa';
+import execa from 'execa';
+// This is a false positive – I don't think we can combine a type and value import into one statement.
+// eslint-disable-next-line no-duplicate-imports
+import type {ExecaReturnValue} from 'execa';
 import path from 'path';
 import 'loud-rejection/register';
 import createLog from 'nth-log';
@@ -11,6 +14,7 @@ import stripAnsi from 'strip-ansi';
 import resolveBin from 'resolve-bin';
 import sanitizeFilename from 'sanitize-filename';
 import {getTransformedContentsOfSingleFile, execBigCommand} from '../build';
+import gitRoot from 'git-root';
 
 const log = createLog({name: 'test'});
 
@@ -23,7 +27,11 @@ type TestArgs = {
   git?: boolean;
   snapshot?: true;
   setUpNodeModules?: boolean;
-  assert?: (ExecaReturnValue, testDir: string, getRelativeFilePaths: (inputFilePaths: string[]) => string[]) => void;
+  assert?: (
+    spawnResult: ExecaReturnValue,
+    testDir: string,
+    getRelativeFilePaths: (inputFilePaths: string[]) => string[]
+  ) => void;
   modifier?: 'only' | 'skip';
 }
 
@@ -146,6 +154,13 @@ const getJsonLogs = (stdout: string) => stdout.split('\n').map(line => {
 // eslint-disable-next-line no-magic-numbers
 jest.setTimeout(15 * 1000);
 
+const gitRootFilePath = gitRoot(__dirname);
+
+const sanitizeOutput = (
+  spawnResult: Parameters<TestArgs['assert']>[0],
+  testDir: Parameters<TestArgs['assert']>[1]
+) => stripAnsi(replaceAll(replaceAll(spawnResult.stdout, testDir, '<test-dir>'), gitRootFilePath, '<git-root>'));
+
 describe('happy path', () => {
   createTest({
     fixtureName: 'prepend-string',
@@ -153,7 +168,7 @@ describe('happy path', () => {
     setUpNodeModules: false,
     snapshot: true,
     assert(spawnResult, testDir) {
-      const sanitizedStdout = stripAnsi(replaceAll(spawnResult.stdout, testDir, '<test-dir>'));
+      const sanitizedStdout = sanitizeOutput(spawnResult, testDir);
       const findLine = substring => sanitizedStdout.split('\n').find(line => line.includes(substring));
 
       const postProcessOutput = findLine('codemod post process');
@@ -179,6 +194,21 @@ describe('happy path', () => {
   });
 
   createTest({
+    testName: 'All logging enabled',
+    fixtureName: 'prepend-string',
+    spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), '--inputFileList', 'input-file-list.txt'],
+    setUpNodeModules: false,
+    processOverrides: {
+      loglevel: 'trace'
+    },
+    snapshot: true,
+    assert(spawnResult, testDir) {
+      const sanitizedStdout = sanitizeOutput(spawnResult, testDir);
+      expect(sanitizedStdout).toMatchSnapshot();
+    }
+  });
+
+  createTest({
     testName: 'prepend-string with piscina',
     fixtureName: 'prepend-string',
     spawnArgs: [
@@ -189,7 +219,7 @@ describe('happy path', () => {
     setUpNodeModules: false,
     snapshot: true,
     assert(spawnResult, testDir) {
-      const sanitizedStdout = stripAnsi(replaceAll(spawnResult.stdout, testDir, '<test-dir>'));
+      const sanitizedStdout = sanitizeOutput(spawnResult, testDir);
       const findLine = substring => sanitizedStdout.split('\n').find(line => line.includes(substring));
 
       const postProcessOutput = findLine('codemod post process');
@@ -228,7 +258,7 @@ describe('happy path', () => {
     spawnArgs: ['--dry', '--porcelain', '--codemod', path.join('codemod', 'codemod.js'), 'source'],
     snapshot: true,
     assert(spawnResult, testDir) {
-      const sanitizedStdout = replaceAll(spawnResult.stdout, testDir, '<test-dir>');
+      const sanitizedStdout = sanitizeOutput(spawnResult, testDir);
       expect(sanitizedStdout).toMatchSnapshot();
     }
   });
@@ -249,8 +279,7 @@ describe('happy path', () => {
     spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), path.join('source', 'recast-oddities.js')],
     processOverrides: {
       CALL_WILL_NOTIFY_ON_AST_CHANGE: 'true',
-      CALL_AST_DID_CHANGE: 'true',
-      ...process.env
+      CALL_AST_DID_CHANGE: 'true'
     },
     snapshot: true
   });
@@ -261,8 +290,7 @@ describe('happy path', () => {
     spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), path.join('source', 'optional-chaining.js')],
     expectedExitCode: 1,
     processOverrides: {
-      CALL_AST_DID_CHANGE: 'true',
-      ...process.env
+      CALL_AST_DID_CHANGE: 'true'
     },
     snapshot: true
   });
@@ -272,7 +300,7 @@ describe('happy path', () => {
     fixtureName: 'return-meta-from-plugin',
     spawnArgs: ['--codemod', 'codemod.js', 'source'],
     assert(spawnResult, testDir) {
-      const sanitizedStdout = replaceAll(spawnResult.stdout, testDir, '<test-dir>');
+      const sanitizedStdout = sanitizeOutput(spawnResult, testDir);
       expect(sanitizedStdout).toMatchSnapshot();
     }
   });

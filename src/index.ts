@@ -124,11 +124,11 @@ async function transformCode(
     registerForPiscinaDrain = () => {
       piscina.on('drain', () => {
         log.info(
-          _.pick(piscina, 'runTime', 'waitTime', 'duration', 'completed', 'utilization'), 
+          _.pick(piscina, 'runTime', 'waitTime', 'duration', 'completed', 'utilization'),
           'Piscina pool drained.'
         );
       });
-    }
+    };
 
     destroyPiscinaIfNecessary = piscina.destroy.bind(piscina);
 
