@@ -242,19 +242,27 @@ const x = 'starting state';",
 
 exports[`happy path --inputFileList 1`] = `
 Object {
-  "codemod/codemod.js": "module.exports = {
+  "codemod/codemod.js": "const silenceableLog = (...args) => {
+  if (process.env.SILENT === 'true') {
+    return;
+  }
+
+  console.log(...args);
+}
+
+module.exports = {
   ignore: [
     /codemod-ignored/,
     'input-file-list.txt',
     'omitted-via-string-pattern'
   ],
   postProcess: (modifiedFiles, {resultMeta}) => {
-    console.log('codemod post process', JSON.stringify(modifiedFiles));
-    console.log('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
+    silenceableLog('codemod post process', JSON.stringify(modifiedFiles));
+    silenceableLog('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
   },
   parseArgs: rawCommandLineArgs => ({rawCommandLineArgs}),
   transform({source, commandLineArgs, filePath}) {
-    console.log('commandLineArgs', JSON.stringify(commandLineArgs));
+    silenceableLog('commandLineArgs', JSON.stringify(commandLineArgs));
     return {
       meta: \`meta for \${filePath}\`,
       code: \`/* prefix prepend string */\\\\n\${source}\`
@@ -366,19 +374,27 @@ const f = () => 1;",
 
 exports[`happy path dry 1`] = `
 Object {
-  "codemod/codemod.js": "module.exports = {
+  "codemod/codemod.js": "const silenceableLog = (...args) => {
+  if (process.env.SILENT === 'true') {
+    return;
+  }
+
+  console.log(...args);
+}
+
+module.exports = {
   ignore: [
     /codemod-ignored/,
     'input-file-list.txt',
     'omitted-via-string-pattern'
   ],
   postProcess: (modifiedFiles, {resultMeta}) => {
-    console.log('codemod post process', JSON.stringify(modifiedFiles));
-    console.log('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
+    silenceableLog('codemod post process', JSON.stringify(modifiedFiles));
+    silenceableLog('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
   },
   parseArgs: rawCommandLineArgs => ({rawCommandLineArgs}),
   transform({source, commandLineArgs, filePath}) {
-    console.log('commandLineArgs', JSON.stringify(commandLineArgs));
+    silenceableLog('commandLineArgs', JSON.stringify(commandLineArgs));
     return {
       meta: \`meta for \${filePath}\`,
       code: \`/* prefix prepend string */\\\\n\${source}\`
@@ -398,19 +414,27 @@ source/codemod-ignored.js",
 
 exports[`happy path dry porcelain 1`] = `
 Object {
-  "codemod/codemod.js": "module.exports = {
+  "codemod/codemod.js": "const silenceableLog = (...args) => {
+  if (process.env.SILENT === 'true') {
+    return;
+  }
+
+  console.log(...args);
+}
+
+module.exports = {
   ignore: [
     /codemod-ignored/,
     'input-file-list.txt',
     'omitted-via-string-pattern'
   ],
   postProcess: (modifiedFiles, {resultMeta}) => {
-    console.log('codemod post process', JSON.stringify(modifiedFiles));
-    console.log('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
+    silenceableLog('codemod post process', JSON.stringify(modifiedFiles));
+    silenceableLog('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
   },
   parseArgs: rawCommandLineArgs => ({rawCommandLineArgs}),
   transform({source, commandLineArgs, filePath}) {
-    console.log('commandLineArgs', JSON.stringify(commandLineArgs));
+    silenceableLog('commandLineArgs', JSON.stringify(commandLineArgs));
     return {
       meta: \`meta for \${filePath}\`,
       code: \`/* prefix prepend string */\\\\n\${source}\`
@@ -531,10 +555,10 @@ const f = () => {
 `;
 
 exports[`happy path getPlugin returns a meta 1`] = `
-"Map {
-  '<test-dir>/source/a.js' => 3,
-  '<test-dir>/source/b.js' => 1,
-  '<test-dir>/source/c.js' => 7
+"{
+  \\"<test-dir>/source/a.js\\": 3,
+  \\"<test-dir>/source/b.js\\": 1,
+  \\"<test-dir>/source/c.js\\": 7
 }"
 `;
 
@@ -635,19 +659,27 @@ const f = () => {
 
 exports[`happy path prepend-string 1`] = `
 Object {
-  "codemod/codemod.js": "module.exports = {
+  "codemod/codemod.js": "const silenceableLog = (...args) => {
+  if (process.env.SILENT === 'true') {
+    return;
+  }
+
+  console.log(...args);
+}
+
+module.exports = {
   ignore: [
     /codemod-ignored/,
     'input-file-list.txt',
     'omitted-via-string-pattern'
   ],
   postProcess: (modifiedFiles, {resultMeta}) => {
-    console.log('codemod post process', JSON.stringify(modifiedFiles));
-    console.log('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
+    silenceableLog('codemod post process', JSON.stringify(modifiedFiles));
+    silenceableLog('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
   },
   parseArgs: rawCommandLineArgs => ({rawCommandLineArgs}),
   transform({source, commandLineArgs, filePath}) {
-    console.log('commandLineArgs', JSON.stringify(commandLineArgs));
+    silenceableLog('commandLineArgs', JSON.stringify(commandLineArgs));
     return {
       meta: \`meta for \${filePath}\`,
       code: \`/* prefix prepend string */\\\\n\${source}\`
@@ -676,19 +708,27 @@ exports[`happy path prepend-string 4`] = `"commandLineArgs {}"`;
 
 exports[`happy path prepend-string with piscina 1`] = `
 Object {
-  "codemod/codemod.js": "module.exports = {
+  "codemod/codemod.js": "const silenceableLog = (...args) => {
+  if (process.env.SILENT === 'true') {
+    return;
+  }
+
+  console.log(...args);
+}
+
+module.exports = {
   ignore: [
     /codemod-ignored/,
     'input-file-list.txt',
     'omitted-via-string-pattern'
   ],
   postProcess: (modifiedFiles, {resultMeta}) => {
-    console.log('codemod post process', JSON.stringify(modifiedFiles));
-    console.log('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
+    silenceableLog('codemod post process', JSON.stringify(modifiedFiles));
+    silenceableLog('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
   },
   parseArgs: rawCommandLineArgs => ({rawCommandLineArgs}),
   transform({source, commandLineArgs, filePath}) {
-    console.log('commandLineArgs', JSON.stringify(commandLineArgs));
+    silenceableLog('commandLineArgs', JSON.stringify(commandLineArgs));
     return {
       meta: \`meta for \${filePath}\`,
       code: \`/* prefix prepend string */\\\\n\${source}\`
