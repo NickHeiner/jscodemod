@@ -108,3 +108,24 @@ module.exports = {
     }
 }
 ```
+
+## Unit test your codemod
+For more complicated codemods, it's useful to create a test suite. To help you do this, you can use the exported function `getTransformedContentsOfSingleFile`. For example, with Jest:
+
+```js
+import { getTransformedContentsOfSingleFile } from '@nick.heiner/jscodemod';
+
+it('transforms my input file correctly', async () => {
+    expect(
+        await getTransformedContentsOfSingleFile(
+            // Path to your codemod
+            require.resolve('../codemod'),
+
+            // Path to your fixture file
+            require.resolve('../__fixtures__/my-input-file'),
+        ),
+    ).toMatchSnapshot();
+});
+```
+
+The recommended pattern is to add fixtures for each different type of case your codemod may encounter. 
