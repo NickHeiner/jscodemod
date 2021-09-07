@@ -1,6 +1,14 @@
 # jscodemod
 JSCodemod is a codemod runner. Its codemods are written in JS/TS, but you can operate on any type of file.
 
+## Example
+
+```
+$ jscodemod --codemod codemod.js src/**/*.js
+```
+
+Run with `--help` to see other options.
+
 ## What's a codemod?
 Codemods are automated code transformations – for instance, changing `a && a.b && a.b.c` to `a?.b?.c`. Codemods are useful for large codebases, where doing such a change by hand would put you at risk for making mistakes or developing repetitive stress injuries. (Additionally, automating the change allows you to more easily resolve merge conflicts with PR branches.)
 

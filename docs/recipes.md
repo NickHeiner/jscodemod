@@ -90,3 +90,21 @@ Run this inert codemod over your the code you want to query, and you'll get your
 ```
 $ jscodemod --codemod my-codemod.js 'source/**/*.{js,ts}'
 ```
+
+## Run a JSCodeshift Codemod
+If you have a JSCodeshift codemod, but you'd like to take advantage of [jscodemod's comparative strengths](./comparison-with-jscodeshift.md), you can do that with a `transform` codemod:
+
+```js
+// File: codemod.js
+
+const j = require('jscodeshift');
+
+// Run with `jscodemod --codemod path/to/codemod.js 'my/{input,files}/**/*.js'`
+module.exports = {
+    transform({source, filePath}) {
+        const root = j(source);
+        root.find(j.Identifier, {name: 'myVar'}).forEach(/* ... */)
+        return root.toSource();
+    }
+}
+```
