@@ -183,11 +183,8 @@ export default async function runCodemodOnFile(
     // Passing originalFileContents instead of '' solves that problem, but causes some other problem.
     let result: ReturnType<typeof babelTransformSync>;
     try {
-      console.log('attempt transform');
       result = babelTransformSync('', getBabelOpts([setAst, pluginsToUse]));
-      console.log('transform done');
     } catch (e) {
-      console.log('transform error caught');
       e.phase = "babelTransformSync using the plugin returned by your codemod's getPlugin()";
       e.suggestion = 'Check your babel plugin for runtime errors.';
       throw e;
