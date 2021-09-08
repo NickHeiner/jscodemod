@@ -1,6 +1,6 @@
 {
   "name": "@nick.heiner/jscodemod",
-  "version": "1.0.0-23",
+  "version": "1.0.0-24",
   "description": "JS codemod runner",
   "homepage": "https://github.com/NickHeiner/jscodemod",
   "main": "build/index.js",
@@ -63,7 +63,6 @@
     "loud-rejection": "2.2.0",
     "nth-log": "2.0.3",
     "ora": "5.1.0",
-    "p-limit": "4.0.0",
     "piscina": "1.6.3",
     "pretty-ms": "7.0.1",
     "progress": "2.0.3",
