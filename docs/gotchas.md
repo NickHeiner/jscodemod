@@ -23,6 +23,18 @@ To get around this, pass flag `--piscinaLowerBoundInclusive=<some number higher 
 
 Or, if possible, refactor your codemod to `require` or spawn subshells less.
 
+## `getPlugin()` Recast Issues
+When you use the `getPlugin()` API, jscodemod uses `recast` to ensure that your code formatting is retained. However, sometimes `recast` makes mistakes, which can change your program semantics. Here are issues I've run into:
+
+* https://github.com/benjamn/recast/issues/914
+* https://github.com/benjamn/recast/issues/985
+
+Fortunately, these cases have not been common in my experience.
+
+Workarounds:
+* If this only impacts a small set of files for you, configure your codemod to ignore them (via the `ignore` field), and migrate those by hand.
+* Or, use the `transform()` API, and transform your code using jscodeshift's transformer APIs, instead of Babel.
+
 ## Babel Parse v. Transform
 If: 
 1. You're using the low-level `transform` API
