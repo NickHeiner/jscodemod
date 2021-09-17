@@ -540,7 +540,7 @@ Array [
   },
   Object {
     "durationMs": 117,
-    "durationMsPretty": "4ms",
+    "durationMsPretty": "<placeholder pretty ms duration>",
     "hostname": "<hostname placeholder>",
     "level": 20,
     "msg": "The first codemod worker to return has done so.",
@@ -683,6 +683,7 @@ const Empty = <div></div>;
 ",
   "source/recast-oddities.js": "#!/usr/bin/env node
 
+/* leading comment */
 const y = 1;
 
 let x = 1;/* trailing comment */
@@ -863,6 +864,7 @@ const Empty = <div></div>;
 ",
   "source/recast-oddities.js": "#!/usr/bin/env node
 
+/* leading comment */
 const y = 1;
 
 let x = 1; /* trailing comment */
@@ -966,6 +968,7 @@ const Empty = <div></div>;
 ",
   "source/recast-oddities.js": "#!/usr/bin/env node
 
+/* leading comment */
 const y = 1;
 
 let x = 1; /* trailing comment */

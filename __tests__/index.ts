@@ -5,7 +5,7 @@ import execa from 'execa';
 import type {ExecaReturnValue} from 'execa';
 import path from 'path';
 import 'loud-rejection/register';
-import createLog, {constantizeLogEntryForTest} from 'nth-log';
+import createLog, {constantizeLogEntryForTest as nthLogConstantizeLogEntryForTest} from 'nth-log';
 import _ from 'lodash';
 import globby from 'globby';
 import {promises as fs} from 'fs';
@@ -130,6 +130,19 @@ function createTest({
   });
   /* eslint-enable jest/no-conditional-expect */
 }
+
+/**
+ * nth-log exports a function to constantize log entries that are dynamic, like the hostname and process ID.
+ * jscodemod adds some dynamic fields of its own, so we'll need custom logic to constantize those as well.
+ *
+ * Mutates `logEntry`.
+ */
+const constantizeLogEntryForTest = logEntry => {
+  if (logEntry.durationMsPretty) {
+    logEntry.durationMsPretty = '<placeholder pretty ms duration>';
+  }
+  return nthLogConstantizeLogEntryForTest(logEntry);
+};
 
 const getJsonLogs = (stdout: string) => stdout.split('\n').map(line => {
   let parsedLine;
