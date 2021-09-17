@@ -1,13 +1,14 @@
 import type {NTHLogger} from 'nth-log';
 import fs from 'fs';
-import type {Codemod, TODO} from './types';
+import type {Codemod} from './types';
 import {PromiseValue} from 'type-fest';
 import _ from 'lodash';
 import {
   parse as babelParse,
   transformSync as babelTransformSync,
-  Visitor,
-  TransformOptions
+  TransformOptions,
+  PluginItem,
+  PluginObj
 } from '@babel/core';
 import * as recast from 'recast';
 import getCodemodName from './get-codemod-name';
@@ -104,13 +105,14 @@ export default async function runCodemodOnFile(
     let pluginChangedAst = false;
     let metaResult;
 
-    let codemodPlugins;
+    let codemodPlugins: TransformOptions['plugins'];
+    let useRecast = true;
     try {
       // TODO: Make a way for the codemod to cleanly say that the file should not be modified.
       // Maybe returning undefined?
       //
       // This is sort of accomplished by allowing a codemod to call willNotifyOnAstChange() and never astDidChange().
-      codemodPlugins = await codemod.getPlugin({
+      const resultOfGetPlugin = await codemod.getPlugin({
         ...codemodOpts,
         willNotifyOnAstChange: () => {
           pluginWillSignalWhenAstHasChanged = true;
@@ -122,6 +124,15 @@ export default async function runCodemodOnFile(
           metaResult = meta;
         }
       });
+
+      if (resultOfGetPlugin && 'plugin' in resultOfGetPlugin) {
+        codemodPlugins = resultOfGetPlugin.plugin;
+        if (resultOfGetPlugin.useRecast === false) {
+          useRecast = resultOfGetPlugin.useRecast;
+        }
+      } else {
+        codemodPlugins = resultOfGetPlugin;
+      }
     } catch (e) {
       e.phase = 'codemod.getPlugin()';
       e.suggestion = 'Check your getPlugin() method for a bug.';
@@ -169,7 +180,7 @@ export default async function runCodemodOnFile(
       throw e;
     }
 
-    const setAst = (): {visitor: Visitor<TODO>} => ({
+    const setAst: PluginItem = (): PluginObj => ({
       visitor: {
         Program(path) {
           path.replaceWith(ast.program);
@@ -190,7 +201,7 @@ export default async function runCodemodOnFile(
       throw e;
     }
 
-    log.debug({pluginWillSignalWhenAstHasChanged, pluginChangedAst});
+    log.debug({pluginWillSignalWhenAstHasChanged, pluginChangedAst, useRecast});
 
     if (!pluginWillSignalWhenAstHasChanged && pluginChangedAst) {
       const err = new Error('Your plugin called astDidChange() but not willNotifyOnAstChange(). ' +

@@ -1,6 +1,6 @@
 import type {Promisable} from 'type-fest';
 
-import {PluginTarget, TransformOptions} from '@babel/core';
+import {TransformOptions} from '@babel/core';
 
 import jscodemod, {Options} from './';
 
@@ -12,6 +12,20 @@ export type BaseCodemodArgs<ParsedArgs> = {
   // TODO: only specify this as an option to transform if parseArgs is present.
   commandLineArgs?: ParsedArgs;
 }
+
+export type GetPluginResult = TransformOptions['plugins'] | {
+  /**
+   * If true, use Recast to maintain code formatting. If false, just take Babel's generated output directly.
+   *
+   * Most of the time, you'll want this, because Babel's code generator doesn't make any attempt to match the input
+   * styling. However, Recast sometimes introduces oddities of its own, as noted in
+   * [the docs](https://github.com/NickHeiner/jscodemod/blob/master/docs/gotchas.md#getplugin-recast-issues).
+   *
+   * Defaults to true.
+   */
+  useRecast?: boolean;
+  plugin: TransformOptions['plugins'];
+};
 
 export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
   /**
@@ -170,7 +184,7 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
 
     /** Set a meta result to be associated with this file. This value will be passed to the postProcess hook. */
     setMetaResult: (meta: TransformResultMeta) => void;
-  }) => Promisable<PluginTarget>;
+  }) => Promisable<GetPluginResult>;
 })
 
 // The `any` here is intentional.
