@@ -138,6 +138,17 @@ function createTest({
  * Mutates `logEntry`.
  */
 const constantizeLogEntryForTest = logEntry => {
+  const makePlaceholder = (key, placeholder = undefined) => {
+    if (logEntry[key]) {
+      logEntry[key] = placeholder || `<placeholder ${key}>`;
+    }
+  }
+
+  makePlaceholder('durationMsPretty');
+  // eslint-disable-next-line no-magic-numbers
+  makePlaceholder('timeSinceRunStart', 123);
+  makePlaceholder('timeSinceRunStartPretty');
+
   if (logEntry.durationMsPretty) {
     logEntry.durationMsPretty = '<placeholder pretty ms duration>';
   }

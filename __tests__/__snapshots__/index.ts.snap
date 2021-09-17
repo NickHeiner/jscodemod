@@ -449,7 +449,7 @@ Array [
     "sourceCodeFile": "<test-dir>/source/a.js",
     "time": 2012-01-01T00:00:00.000Z,
     "timeSinceRunStart": 0,
-    "timeSinceRunStartPretty": "0ms",
+    "timeSinceRunStartPretty": "<placeholder timeSinceRunStartPretty>",
     "v": 0,
   },
   Object {
