@@ -25,7 +25,7 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
    * If a regex is passed, the any file path matching that regex will be ignored.
    * If a string is passed, any file path containing that string will be ignored.
    */
-  ignore?: RegExp[] | RegExp | string[] | string;
+  ignore?: (RegExp | string)[] | RegExp | string;
 
   /**
    * Use this to block the codemod from running on files ignored by .*ignore files. The elements of this array are

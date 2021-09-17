@@ -142,7 +142,7 @@ const constantizeLogEntryForTest = logEntry => {
     if (logEntry[key]) {
       logEntry[key] = placeholder || `<placeholder ${key}>`;
     }
-  }
+  };
 
   makePlaceholder('durationMsPretty');
   // eslint-disable-next-line no-magic-numbers
