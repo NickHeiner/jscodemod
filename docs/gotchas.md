@@ -36,6 +36,58 @@ Workarounds:
 * Or, use the `transform()` API, and transform your code using jscodeshift's transformer APIs, instead of Babel.
 * Or, return `useRecast: false` to disable `recast` for files that it trips up on. A few ways to do this:
 
+```js
+// Always disable Recast.
+getPlugin() {
+  return {
+    plugin: myBabelPlugin,
+    useRecast: false
+  }
+}
+```
+
+```js
+// Disable Recast for certain files.
+getPlugin({filePath}) {
+  const filesToDisableRecastFor = ['a.js', /* ... etc */];
+  return {
+    plugin: myBabelPlugin,
+    useRecast: !filesToDisableRecastFor.includes(filePath)
+  }
+}
+```
+
+```js
+// Scan files for a condition that makes Recast fail for them, then split out into two codemod phases.
+getPlugin: ({filePath, setMetaResult}) => () => ({
+  Program(astPath) {
+    // Traverse the AST and figure out if this file triggers a Recast issue.
+    setMetaResult(recastWillMessThisFileUp(astPath));
+  }
+}),
+postProcess(_, {resultsMeta, jscodemod}) {
+  const recastSkipFiles = [];
+  
+  for (const [filePath, recastWillMessItUp] of resultsMeta.entries()) {
+    if (recastWillMessItUp) {
+      recastSkipFiles.push(filePath);
+    }
+  }
+
+  // Run our actual transformation in the second phase, now that we know which files are safe to recast. 
+  await jscodemod(
+    require.resolve('./codemod-phase-two'), {
+      // resultsMeta.keys() is the entire set of files we ran against in this phase, since we called setMetaResult for
+      // each file.
+      inputfilesPatterns: resultsMeta.keys(),
+
+      // Pass an argument to the next codemod telling it which files to skip recast for.
+      codemodArgs: recastSkipFiles
+    }
+  )
+}
+```
+
 ## Babel Parse v. Transform
 If: 
 1. You're using the low-level `transform` API
