@@ -1,6 +1,6 @@
 import type {Promisable} from 'type-fest';
 
-import {TransformOptions} from '@babel/core';
+import {PluginItem, TransformOptions} from '@babel/core';
 
 import jscodemod, {Options} from './';
 
@@ -13,7 +13,7 @@ export type BaseCodemodArgs<ParsedArgs> = {
   commandLineArgs?: ParsedArgs;
 }
 
-export type GetPluginResult = TransformOptions['plugins'] | {
+export type GetPluginResult = PluginItem | {
   /**
    * If true, use Recast to maintain code formatting. If false, just take Babel's generated output directly.
    *
@@ -24,7 +24,7 @@ export type GetPluginResult = TransformOptions['plugins'] | {
    * Defaults to true.
    */
   useRecast?: boolean;
-  plugin: TransformOptions['plugins'];
+  plugin: PluginItem;
 };
 
 export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
@@ -167,8 +167,9 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
    *      })
    *    }
    *
-   * jscodemod bundles @babel/core and recast. If those bundled versions don't work for your project, then the
-   * getPlugin() codemod API won't work for you. Use transform() instead.
+   * jscodemod bundles @babel/core and recast. If the bundled @babel/core version doesn't work for your project, then 
+   * getPlugin() codemod API won't work for you. Use transform() instead. If the bundled recast version doesn't work for
+   * your project, set useRecast = false. (See the useRecast definition above.)
    *
    * @param opts
    * @param opts.source the contents of the file to transform.

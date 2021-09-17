@@ -13,6 +13,7 @@ import {
 import * as recast from 'recast';
 import getCodemodName from './get-codemod-name';
 import prettyMs from 'pretty-ms';
+import assert from 'assert';
 
 const pFs = fs.promises;
 
@@ -105,7 +106,7 @@ export default async function runCodemodOnFile(
     let pluginChangedAst = false;
     let metaResult;
 
-    let codemodPlugins: TransformOptions['plugins'];
+    let codemodPlugin: PluginItem;
     let useRecast = true;
     try {
       // TODO: Make a way for the codemod to cleanly say that the file should not be modified.
@@ -125,13 +126,13 @@ export default async function runCodemodOnFile(
         }
       });
 
-      if (resultOfGetPlugin && 'plugin' in resultOfGetPlugin) {
-        codemodPlugins = resultOfGetPlugin.plugin;
+      if (resultOfGetPlugin && typeof resultOfGetPlugin === 'object' && 'plugin' in resultOfGetPlugin) {
+        codemodPlugin = resultOfGetPlugin.plugin;
         if (resultOfGetPlugin.useRecast === false) {
           useRecast = resultOfGetPlugin.useRecast;
         }
       } else {
-        codemodPlugins = resultOfGetPlugin;
+        codemodPlugin = resultOfGetPlugin;
       }
     } catch (e) {
       e.phase = 'codemod.getPlugin()';
@@ -145,56 +146,72 @@ export default async function runCodemodOnFile(
       ast: true
     });
 
-    const parser = {
-      parse(source: string, opts: Record<string, unknown>) {
-        const babelOpts = {
-          ...getBabelOpts(),
-          ..._.pick(codemod, 'presets'),
-          // There are options that are recognized by recast but not babel. Babel errors when they're passed. To avoid
-          // this, we'll omit them.
-          ..._.omit(
-            opts,
-            'jsx', 'loc', 'locations', 'range', 'comment', 'onComment', 'tolerant', 'ecmaVersion'
-          ),
-          /**
-           * We must have babel emit tokens. Otherwise, recast will use esprima to tokenize, which won't have the
-           * user-provided babel config.
-           *
-           * https://github.com/benjamn/recast/issues/834
-           */
-          parserOpts: {
-            tokens: true
+    const getAst = (): ReturnType<typeof recast.parse> | ReturnType<typeof babelParse> => {
+      if (useRecast) {
+        const parser = {
+          parse(source: string, opts: Record<string, unknown>) {
+            const babelOpts = {
+              ...getBabelOpts(),
+              ..._.pick(codemod, 'presets'),
+              // There are options that are recognized by recast but not babel. Babel errors when they're passed. To
+              // avoid this, we'll omit them.
+              ..._.omit(
+                opts,
+                'jsx', 'loc', 'locations', 'range', 'comment', 'onComment', 'tolerant', 'ecmaVersion'
+              ),
+              /**
+               * We must have babel emit tokens. Otherwise, recast will use esprima to tokenize, which won't have the
+               * user-provided babel config.
+               *
+               * https://github.com/benjamn/recast/issues/834
+               */
+              parserOpts: {
+                tokens: true
+              }
+            };
+            log.trace({babelOpts});
+            return babelParse(source, babelOpts);
           }
         };
-        log.trace({babelOpts});
-        return babelParse(source, babelOpts);
-      }
-    };
 
-    let ast: ReturnType<typeof recast.parse>;
-    try {
-      ast = recast.parse(fileContentsForRecast, {parser});
-    } catch (e) {
-      e.phase = 'recast.parse using the settings you passed';
-      e.suggestion = "Check that you passed the right babel preset in the codemod's `presets` field.";
-      throw e;
-    }
-
-    const setAst: PluginItem = (): PluginObj => ({
-      visitor: {
-        Program(path) {
-          path.replaceWith(ast.program);
+        try {
+          return recast.parse(fileContentsForRecast, {parser});
+        } catch (e) {
+          e.phase = 'recast.parse using the settings you passed';
+          e.suggestion = "Check that you passed the right babel preset in the codemod's `presets` field.";
+          throw e;
         }
       }
-    });
 
-    const pluginsToUse = Array.isArray(codemodPlugins) ? codemodPlugins : [codemodPlugins];
+      const babelParseResult = babelParse(originalFileContents, {
+        ...getBabelOpts(),
+        ..._.pick(codemod, 'presets')
+      });
+
+      assert(babelParseResult, 'Bug in jscodemod: expected the result of babel.parse to be truthy.');
+
+      return babelParseResult;
+    };
+
+    const pluginsToUse = [codemodPlugin];
+    const ast = getAst();
+
+    if (useRecast) {
+      const setAst: PluginItem = (): PluginObj => ({
+        visitor: {
+          Program(path) {
+            path.replaceWith(ast.program);
+          }
+        }
+      });
+      pluginsToUse.unshift(setAst);
+    }
 
     // result.ast.end will be 0, and ast.end is originalFileContents.length.
     // Passing originalFileContents instead of '' solves that problem, but causes some other problem.
-    let result: ReturnType<typeof babelTransformSync>;
+    let babelTransformResult: ReturnType<typeof babelTransformSync>;
     try {
-      result = babelTransformSync('', getBabelOpts([setAst, pluginsToUse]));
+      babelTransformResult = babelTransformSync('', getBabelOpts(pluginsToUse));
     } catch (e) {
       e.phase = "babelTransformSync using the plugin returned by your codemod's getPlugin()";
       e.suggestion = 'Check your babel plugin for runtime errors.';
@@ -221,7 +238,7 @@ export default async function runCodemodOnFile(
       return originalFileContents;
     }
 
-    if (!result) {
+    if (!babelTransformResult) {
       const err = new Error(`Transforming "${sourceCodeFile}" resulted in a null babel result.`);
       Object.assign(err, {
         phase: 'your codemod babel plugin running',
@@ -230,10 +247,11 @@ export default async function runCodemodOnFile(
       throw err;
     }
 
-    let transformedCode =
-      fileContentsPrefixToReattachPostTransform + recast.print(result.ast as recast.types.ASTNode).code;
+    let transformedCode = useRecast ?
+      fileContentsPrefixToReattachPostTransform + recast.print(babelTransformResult.ast as recast.types.ASTNode).code :
+      babelTransformResult.code;
 
-    if (originalFileContents.endsWith('\n') && !transformedCode.endsWith('\n')) {
+    if (transformedCode && originalFileContents.endsWith('\n') && !transformedCode.endsWith('\n')) {
       transformedCode += '\n';
     }
 
