@@ -329,6 +329,14 @@ describe('happy path', () => {
   });
 
   createTest({
+    testName: 'getPlugin sets useRecast = false',
+    fixtureName: 'arrow-function-inline-return',
+    spawnArgs: ['--codemod', 'codemod/do-not-use-recast.ts', 'source'],
+    snapshot: true,
+    modifier: 'only'
+  });
+
+  createTest({
     testName: 'codemodArgs parseArgs is passed to postProcess',
     fixtureName: 'parse-args',
     spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), '*.js', '--', '--requiredFlag'],

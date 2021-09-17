@@ -34,6 +34,7 @@ Fortunately, these cases have not been common in my experience.
 Workarounds:
 * If this only impacts a small set of files for you, configure your codemod to ignore them (via the `ignore` field), and migrate those by hand.
 * Or, use the `transform()` API, and transform your code using jscodeshift's transformer APIs, instead of Babel.
+* Or, return `useRecast: false` to disable `recast` for files that it trips up on. A few ways to do this:
 
 ## Babel Parse v. Transform
 If: 
