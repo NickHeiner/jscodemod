@@ -332,8 +332,7 @@ describe('happy path', () => {
     testName: 'getPlugin sets useRecast = false',
     fixtureName: 'arrow-function-inline-return',
     spawnArgs: ['--codemod', 'codemod/do-not-use-recast.ts', 'source'],
-    snapshot: true,
-    modifier: 'only'
+    snapshot: true
   });
 
   createTest({
