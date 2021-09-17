@@ -247,9 +247,9 @@ export default async function runCodemodOnFile(
       throw err;
     }
 
-    let transformedCode = useRecast ?
-      fileContentsPrefixToReattachPostTransform + recast.print(babelTransformResult.ast as recast.types.ASTNode).code :
-      babelTransformResult.code;
+    let transformedCode = useRecast
+      ? fileContentsPrefixToReattachPostTransform + recast.print(babelTransformResult.ast as recast.types.ASTNode).code
+      : babelTransformResult.code;
 
     if (transformedCode && originalFileContents.endsWith('\n') && !transformedCode.endsWith('\n')) {
       transformedCode += '\n';

@@ -167,7 +167,7 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
    *      })
    *    }
    *
-   * jscodemod bundles @babel/core and recast. If the bundled @babel/core version doesn't work for your project, then 
+   * jscodemod bundles @babel/core and recast. If the bundled @babel/core version doesn't work for your project, then
    * getPlugin() codemod API won't work for you. Use transform() instead. If the bundled recast version doesn't work for
    * your project, set useRecast = false. (See the useRecast definition above.)
    *
