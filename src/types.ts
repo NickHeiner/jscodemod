@@ -29,9 +29,13 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
 
   /**
    * Use this to block the codemod from running on files ignored by .*ignore files. The elements of this array are
-   * absolute paths to your ignore files. The ignore file will be parsed with https://www.npmjs.com/package/ignore, so
-   * only use this if your ignore file format works with it. (For instance, `.eslintignore` works, but `.npmignore` is a
-   * different spec.)
+   * absolute paths to your ignore files. The ignore file will be interpreted with the .gitignore spec,
+   * using https://www.npmjs.com/package/ignore, so only use this if your ignore file format works with it. (For
+   * instance, `.eslintignore` works, but `.npmignore` is a different spec.)
+   *
+   * .gitignore resolves paths relative to the .gitignore file location. So, if you have an ignore.txt file that lives
+   * at `<repo-root>/codemod/ignore.txt`, and ignore.txt contains the line `*.md`, then the ignored file pattern will
+   * be `<repo-root>/codemod/*.md`. If you want to ignore all Markdown files, you would instead want to write `../*.md`.
    *
    * Relative file paths will be resolved relative to the current working directory, so for robustness, you probably
    * want to pass absolute paths. (Perhaps use `path.resolve(__dirname, '../path/to/your/file')`).
