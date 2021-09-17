@@ -991,15 +991,12 @@ const codemod: Codemod = {
 };
 
 export default codemod;",
-  "source/change-string-literal-0.js": "const a = 'replace with file name';",
-  "source/change-string-literal-1.js": "const a = 'replace with file name';",
+  "source/change-string-literal-0.js": "const a = \\"new string literal\\";",
+  "source/change-string-literal-1.js": "const a = \\"new string literal\\";",
   "source/commented-out.js": "// const g = a => {
 //   return a?.b?.c?.d
 // };",
-  "source/optional-chaining.js": "const g = a => {
-  return a?.b?.c?.d
-};
-
+  "source/optional-chaining.js": "const g = a => a?.b?.c?.d;
 
 const C = <img />;
 const Empty = <div></div>;
@@ -1008,34 +1005,27 @@ const Empty = <div></div>;
 
 /* leading comment */
 const y = 1;
-
-let x = 1; /* trailing comment */
+let x = 1;
+/* trailing comment */
 
 /**
  * I was previously seeing issues where this would transform \`return (\\\\n expr \\\\n)\` to \`return expr\`, but I'm not seeing
  * that any more.
  */
-function f() {
-  return (
-    true || false
-  )
-}
 
-// Will be erroneously transformed because of https://github.com/benjamn/recast/issues/914.
-const e = () => function(g, h) {
+function f() {
+  return true || false;
+} // Will be erroneously transformed because of https://github.com/benjamn/recast/issues/914.
+
+
+const e = () => function (g, h) {
   return i;
 };",
-  "source/ts.ts": "function g(
-  a: string,
-  b: number,
-  c: boolean
-) {
+  "source/ts.ts": "function g(a: string, b: number, c: boolean) {
   return 0;
 }
 
-const f = () => {
-  return 1
-};",
+const f = () => 1;",
 }
 `;
 

@@ -6,6 +6,7 @@ import _ from 'lodash';
 import {
   parse as babelParse,
   transformSync as babelTransformSync,
+  transformFromAstSync as babelTransformFromAstSync,
   TransformOptions,
   PluginItem,
   PluginObj
@@ -210,8 +211,11 @@ export default async function runCodemodOnFile(
     // result.ast.end will be 0, and ast.end is originalFileContents.length.
     // Passing originalFileContents instead of '' solves that problem, but causes some other problem.
     let babelTransformResult: ReturnType<typeof babelTransformSync>;
+    const babelOptions = getBabelOpts(pluginsToUse);
     try {
-      babelTransformResult = babelTransformSync('', getBabelOpts(pluginsToUse));
+      babelTransformResult = useRecast
+        ? babelTransformSync('', babelOptions)
+        : babelTransformFromAstSync(ast, originalFileContents, babelOptions);
     } catch (e) {
       e.phase = "babelTransformSync using the plugin returned by your codemod's getPlugin()";
       e.suggestion = 'Check your babel plugin for runtime errors.';
