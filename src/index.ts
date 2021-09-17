@@ -214,6 +214,7 @@ async function getIsIgnoredByIgnoreFile(log: TODO, ignoreFiles: string[] | undef
         log.error({invalidIgnoreFilePath: e.file}, `Ignore file "${e.file}" does not exist.`);
         throw e;
       }
+      throw e;
     }
   }
 
