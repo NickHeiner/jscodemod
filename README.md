@@ -68,8 +68,10 @@ Using the high-level `getPlugin` API:
 ```ts
 import type {Codemod} from '@nick.heiner/jscodemod';
 const codemod: Codemod = {
-  // Whatever presets are needed to parse your code.
-  presets: ['@babel/preset-react', '@babel/preset-typescript', '@babel/preset-env']
+  // Whatever babel configuration is needed to parse or transform your code.
+  babelTransformOptions: {
+    presets: ['@babel/preset-react', '@babel/preset-typescript', '@babel/preset-env']
+  },
 
   // The transformation you'd like to do in the codemod.
   getPlugin({source, fileName}) {

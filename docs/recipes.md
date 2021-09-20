@@ -49,7 +49,6 @@ Sometimes, you might not want to make any changes, but do want to use Babel's po
 
 ```js
 module.exports = {
-    presets: [],
     getPlugin({ willNotifyOnAstChange, setMetaResult }) {
         // Because we don't plan to modify the AST, call this function, then never call astDidChange(). That way, jscodemod
         // won't change the file.
