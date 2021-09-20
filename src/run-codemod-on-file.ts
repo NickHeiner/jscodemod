@@ -145,15 +145,15 @@ export default async function runCodemodOnFile(
             opts,
             'jsx', 'loc', 'locations', 'range', 'comment', 'onComment', 'tolerant', 'ecmaVersion'
           ),
-          /**
-           * We must have babel emit tokens. Otherwise, recast will use esprima to tokenize, which won't have the
-           * user-provided babel config.
-           *
-           * https://github.com/benjamn/recast/issues/834
-           */
           parserOpts: {
-            tokens: true,
-            ..._.pick(codemod, 'babelTransformOptions.parserOpts')
+            ..._.pick(codemod, 'babelTransformOptions.parserOpts'),
+            /**
+             * We must have babel emit tokens. Otherwise, recast will use esprima to tokenize, which won't have the
+             * user-provided babel config.
+             *
+             * https://github.com/benjamn/recast/issues/834
+             */
+            tokens: true
           }
         };
         log.trace({babelOpts});
