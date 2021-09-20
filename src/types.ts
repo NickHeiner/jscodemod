@@ -98,7 +98,7 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
     source: string;
   } & BaseCodemodArgs<ParsedArgs>): CodemodResult<TransformResultMeta> | Promise<CodemodResult<TransformResultMeta>>;
 
-  presets?: never;
+  babelTransformOptions?: never;
   getPlugin?: never;
 } | {
   transform?: never;

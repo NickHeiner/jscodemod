@@ -166,7 +166,7 @@ export default async function runCodemodOnFile(
       ast = recast.parse(fileContentsForRecast, {parser});
     } catch (e) {
       e.phase = 'recast.parse using the settings you passed';
-      e.suggestion = "Check that you passed the right babel preset in the codemod's `presets` field.";
+      e.suggestion = "Check that you passed the right babel configuration in the codemod's `babelTransformOptions` field.";
       throw e;
     }
 
