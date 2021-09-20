@@ -138,7 +138,7 @@ export default async function runCodemodOnFile(
       parse(source: string, opts: Record<string, unknown>) {
         const babelOpts = {
           ...getBabelOpts(),
-          ..._.pick(codemod, 'presets'),
+          ..._.pick(codemod, 'babelTransformOptions'),
           // There are options that are recognized by recast but not babel. Babel errors when they're passed. To avoid
           // this, we'll omit them.
           ..._.omit(
@@ -152,7 +152,8 @@ export default async function runCodemodOnFile(
            * https://github.com/benjamn/recast/issues/834
            */
           parserOpts: {
-            tokens: true
+            tokens: true,
+            ..._.pick(codemod, 'babelTransformOptions.parserOpts')
           }
         };
         log.trace({babelOpts});

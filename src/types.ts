@@ -104,9 +104,10 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
   transform?: never;
 
   /**
-   * The set of babel presets needed to compile your code, like `@babel/preset-env`.
+   * The set of babel transform options needed to compile your code, such as `presets`. More details can be found
+   * [in the Babel documentation](https://babeljs.io/docs/en/options).
    */
-  presets: TransformOptions['presets'];
+  babelTransformOptions: TransformOptions;
 
   /**
    * Return a plugin that will be used to codemod your code.

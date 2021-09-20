@@ -7,7 +7,6 @@ const silenceableLog = (...args) => {
 }
 
 module.exports = {
-  presets: [],
   getPlugin({willNotifyOnAstChange, setMetaResult}) {
     willNotifyOnAstChange();
     return ({}) => ({

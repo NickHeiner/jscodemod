@@ -40,7 +40,9 @@ const codemod: Codemod = {
         }
       });
   },
-  presets: ['@babel/preset-react', '@babel/preset-typescript', '@babel/preset-env']
+  babelTransformOptions: {
+    presets: ['@babel/preset-react', '@babel/preset-typescript', '@babel/preset-env']
+  }
 };
 
 export default codemod;
