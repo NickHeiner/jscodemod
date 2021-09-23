@@ -351,10 +351,9 @@ describe('happy path', () => {
   });
 
   createTest({
-    modifier: 'only',
     testName: 'getPlugin supports custom `babelTransformOptions`',
     fixtureName: 'custom-babel-options',
-    spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), 'source'],
+    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), 'input.ts'],
     snapshot: true
   });
 });
