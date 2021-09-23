@@ -102,7 +102,7 @@ async function transformCode(
   inputFiles: string[],
   writeFiles: boolean,
   piscinaLowerBoundInclusive: NonTSOptions['piscinaLowerBoundInclusive'],
-  logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, 
+  logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>,
   codemodArgs?: string[]
 ) {
   const rawArgs = codemodArgs ? JSON.stringify(codemodArgs) : undefined;
