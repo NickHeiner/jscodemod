@@ -6,17 +6,20 @@ import type {Visitor} from '@babel/traverse';
 export type TODO = any;
 
 const codemod: Codemod = {
-  getPlugin: () => (): {visitor: Visitor<TODO>} => ({
-    visitor: {
-      Identifier(path: TODO) {
-        path.node.name = path.node.name.split('').reverse().join('');
+  getPlugin: () => ({
+    useRecast: false,
+    plugin: (): {visitor: Visitor<TODO>} => ({
+      visitor: {
+        Identifier(path: TODO) {
+          path.node.name = path.node.name.split('').reverse().join('');
+        }
       }
-    }
+    })
   }),
 
   babelTransformOptions: {
     generatorOpts: {
-      compact: true
+      retainFunctionParens: true
     }
   }
 };

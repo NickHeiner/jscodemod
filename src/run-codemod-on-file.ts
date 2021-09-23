@@ -161,7 +161,7 @@ export default async function runCodemodOnFile(
                 'jsx', 'loc', 'locations', 'range', 'comment', 'onComment', 'tolerant', 'ecmaVersion'
               ),
               parserOpts: {
-                ...codemod?.babelTransformOptions?.parserOpts,
+                ...codemod.babelTransformOptions?.parserOpts,
                 /**
                  * We must have babel emit tokens. Otherwise, recast will use esprima to tokenize, which won't have the
                  * user-provided babel config.
@@ -171,7 +171,7 @@ export default async function runCodemodOnFile(
                 tokens: true
               }
             };
-            log.trace({babelOpts});
+            log.trace({babelOpts}, 'Babel options for parsing with recast');
             return babelParse(source, babelOpts);
           }
         };
@@ -187,10 +187,14 @@ export default async function runCodemodOnFile(
         }
       }
 
-      const babelParseResult = babelParse(originalFileContents, {
+      const babelOpts = {
         ...getBabelOpts(),
         ...codemod.babelTransformOptions
-      });
+      };
+
+      log.trace({babelOpts}, 'Babel options for parsing without recast');
+
+      const babelParseResult = babelParse(originalFileContents, babelOpts);
 
       assert(babelParseResult, 'Bug in jscodemod: expected the result of babel.parse to be truthy.');
 
@@ -214,7 +218,13 @@ export default async function runCodemodOnFile(
     // result.ast.end will be 0, and ast.end is originalFileContents.length.
     // Passing originalFileContents instead of '' solves that problem, but causes some other problem.
     let babelTransformResult: ReturnType<typeof babelTransformSync>;
-    const babelOptions = getBabelOpts(pluginsToUse);
+    const babelOptions = {
+      ...getBabelOpts(pluginsToUse),
+      ...codemod.babelTransformOptions
+    };
+
+    log.trace({babelOptions}, 'Babel options for generation');
+    
     try {
       babelTransformResult = useRecast
         ? babelTransformSync('', babelOptions)
