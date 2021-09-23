@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+/* leading comment */
 const y = 1;
 
 let x = 1; /* trailing comment */

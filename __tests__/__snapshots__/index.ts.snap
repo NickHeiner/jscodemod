@@ -170,7 +170,7 @@ exports[`getTransformedContentsOfSingleFile returns the contents of a single fil
 function b() {}"
 `;
 
-exports[`getTransformedContentsOfSingleFile throws an error if the codemod throws an error 1`] = `[Error: Error for: /Users/nheiner/code/jscodemod/fixtures/will-throw-error/source/a.js]`;
+exports[`getTransformedContentsOfSingleFile throws an error if the codemod throws an error 1`] = `"Error: Error for: <git-root>/fixtures/will-throw-error/source/a.js"`;
 
 exports[`git Modify dirty files 1`] = `
 Object {
@@ -448,8 +448,8 @@ Array [
     "prettyDuration": "<duration placeholder>",
     "sourceCodeFile": "<test-dir>/source/a.js",
     "time": 2012-01-01T00:00:00.000Z,
-    "timeSinceRunStart": 0,
-    "timeSinceRunStartPretty": "0ms",
+    "timeSinceRunStart": 123,
+    "timeSinceRunStartPretty": "<placeholder timeSinceRunStartPretty>",
     "v": 0,
   },
   Object {
@@ -540,7 +540,7 @@ Array [
   },
   Object {
     "durationMs": 117,
-    "durationMsPretty": "4ms",
+    "durationMsPretty": "<placeholder pretty ms duration>",
     "hostname": "<hostname placeholder>",
     "level": 20,
     "msg": "The first codemod worker to return has done so.",
@@ -624,6 +624,44 @@ console.log('a');",
 
 exports[`happy path TS without manually specifying any of the args determining how to compile 1`] = `
 Object {
+  "codemod/do-not-use-recast.ts": "import {Codemod} from '@nick.heiner/jscodemod';
+import _ from 'lodash';
+import * as BabelTypes from '@babel/types';
+import type {Visitor} from '@babel/traverse';
+
+// TODO is our intentional any type.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type TODO = any;
+
+const codemod: Codemod = {
+  getPlugin: () => ({
+    plugin: ({types: t}: {types: typeof BabelTypes}): {visitor: Visitor<TODO>} =>
+      ({
+        visitor: {
+          ArrowFunctionExpression(path) {
+            if (t.isBlockStatement(path.node.body) && path.node.body.body.length === 1 &&
+                  t.isReturnStatement(path.node.body.body[0])) {
+
+              // I'm confident that this value will not be null, based on the runtime checks above.
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              path.get('body').replaceWith(path.node.body.body[0].argument!);
+            }
+          },
+          Literal(literalPath) {
+          // This tests to make sure that getPlugin is called for each file, and is not reused between files.
+            if (literalPath.node.type === 'StringLiteral') {
+              literalPath.replaceWith(t.stringLiteral('new string literal'));
+              literalPath.skip();
+            }
+          }
+        }
+      }),
+    useRecast: false
+  }),
+  presets: ['@babel/preset-react', '@babel/preset-typescript', '@babel/preset-env']
+};
+
+export default codemod;",
   "codemod/index.ts": "import {Codemod} from '@nick.heiner/jscodemod';
 import _ from 'lodash';
 import path from 'path';
@@ -683,6 +721,7 @@ const Empty = <div></div>;
 ",
   "source/recast-oddities.js": "#!/usr/bin/env node
 
+/* leading comment */
 const y = 1;
 
 let x = 1;/* trailing comment */
@@ -802,6 +841,44 @@ exports[`happy path dry porcelain 2`] = `
 
 exports[`happy path getPlugin calls astDidChange() but forgot to call willNotifyOnAstChange() 1`] = `
 Object {
+  "codemod/do-not-use-recast.ts": "import {Codemod} from '@nick.heiner/jscodemod';
+import _ from 'lodash';
+import * as BabelTypes from '@babel/types';
+import type {Visitor} from '@babel/traverse';
+
+// TODO is our intentional any type.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type TODO = any;
+
+const codemod: Codemod = {
+  getPlugin: () => ({
+    plugin: ({types: t}: {types: typeof BabelTypes}): {visitor: Visitor<TODO>} =>
+      ({
+        visitor: {
+          ArrowFunctionExpression(path) {
+            if (t.isBlockStatement(path.node.body) && path.node.body.body.length === 1 &&
+                  t.isReturnStatement(path.node.body.body[0])) {
+
+              // I'm confident that this value will not be null, based on the runtime checks above.
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              path.get('body').replaceWith(path.node.body.body[0].argument!);
+            }
+          },
+          Literal(literalPath) {
+          // This tests to make sure that getPlugin is called for each file, and is not reused between files.
+            if (literalPath.node.type === 'StringLiteral') {
+              literalPath.replaceWith(t.stringLiteral('new string literal'));
+              literalPath.skip();
+            }
+          }
+        }
+      }),
+    useRecast: false
+  }),
+  presets: ['@babel/preset-react', '@babel/preset-typescript', '@babel/preset-env']
+};
+
+export default codemod;",
   "codemod/index.ts": "import {Codemod} from '@nick.heiner/jscodemod';
 import _ from 'lodash';
 import path from 'path';
@@ -863,6 +940,7 @@ const Empty = <div></div>;
 ",
   "source/recast-oddities.js": "#!/usr/bin/env node
 
+/* leading comment */
 const y = 1;
 
 let x = 1; /* trailing comment */
@@ -896,15 +974,179 @@ const f = () => {
 `;
 
 exports[`happy path getPlugin returns a meta 1`] = `
-"{
+"🔨 Running postProcess for \\"0\\" modified files...
+{
   \\"<test-dir>/source/a.js\\": 3,
   \\"<test-dir>/source/b.js\\": 1,
   \\"<test-dir>/source/c.js\\": 7
-}"
+}
+✅ postProcess done."
+`;
+
+exports[`happy path getPlugin sets useRecast = false 1`] = `
+Object {
+  "codemod/do-not-use-recast.ts": "import {Codemod} from '@nick.heiner/jscodemod';
+import _ from 'lodash';
+import * as BabelTypes from '@babel/types';
+import type {Visitor} from '@babel/traverse';
+
+// TODO is our intentional any type.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type TODO = any;
+
+const codemod: Codemod = {
+  getPlugin: () => ({
+    plugin: ({types: t}: {types: typeof BabelTypes}): {visitor: Visitor<TODO>} =>
+      ({
+        visitor: {
+          ArrowFunctionExpression(path) {
+            if (t.isBlockStatement(path.node.body) && path.node.body.body.length === 1 &&
+                  t.isReturnStatement(path.node.body.body[0])) {
+
+              // I'm confident that this value will not be null, based on the runtime checks above.
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              path.get('body').replaceWith(path.node.body.body[0].argument!);
+            }
+          },
+          Literal(literalPath) {
+          // This tests to make sure that getPlugin is called for each file, and is not reused between files.
+            if (literalPath.node.type === 'StringLiteral') {
+              literalPath.replaceWith(t.stringLiteral('new string literal'));
+              literalPath.skip();
+            }
+          }
+        }
+      }),
+    useRecast: false
+  }),
+  presets: ['@babel/preset-react', '@babel/preset-typescript', '@babel/preset-env']
+};
+
+export default codemod;",
+  "codemod/index.ts": "import {Codemod} from '@nick.heiner/jscodemod';
+import _ from 'lodash';
+import path from 'path';
+import * as BabelTypes from '@babel/types';
+import type {Visitor} from '@babel/traverse';
+
+// TODO is our intentional any type.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type TODO = any;
+
+const codemod: Codemod = {
+  getPlugin: ({willNotifyOnAstChange, astDidChange, filePath}) => {
+    if (process.env.CALL_WILL_NOTIFY_ON_AST_CHANGE) {
+      willNotifyOnAstChange();
+    }
+
+    return ({types: t}: {types: typeof BabelTypes}): {visitor: Visitor<TODO>} => 
+      ({
+        visitor: {
+          ArrowFunctionExpression(path) {
+            if (t.isBlockStatement(path.node.body) && path.node.body.body.length === 1 &&
+                  t.isReturnStatement(path.node.body.body[0])) {
+
+              if (process.env.CALL_AST_DID_CHANGE) {
+                astDidChange();
+              }
+    
+              // I'm confident that this value will not be null, based on the runtime checks above.
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              path.get('body').replaceWith(path.node.body.body[0].argument!);  
+            }
+          },
+          Literal(literalPath) {
+            // This tests to make sure that getPlugin is called for each file, and is not reused between files.
+            if (literalPath.node.type === 'StringLiteral') {
+              literalPath.replaceWith(t.stringLiteral(path.basename(filePath)));
+              literalPath.skip();
+            }
+          }
+        }
+      });
+  },
+  presets: ['@babel/preset-react', '@babel/preset-typescript', '@babel/preset-env']
+};
+
+export default codemod;",
+  "source/change-string-literal-0.js": "const a = \\"new string literal\\";",
+  "source/change-string-literal-1.js": "const a = \\"new string literal\\";",
+  "source/commented-out.js": "// const g = a => {
+//   return a?.b?.c?.d
+// };",
+  "source/optional-chaining.js": "const g = a => a?.b?.c?.d;
+
+const C = <img />;
+const Empty = <div></div>;
+",
+  "source/recast-oddities.js": "#!/usr/bin/env node
+
+/* leading comment */
+const y = 1;
+let x = 1;
+/* trailing comment */
+
+/**
+ * I was previously seeing issues where this would transform \`return (\\\\n expr \\\\n)\` to \`return expr\`, but I'm not seeing
+ * that any more.
+ */
+
+function f() {
+  return true || false;
+} // Will be erroneously transformed because of https://github.com/benjamn/recast/issues/914.
+
+
+const e = () => function (g, h) {
+  return i;
+};",
+  "source/ts.ts": "function g(a: string, b: number, c: boolean) {
+  return 0;
+}
+
+const f = () => 1;",
+}
 `;
 
 exports[`happy path getPlugin uses the willNotifyOnAstChange API 1`] = `
 Object {
+  "codemod/do-not-use-recast.ts": "import {Codemod} from '@nick.heiner/jscodemod';
+import _ from 'lodash';
+import * as BabelTypes from '@babel/types';
+import type {Visitor} from '@babel/traverse';
+
+// TODO is our intentional any type.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type TODO = any;
+
+const codemod: Codemod = {
+  getPlugin: () => ({
+    plugin: ({types: t}: {types: typeof BabelTypes}): {visitor: Visitor<TODO>} =>
+      ({
+        visitor: {
+          ArrowFunctionExpression(path) {
+            if (t.isBlockStatement(path.node.body) && path.node.body.body.length === 1 &&
+                  t.isReturnStatement(path.node.body.body[0])) {
+
+              // I'm confident that this value will not be null, based on the runtime checks above.
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              path.get('body').replaceWith(path.node.body.body[0].argument!);
+            }
+          },
+          Literal(literalPath) {
+          // This tests to make sure that getPlugin is called for each file, and is not reused between files.
+            if (literalPath.node.type === 'StringLiteral') {
+              literalPath.replaceWith(t.stringLiteral('new string literal'));
+              literalPath.skip();
+            }
+          }
+        }
+      }),
+    useRecast: false
+  }),
+  presets: ['@babel/preset-react', '@babel/preset-typescript', '@babel/preset-env']
+};
+
+export default codemod;",
   "codemod/index.ts": "import {Codemod} from '@nick.heiner/jscodemod';
 import _ from 'lodash';
 import path from 'path';
@@ -966,6 +1208,7 @@ const Empty = <div></div>;
 ",
   "source/recast-oddities.js": "#!/usr/bin/env node
 
+/* leading comment */
 const y = 1;
 
 let x = 1; /* trailing comment */

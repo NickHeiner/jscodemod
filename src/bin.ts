@@ -1,11 +1,16 @@
 #!/usr/bin/env node
 
+// This is a bin file, so console logs are ok.
+/* eslint-disable no-console */
+
 import yargs from 'yargs';
 import jscodemod, {defaultPiscinaLowerBoundInclusive} from './';
 import _ from 'lodash';
 import 'loud-rejection/register';
 import getLogger from './get-logger';
 import {CodemodMetaResult} from './run-codemod-on-file';
+import PrettyError from 'pretty-error';
+import ansiColors from 'ansi-colors';
 
 const tsOnlyNote = '(Only applicable if your codemod is written in TypeScript)';
 
@@ -140,6 +145,16 @@ async function main() {
       log
     };
 
+    // This is intentional.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function safeConsoleLog(...args: any[]) {
+      if (opts.jsonOutput || opts.porcelain) {
+        return;
+      }
+
+      console.log(...args);
+    }
+
     // Yarg's types are messed up.
     Object.assign(opts, _.pick(argv, 'codemodArgs'));
 
@@ -155,7 +170,20 @@ async function main() {
       .map((result: CodemodMetaResult<unknown>) => _.omit(result, 'fileContents'))
       .value();
     if (erroredFiles.length) {
-      log.error({erroredFiles}, 'The codemod threw errors for some files.');
+      if (opts.jsonOutput) {
+        log.error({erroredFiles}, 'The codemod threw errors for some files.');
+      } else {
+        const prettyError = new PrettyError();
+        safeConsoleLog(ansiColors.bold(
+          'The codemod threw errors for some files. This would not stop other files from being transformed.'
+        ));
+        // Lodash's types are messed up.
+        // @ts-expect-error
+        erroredFiles.forEach(({error}) => {
+          safeConsoleLog(prettyError.render(error));
+        });
+      }
+
       process.exit(1);
     }
 

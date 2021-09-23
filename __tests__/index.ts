@@ -5,7 +5,7 @@ import execa from 'execa';
 import type {ExecaReturnValue} from 'execa';
 import path from 'path';
 import 'loud-rejection/register';
-import createLog, {constantizeLogEntryForTest} from 'nth-log';
+import createLog, {constantizeLogEntryForTest as nthLogConstantizeLogEntryForTest} from 'nth-log';
 import _ from 'lodash';
 import globby from 'globby';
 import {promises as fs} from 'fs';
@@ -130,6 +130,30 @@ function createTest({
   });
   /* eslint-enable jest/no-conditional-expect */
 }
+
+/**
+ * nth-log exports a function to constantize log entries that are dynamic, like the hostname and process ID.
+ * jscodemod adds some dynamic fields of its own, so we'll need custom logic to constantize those as well.
+ *
+ * Mutates `logEntry`.
+ */
+const constantizeLogEntryForTest = logEntry => {
+  const makePlaceholder = (key, placeholder = undefined) => {
+    if (key in logEntry) {
+      logEntry[key] = placeholder || `<placeholder ${key}>`;
+    }
+  };
+
+  makePlaceholder('durationMsPretty');
+  // eslint-disable-next-line no-magic-numbers
+  makePlaceholder('timeSinceRunStart', 123);
+  makePlaceholder('timeSinceRunStartPretty');
+
+  if (logEntry.durationMsPretty) {
+    logEntry.durationMsPretty = '<placeholder pretty ms duration>';
+  }
+  return nthLogConstantizeLogEntryForTest(logEntry);
+};
 
 const getJsonLogs = (stdout: string) => stdout.split('\n').map(line => {
   let parsedLine;
@@ -305,9 +329,16 @@ describe('happy path', () => {
   });
 
   createTest({
+    testName: 'getPlugin sets useRecast = false',
+    fixtureName: 'arrow-function-inline-return',
+    spawnArgs: ['--codemod', 'codemod/do-not-use-recast.ts', 'source'],
+    snapshot: true
+  });
+
+  createTest({
     testName: 'codemodArgs parseArgs is passed to postProcess',
     fixtureName: 'parse-args',
-    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), '*.js', '--', '--requiredFlag'],
+    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), '*.js', '--jsonOutput', '--', '--requiredFlag'],
     assert({stdout}) {
       const jsonLogs = getJsonLogs(stdout);
       expect(jsonLogs).toContainEqual(expect.objectContaining({
@@ -572,14 +603,28 @@ describe('getTransformedContentsOfSingleFile', () => {
     const inputFilePath = path.resolve(__dirname, '../fixtures/will-throw-error/source/a.js');
     const originalFilesContents = await fs.readFile(inputFilePath, 'utf-8');
 
-    await expect(getTransformedContentsOfSingleFile(
-      require.resolve('../fixtures/will-throw-error/codemod/codemod-named'),
+    try {
+      await getTransformedContentsOfSingleFile(
+        require.resolve('../fixtures/will-throw-error/codemod/codemod-named'),
 
-      // If we use require.resolve here, then Jest will detect it as a test dependency. When the codemod modifies the
-      // file, and we're in watch mode, Jest will kick off another run, continuing ad infinitum.
-      inputFilePath,
-      {log}
-    )).rejects.toMatchSnapshot();
+        // If we use require.resolve here, then Jest will detect it as a test dependency. When the codemod modifies the
+        // file, and we're in watch mode, Jest will kick off another run, continuing ad infinitum.
+        inputFilePath,
+        {log}
+      );
+      throw new Error('The previous line should have thrown an error');
+    } catch (e) {
+      // I originally had this test using the Jest helpers, as these lint rules suggest. However, I need to intercept
+      // the error value to constantize the snapshot, removing the absolute file path. I tried this with a Jest
+      // snapshot serializer, but it gave me a stack overflow, calling the test() function over and over again,
+      // and I wasn't able to figure out why.
+      //
+      // For now, this is fine. But if I start having to do this in more places, I'll revisit the snapshot serializer,
+      // which has the benefit of a centralized approach.
+      //
+      // eslint-disable-next-line jest/no-conditional-expect,jest/no-try-expect
+      expect(replaceAll(e.toString(), gitRootFilePath, '<git-root>')).toMatchSnapshot();
+    }
 
     expect(originalFilesContents).toEqual(
       await fs.readFile(inputFilePath, 'utf-8')
