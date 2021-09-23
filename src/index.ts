@@ -71,14 +71,14 @@ async function getCodemodPath(pathToCodemod: string, options: TSOptions) {
   return path.resolve(pathToCodemod);
 }
 
-function getProgressUI(logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, totalCount: number) {
+function getProgressUI(logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, totalCount: number, codemodName: string) {
   if (logOpts.porcelain || logOpts.jsonOutput) {
     // This is intentional.
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     return {tick() {}};
   }
 
-  return new ProgressBar(':bar (:current/:total, :percent)', {total: totalCount});
+  return new ProgressBar(`[${codemodName}] :bar (:current/:total, :percent)`, {total: totalCount});
 }
 
 /**
@@ -99,7 +99,8 @@ async function transformCode(
   inputFiles: string[],
   writeFiles: boolean,
   piscinaLowerBoundInclusive: NonTSOptions['piscinaLowerBoundInclusive'],
-  logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, codemodArgs?: string[]
+  logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, 
+  codemodArgs?: string[]
 ) {
   const rawArgs = codemodArgs ? JSON.stringify(codemodArgs) : undefined;
 
@@ -144,7 +145,8 @@ async function transformCode(
     return runCodemodOnFile(codemod, inputFile, log, baseRunnerOpts, runStartTimeMs);
   };
 
-  const progressBar = getProgressUI(logOpts, inputFiles.length);
+  const codemodName = getCodemodName(codemod, codemodPath);
+  const progressBar = getProgressUI(logOpts, inputFiles.length, codemodName);
   // We might be doing something to hurt perf here.
   // https://github.com/piscinajs/piscina/issues/145
 
