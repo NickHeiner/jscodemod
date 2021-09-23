@@ -448,7 +448,7 @@ Array [
     "prettyDuration": "<duration placeholder>",
     "sourceCodeFile": "<test-dir>/source/a.js",
     "time": 2012-01-01T00:00:00.000Z,
-    "timeSinceRunStart": 0,
+    "timeSinceRunStart": 123,
     "timeSinceRunStartPretty": "<placeholder timeSinceRunStartPretty>",
     "v": 0,
   },
@@ -974,11 +974,13 @@ const f = () => {
 `;
 
 exports[`happy path getPlugin returns a meta 1`] = `
-"{
+"🔨 Running postProcess for \\"0\\" modified files...
+{
   \\"<test-dir>/source/a.js\\": 3,
   \\"<test-dir>/source/b.js\\": 1,
   \\"<test-dir>/source/c.js\\": 7
-}"
+}
+✅ postProcess done."
 `;
 
 exports[`happy path getPlugin sets useRecast = false 1`] = `

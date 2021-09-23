@@ -1,3 +1,6 @@
+// This file has terminal UI logic.
+/* eslint-disable no-console */
+
 import globby from 'globby';
 import _ from 'lodash';
 import execa from 'execa';
@@ -71,14 +74,14 @@ async function getCodemodPath(pathToCodemod: string, options: TSOptions) {
   return path.resolve(pathToCodemod);
 }
 
-function getProgressUI(logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, totalCount: number) {
+function getProgressUI(logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, totalCount: number, codemodName: string) {
   if (logOpts.porcelain || logOpts.jsonOutput) {
     // This is intentional.
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     return {tick() {}};
   }
 
-  return new ProgressBar(':bar (:current/:total, :percent)', {total: totalCount});
+  return new ProgressBar(`[${codemodName}] :bar (:current/:total, :percent)`, {total: totalCount});
 }
 
 /**
@@ -99,7 +102,8 @@ async function transformCode(
   inputFiles: string[],
   writeFiles: boolean,
   piscinaLowerBoundInclusive: NonTSOptions['piscinaLowerBoundInclusive'],
-  logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, codemodArgs?: string[]
+  logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>,
+  codemodArgs?: string[]
 ) {
   const rawArgs = codemodArgs ? JSON.stringify(codemodArgs) : undefined;
 
@@ -144,7 +148,8 @@ async function transformCode(
     return runCodemodOnFile(codemod, inputFile, log, baseRunnerOpts, runStartTimeMs);
   };
 
-  const progressBar = getProgressUI(logOpts, inputFiles.length);
+  const codemodName = getCodemodName(codemod, codemodPath);
+  const progressBar = getProgressUI(logOpts, inputFiles.length, codemodName);
   // We might be doing something to hurt perf here.
   // https://github.com/piscinajs/piscina/issues/145
 
@@ -245,6 +250,16 @@ async function jscodemod(
     ..._.pick(options, 'tsconfig', 'tsOutDir', 'tsc'),
     log
   });
+
+  // This is intentional.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function safeConsoleLog(...args: any[]) {
+    if (passedOptions.jsonOutput || passedOptions.porcelain) {
+      return;
+    }
+
+    console.log(...args);
+  }
 
   const codemod = loadCodemod(codemodPath);
   const codemodName = getCodemodName(codemod, codemodPath);
@@ -350,6 +365,7 @@ async function jscodemod(
       codemodMetaResults.map(({filePath, meta}) => [filePath, meta])
     );
 
+    safeConsoleLog(`🔨 Running postProcess for "${modifiedFiles.length}" modified files...`);
     // TODO: if the postProcess phase fails, there's no way for that to propagate back up to the caller, which means
     // we can't exit with a non-zero code.
     await log.logPhase({
@@ -378,6 +394,7 @@ async function jscodemod(
         });
       }
     }));
+    safeConsoleLog('✅ postProcess done.');
   }
   return codemodMetaResults;
 }
