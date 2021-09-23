@@ -129,6 +129,12 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
    * clobber) settings that jscodemod needs to pass to Babel to run your codemod. To see what's safe, you can either
    * 1) guess and check or 2) look in <this repo root>/src/run-codemod-on-file.ts. I'm sorry I don't have anything more
    * robust.
+   *
+   * *Note:* if you pass [babelTransformOptions.generatorOpts](https://babeljs.io/docs/en/options#generatoropts), be
+   * aware that Babel describes those options as "an opaque object
+   * containing options to pass through to the code generator being used." This means that what you pass will change
+   * based on whether you're using recast (see the `useRecast` option). If you're using recast, then generatorOpts will
+   * be passed to recast. Otherwise, it'll be used for the Babel generator.
    */
   babelTransformOptions: TransformOptions;
 
