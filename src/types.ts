@@ -1,6 +1,6 @@
 import type {Promisable} from 'type-fest';
 
-import {PluginTarget, TransformOptions} from '@babel/core';
+import {PluginItem, TransformOptions} from '@babel/core';
 
 import jscodemod, {Options} from './';
 
@@ -12,6 +12,20 @@ export type BaseCodemodArgs<ParsedArgs> = {
   // TODO: only specify this as an option to transform if parseArgs is present.
   commandLineArgs?: ParsedArgs;
 }
+
+export type GetPluginResult = PluginItem | {
+  /**
+   * If true, use Recast to maintain code formatting. If false, just take Babel's generated output directly.
+   *
+   * Most of the time, you'll want this, because Babel's code generator doesn't make any attempt to match the input
+   * styling. However, Recast sometimes introduces oddities of its own, as noted in
+   * [the docs](https://github.com/NickHeiner/jscodemod/blob/master/docs/gotchas.md#getplugin-recast-issues).
+   *
+   * Defaults to true.
+   */
+  useRecast?: boolean;
+  plugin: PluginItem;
+};
 
 export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
   /**
@@ -25,13 +39,17 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
    * If a regex is passed, the any file path matching that regex will be ignored.
    * If a string is passed, any file path containing that string will be ignored.
    */
-  ignore?: RegExp[] | RegExp | string[] | string;
+  ignore?: (RegExp | string)[] | RegExp | string;
 
   /**
    * Use this to block the codemod from running on files ignored by .*ignore files. The elements of this array are
-   * absolute paths to your ignore files. The ignore file will be parsed with https://www.npmjs.com/package/ignore, so
-   * only use this if your ignore file format works with it. (For instance, `.eslintignore` works, but `.npmignore` is a
-   * different spec.)
+   * absolute paths to your ignore files. The ignore file will be interpreted with the .gitignore spec,
+   * using https://www.npmjs.com/package/ignore, so only use this if your ignore file format works with it. (For
+   * instance, `.eslintignore` works, but `.npmignore` is a different spec.)
+   *
+   * .gitignore resolves paths relative to the .gitignore file location. So, if you have an ignore.txt file that lives
+   * at `<repo-root>/codemod/ignore.txt`, and ignore.txt contains the line `*.md`, then the ignored file pattern will
+   * be `<repo-root>/codemod/*.md`. If you want to ignore all Markdown files, you would instead want to write `../*.md`.
    *
    * Relative file paths will be resolved relative to the current working directory, so for robustness, you probably
    * want to pass absolute paths. (Perhaps use `path.resolve(__dirname, '../path/to/your/file')`).
@@ -106,6 +124,11 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
   /**
    * The set of babel transform options needed to compile your code, such as `presets`. More details can be found
    * [in the Babel documentation](https://babeljs.io/docs/en/options).
+   *
+   * *Warning:* It will always be safe to pass `presets`. Any other value, however, could be clobbered by (or could
+   * clobber) settings that jscodemod needs to pass to Babel to run your codemod. To see what's safe, you can either
+   * 1) guess and check or 2) look in <this repo root>/src/run-codemod-on-file.ts. I'm sorry I don't have anything more
+   * robust.
    */
   babelTransformOptions: TransformOptions;
 
@@ -150,8 +173,9 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
    *      })
    *    }
    *
-   * jscodemod bundles @babel/core and recast. If those bundled versions don't work for your project, then the
-   * getPlugin() codemod API won't work for you. Use transform() instead.
+   * jscodemod bundles @babel/core and recast. If the bundled @babel/core version doesn't work for your project, then
+   * getPlugin() codemod API won't work for you. Use transform() instead. If the bundled recast version doesn't work for
+   * your project, set useRecast = false. (See the useRecast definition above.)
    *
    * @param opts
    * @param opts.source the contents of the file to transform.
@@ -167,7 +191,7 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
 
     /** Set a meta result to be associated with this file. This value will be passed to the postProcess hook. */
     setMetaResult: (meta: TransformResultMeta) => void;
-  }) => Promisable<PluginTarget>;
+  }) => Promisable<GetPluginResult>;
 })
 
 // The `any` here is intentional.

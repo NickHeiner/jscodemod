@@ -128,3 +128,11 @@ it('transforms my input file correctly', async () => {
 ```
 
 The recommended pattern is to add fixtures for each different type of case your codemod may encounter. 
+
+## Limit your codemod to only running on certain files
+The `ignore` codemod entry allows you to omit files from processing. If you'd rather write an include-list than deny-list, you can use a [regex negative lookahead](https://stackoverflow.com/a/1749956/147601). For example:
+
+```js
+// Only process files ending in .js or .tsx
+ignore: /\.(?!(js|tsx)$)/
+```
