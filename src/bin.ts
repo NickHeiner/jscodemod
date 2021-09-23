@@ -171,7 +171,7 @@ async function main() {
       .value();
     if (erroredFiles.length) {
       if (opts.jsonOutput) {
-        log.error({erroredFiles});
+        log.error({erroredFiles}, 'The codemod threw errors for some files.');
       } else {
         const prettyError = new PrettyError();
         safeConsoleLog(ansiColors.bold(
