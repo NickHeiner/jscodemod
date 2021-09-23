@@ -13,7 +13,7 @@ const codemod: Codemod = {
 
   babelTransformOptions: {
     generatorOpts: {
-      compact: true,
+      retainFunctionParens: true,
     }
   }
 };

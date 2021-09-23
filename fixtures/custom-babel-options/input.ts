@@ -1,5 +1,5 @@
-const variable = 'value';
+const functionExpession = (function () {});
 
 module.exports = {
-  renamed: variable,
+  functionExpession,
 };
