@@ -224,7 +224,7 @@ export default async function runCodemodOnFile(
     };
 
     log.trace({babelOptions}, 'Babel options for generation');
-    
+
     try {
       babelTransformResult = useRecast
         ? babelTransformSync('', babelOptions)
