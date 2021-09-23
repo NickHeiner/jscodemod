@@ -145,6 +145,16 @@ async function main() {
       log
     };
 
+    // This is intentional.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function safeConsoleLog(...args: any[]) {
+      if (opts.jsonOutput || opts.porcelain) {
+        return;
+      }
+
+      console.log(...args);
+    }
+
     // Yarg's types are messed up.
     Object.assign(opts, _.pick(argv, 'codemodArgs'));
 
@@ -160,15 +170,19 @@ async function main() {
       .map((result: CodemodMetaResult<unknown>) => _.omit(result, 'fileContents'))
       .value();
     if (erroredFiles.length) {
-      const prettyError = new PrettyError();
-      console.log(ansiColors.bold(
-        'The codemod threw errors for some files. This would not stop other files from being transformed.'
-      ));
-      // Lodash's types are messed up.
-      // @ts-expect-error
-      erroredFiles.forEach(({error}) => {
-        console.log(prettyError.render(error));
-      });
+      if (opts.jsonOutput) {
+        log.error({erroredFiles});
+      } else {
+        const prettyError = new PrettyError();
+        safeConsoleLog(ansiColors.bold(
+          'The codemod threw errors for some files. This would not stop other files from being transformed.'
+        ));
+        // Lodash's types are messed up.
+        // @ts-expect-error
+        erroredFiles.forEach(({error}) => {
+          safeConsoleLog(prettyError.render(error));
+        });
+      }
 
       process.exit(1);
     }

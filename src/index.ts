@@ -251,6 +251,16 @@ async function jscodemod(
     log
   });
 
+  // This is intentional.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function safeConsoleLog(...args: any[]) {
+    if (passedOptions.jsonOutput || passedOptions.porcelain) {
+      return;
+    }
+
+    console.log(...args);
+  }
+
   const codemod = loadCodemod(codemodPath);
   const codemodName = getCodemodName(codemod, codemodPath);
 
@@ -355,7 +365,7 @@ async function jscodemod(
       codemodMetaResults.map(({filePath, meta}) => [filePath, meta])
     );
 
-    console.log(`🔨 Running postProcess for "${modifiedFiles.length}" modified files...`);
+    safeConsoleLog(`🔨 Running postProcess for "${modifiedFiles.length}" modified files...`);
     // TODO: if the postProcess phase fails, there's no way for that to propagate back up to the caller, which means
     // we can't exit with a non-zero code.
     await log.logPhase({
@@ -384,7 +394,7 @@ async function jscodemod(
         });
       }
     }));
-    console.log('✅ postProcess done.');
+    safeConsoleLog('✅ postProcess done.');
   }
   return codemodMetaResults;
 }

@@ -139,7 +139,7 @@ function createTest({
  */
 const constantizeLogEntryForTest = logEntry => {
   const makePlaceholder = (key, placeholder = undefined) => {
-    if (logEntry[key]) {
+    if (key in logEntry) {
       logEntry[key] = placeholder || `<placeholder ${key}>`;
     }
   };
@@ -338,7 +338,7 @@ describe('happy path', () => {
   createTest({
     testName: 'codemodArgs parseArgs is passed to postProcess',
     fixtureName: 'parse-args',
-    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), '*.js', '--', '--requiredFlag'],
+    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), '*.js', '--jsonOutput', '--', '--requiredFlag'],
     assert({stdout}) {
       const jsonLogs = getJsonLogs(stdout);
       expect(jsonLogs).toContainEqual(expect.objectContaining({
@@ -384,7 +384,7 @@ describe('error handling', () => {
     }
   });
 
-  const createTestForThrowingError = (codemodName: string, codemodFileName: string) =>
+  const createTestForThrowingError = (codemodName: string, codemodFileName: string, jsonOutput: boolean, assert) =>
     createTest({
       testName: `handles codemod ${codemodName} (${codemodFileName}) throwing an error`,
       fixtureName: 'will-throw-error',
