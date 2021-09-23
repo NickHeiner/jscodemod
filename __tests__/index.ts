@@ -384,7 +384,7 @@ describe('error handling', () => {
     }
   });
 
-  const createTestForThrowingError = (codemodName: string, codemodFileName: string, jsonOutput: boolean, assert) =>
+  const createTestForThrowingError = (codemodName: string, codemodFileName: string) =>
     createTest({
       testName: `handles codemod ${codemodName} (${codemodFileName}) throwing an error`,
       fixtureName: 'will-throw-error',
