@@ -1,3 +1,6 @@
+// This file has terminal UI logic.
+/* eslint-disable no-console */
+
 import globby from 'globby';
 import _ from 'lodash';
 import execa from 'execa';
@@ -352,6 +355,7 @@ async function jscodemod(
       codemodMetaResults.map(({filePath, meta}) => [filePath, meta])
     );
 
+    console.log(`🔨 Running postProcess for "${modifiedFiles.length}" modified files...`);
     // TODO: if the postProcess phase fails, there's no way for that to propagate back up to the caller, which means
     // we can't exit with a non-zero code.
     await log.logPhase({
@@ -380,6 +384,7 @@ async function jscodemod(
         });
       }
     }));
+    console.log('✅ postProcess done.');
   }
   return codemodMetaResults;
 }
