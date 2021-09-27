@@ -68,11 +68,11 @@ function createTest({
     await promisify(ncp)(fixtureDir, testDir);
 
     if (git) {
-      await execa('mv', ['git', '.git'], {cwd: testDir});
+      await fs.rename(path.join(testDir, 'git'), path.join(testDir, '.git'));
       const gitignores = await globby('**/gitignore', {cwd: testDir});
-      await Promise.all(gitignores.map(gitignorePath => {
+      await Promise.all(gitignores.map(async gitignorePath => {
         const dirname = path.dirname(gitignorePath);
-        return execa('mv', [gitignorePath, path.join(dirname, '.gitignore')], {cwd: testDir});
+        await fs.rename(path.join(testDir, gitignorePath), path.join(testDir, dirname, '.gitignore'));
       }));
     }
 
