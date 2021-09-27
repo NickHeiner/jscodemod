@@ -23,7 +23,7 @@ const log = createLog({name: 'test'});
 // Tests run slower on GH CI.
 // Disable this lint rule because it's obvious what the number refers to.
 // eslint-disable-next-line no-magic-numbers
-jest.setTimeout(60 * 2000);
+jest.setTimeout(120 * 1000);
 
 type TestArgs = {
   fixtureName: string;
