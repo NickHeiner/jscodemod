@@ -15,6 +15,8 @@ import resolveBin from 'resolve-bin';
 import sanitizeFilename from 'sanitize-filename';
 import {getTransformedContentsOfSingleFile, execBigCommand} from '../build';
 import gitRoot from 'git-root';
+import ncp from 'ncp';
+import {promisify} from 'util';
 
 const log = createLog({name: 'test'});
 
@@ -58,12 +60,12 @@ function createTest({
     const testDirSuffix = replaceAll(sanitizeFilename(testNameWithDefault), ' ', '-').toLowerCase();
     const testDirPrefix = `${packageJson.name.replace('/', '-')}-test-${testDirSuffix}`;
     const testDir = await tempy.directory({prefix: testDirPrefix});
-    log.debug({testDir});
 
     const repoRoot = path.resolve(__dirname, '..');
     const fixtureDir = path.resolve(repoRoot, 'fixtures', fixtureName);
 
-    await execa('cp', ['-r', fixtureDir + path.sep, testDir]);
+    log.debug({testDir, fixtureDir}, 'Copy fixture files into test dir');
+    await promisify(ncp)(fixtureDir, testDir);
 
     if (git) {
       await execa('mv', ['git', '.git'], {cwd: testDir});
@@ -77,7 +79,7 @@ function createTest({
     if (setUpNodeModules) {
       await execa('yarn', {cwd: testDir});
       const symlinkLocation = path.join('node_modules', packageJson.name);
-      await execa('mkdir', ['-p', path.dirname(symlinkLocation)], {cwd: testDir});
+      await fs.mkdir(path.resolve(testDir, path.dirname(symlinkLocation)), {recursive: true});
       await execa('ln', ['-s', repoRoot, symlinkLocation], {cwd: testDir});
     }
 
