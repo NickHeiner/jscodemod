@@ -22,9 +22,6 @@ jobs:
     - name: Install
       run: yarn --frozen-lockfile
     - name: Test
-    # I wanted to run "yarn test" here, but it fails: https://github.com/NickHeiner/jscodemod/runs/1171428834
-    # It looks like there are no input files found, which makes me wonder if the `cp -r` isn't working as expected
-    # in the GH Actions environment.
       run: yarn test
       env:
         CI: true
