@@ -1119,6 +1119,116 @@ const f = () => 1;",
 }
 `;
 
+exports[`happy path getPlugin supports custom \`babelTransformOptions\` 1`] = `
+"19:50:54.867Z DEBUG jscodemod-coordinator: 
+  argv: {
+    \\"_\\": [],
+    \\"codemod\\": \\"codemod/index.ts\\",
+    \\"c\\": \\"codemod/index.ts\\",
+    \\"piscinaLowerBoundInclusive\\": 20,
+    \\"b\\": 20,
+    \\"piscina-lower-bound-inclusive\\": 20,
+    \\"porcelain\\": false,
+    \\"p\\": false,
+    \\"resetDirtyInputFiles\\": false,
+    \\"r\\": false,
+    \\"reset-dirty-input-files\\": false,
+    \\"jsonOutput\\": false,
+    \\"json-output\\": false,
+    \\"$0\\": \\"<git-root>/build/bin.js\\",
+    \\"inputFilesPatterns\\": [
+      \\"input.ts\\"
+    ],
+    \\"input-files-patterns\\": [
+      \\"input.ts\\"
+    ]
+  }
+19:50:54.874Z DEBUG jscodemod-coordinator: exec
+  tsc: <test-dir>/node_modules/typescript/bin/tsc
+  --
+  tscArgs: [
+    \\"--project\\",
+    \\"<test-dir>/tsconfig.json\\",
+    \\"--outDir\\",
+    \\"/private/var/folders/5q/vbysv3n16x57dtk8gh2bnr0w0000gn/T/@nick.heiner-jscodemod-ts-out-dir1a2424b7d7cd41d62110e800c5933d1b\\"
+  ]
+19:50:57.448Z DEBUG jscodemod-coordinator: Searched for original node_modules
+  originalNodeModules: <test-dir>/node_modules
+19:50:57.449Z DEBUG jscodemod-coordinator:  (codemodName=index.js)
+  codemodPath: /private/var/folders/5q/vbysv3n16x57dtk8gh2bnr0w0000gn/T/@nick.heiner-jscodemod-ts-out-dir1a2424b7d7cd41d62110e800c5933d1b/codemod/index.js
+  --
+  codemodKeys: [
+    \\"getPlugin\\",
+    \\"babelTransformOptions\\"
+  ]
+19:50:57.450Z DEBUG jscodemod-coordinator: Starting globbing
+  inputFilesPatterns: [
+    \\"input.ts\\"
+  ]
+19:50:57.461Z DEBUG jscodemod-coordinator: Completed globbing (durationMs=11, prettyDuration=11ms)
+  inputFilesPatterns: [
+    \\"input.ts\\"
+  ]
+19:50:57.461Z DEBUG jscodemod-coordinator: Filtering input file patterns. (codemodName=index.js, codemodIgnores=[])
+  inputFilesBeforeIgnores: [
+    \\"input.ts\\"
+  ]
+19:50:57.462Z DEBUG jscodemod-coordinator: Found files to modify. (count=1, codemodName=index.js)
+  filesToModify: [
+    \\"<test-dir>/input.ts\\"
+  ]
+  --
+  inputFilesPatterns: [
+    \\"input.ts\\"
+  ]
+19:50:57.462Z DEBUG jscodemod-coordinator:  (codemodName=index.js)
+19:50:57.463Z DEBUG jscodemod-coordinator:  (gitRoot=null, codemodName=index.js)
+19:50:57.465Z TRACE jscodemod-coordinator:  (action=\\"Codemod ready to start\\", codemod=index.js, timeSinceRunStart=0, timeSinceRunStartPretty=0ms)
+  sourceCodeFile: <test-dir>/input.ts
+19:50:57.465Z TRACE jscodemod-coordinator: Starting read file
+  sourceCodeFile: <test-dir>/input.ts
+19:50:57.466Z TRACE jscodemod-coordinator: Completed read file (durationMs=1, prettyDuration=1ms)
+  sourceCodeFile: <test-dir>/input.ts
+19:50:57.466Z TRACE jscodemod-coordinator: Starting parse args
+  sourceCodeFile: <test-dir>/input.ts
+19:50:57.466Z TRACE jscodemod-coordinator: Completed parse args (durationMs=0, prettyDuration=0ms)
+  sourceCodeFile: <test-dir>/input.ts
+19:50:57.466Z TRACE jscodemod-coordinator: Starting transform file
+  sourceCodeFile: <test-dir>/input.ts
+19:50:57.468Z TRACE jscodemod-coordinator: 
+  sourceCodeFile: <test-dir>/input.ts
+  --
+  babelOpts: {
+    \\"filename\\": \\"<test-dir>/input.ts\\",
+    \\"plugins\\": [],
+    \\"ast\\": true,
+    \\"sourceType\\": \\"module\\",
+    \\"parserOpts\\": {
+      \\"tokens\\": true
+    }
+  }
+19:50:57.821Z DEBUG jscodemod-coordinator:  (pluginWillSignalWhenAstHasChanged=false, pluginChangedAst=false, useRecast=true)
+  sourceCodeFile: <test-dir>/input.ts
+19:50:57.827Z TRACE jscodemod-coordinator: Completed transform file (durationMs=360, prettyDuration=360ms)
+  sourceCodeFile: <test-dir>/input.ts
+19:50:57.845Z DEBUG jscodemod-coordinator:  (action=modified, writeFiles=true)
+  sourceCodeFile: <test-dir>/input.ts
+19:50:57.845Z DEBUG jscodemod-coordinator: The first codemod worker to return has done so. (durationMs=381, durationMsPretty=381ms)
+19:50:57.845Z DEBUG jscodemod-coordinator:  (action=modified, error=null, codeModified=true, fileContents=\\"<truncated file contents>\\")
+  filePath: <test-dir>/input.ts
+19:50:57.845Z DEBUG jscodemod-coordinator: 
+  codemodMetaResults: [
+    {
+      \\"action\\": \\"modified\\",
+      \\"error\\": null,
+      \\"codeModified\\": true,
+      \\"fileContents\\": \\"const noissepxEnoitcnuf = (function () {});\\\\n\\\\neludom.stropxe = {\\\\n  noissepxEnoitcnuf,\\\\n};\\",
+      \\"filePath\\": \\"<test-dir>/input.ts\\"
+    }
+  ]
+"
+`;
+
 exports[`happy path getPlugin uses the willNotifyOnAstChange API 1`] = `
 Object {
   "codemod/do-not-use-recast.ts": "import {Codemod} from '@nick.heiner/jscodemod';

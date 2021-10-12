@@ -358,7 +358,7 @@ describe('happy path', () => {
   createTest({
     testName: 'getPlugin supports custom `babelTransformOptions`',
     fixtureName: 'custom-babel-options',
-    spawnArgs: ['--codemod', 'codemod.ts', 'source'],
+    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), 'input.ts'],
     assert(spawnResult, testDir) {
       const sanitizedStdout = sanitizeOutput(spawnResult, testDir);
       expect(sanitizedStdout).toMatchSnapshot();

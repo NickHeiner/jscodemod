@@ -15,7 +15,6 @@ import * as recast from 'recast';
 import getCodemodName from './get-codemod-name';
 import prettyMs from 'pretty-ms';
 import assert from 'assert';
-import mergeWithoutOverriding, {MergeError} from './merge-without-overriding';
 
 const pFs = fs.promises;
 
@@ -30,21 +29,6 @@ export type CodemodMetaResult<TransformResultMeta> = {
   action: 'error';
   error: Error;
 })
-
-function mergeWithoutOverridingWithErrorMessage<
-T extends undefined | null | Record<string, unknown>,
-E extends Record<string, unknown>
->(source1: T, source2: E): T extends undefined | null ? E : T & E {
-  try {
-    return mergeWithoutOverriding(source1, source2);
-  } catch (e) {
-    if (e instanceof MergeError) {
-      // eslint-disable-next-line max-len
-      throw new Error(`The following keys are not permitted in your codemod's babelTransformOptions: ${e.overlappingKeys}. jscodemod needs to control those values itself to make the babel interaction work. If this is a blocker for you, use the transform() API instead of the getPlugin() API.`);
-    }
-    throw e;
-  }
-}
 
 export default async function runCodemodOnFile(
   codemod: Codemod, sourceCodeFile: string, baseLog: NTHLogger,
@@ -157,48 +141,36 @@ export default async function runCodemodOnFile(
       throw e;
     }
 
-    type BabelOptionsConfig = {
-      babelTransformOptions: TransformOptions | undefined;
-      plugins?: Exclude<TransformOptions['plugins'], null>;
-      opts?: Record<string, unknown>
-    }
-
-    // TODO: This function will add some properties that are only for Recast, even though it's sometimes called when
-    // recast isn't in use.
-    const getBabelOpts = ({babelTransformOptions, plugins = [], opts = {}}: BabelOptionsConfig) =>
-      mergeWithoutOverridingWithErrorMessage(_.omit(babelTransformOptions, 'plugins'), {
-        ...babelTransformOptions,
-        filename: sourceCodeFile,
-        plugins: babelTransformOptions?.plugins ? [...plugins, ...babelTransformOptions.plugins] : plugins,
-        ast: true,
-        // There are options that are recognized by recast but not babel. Babel errors when they're passed. To
-        // avoid this, we'll omit them.
-        ..._.omit(
-          opts,
-          'jsx', 'loc', 'locations', 'range', 'comment', 'onComment', 'tolerant', 'ecmaVersion'
-        ),
-        /**
-         * We must have babel emit tokens. Otherwise, recast will use esprima to tokenize, which won't have the
-         * user-provided babel config.
-         *
-         * https://github.com/benjamn/recast/issues/834
-         */
-        parserOpts: mergeWithoutOverridingWithErrorMessage(
-          // @ts-expect-error
-          babelTransformOptions?.parserOpts, 
-          {
-            tokens: true
-          })
-      });
-
-    const {babelTransformOptions} = codemod;
+    const getBabelOpts = (plugins: Exclude<TransformOptions['plugins'], null> = []): TransformOptions => ({
+      filename: sourceCodeFile,
+      plugins,
+      ast: true
+    });
 
     const getAst = (): ReturnType<typeof recast.parse> | ReturnType<typeof babelParse> => {
       if (useRecast) {
         const parser = {
           parse(source: string, opts: Record<string, unknown>) {
-            const babelOpts = getBabelOpts({babelTransformOptions, opts});
-            log.trace({babelOpts}, 'babelOpts in Recast parse');
+            const babelOpts = {
+              ...getBabelOpts(),
+              ..._.pick(codemod.babelTransformOptions, 'presets'),
+              // There are options that are recognized by recast but not babel. Babel errors when they're passed. To
+              // avoid this, we'll omit them.
+              ..._.omit(
+                opts,
+                'jsx', 'loc', 'locations', 'range', 'comment', 'onComment', 'tolerant', 'ecmaVersion'
+              ),
+              /**
+               * We must have babel emit tokens. Otherwise, recast will use esprima to tokenize, which won't have the
+               * user-provided babel config.
+               *
+               * https://github.com/benjamn/recast/issues/834
+               */
+              parserOpts: {
+                tokens: true
+              }
+            };
+            log.trace({babelOpts});
             return babelParse(source, babelOpts);
           }
         };
@@ -212,9 +184,10 @@ export default async function runCodemodOnFile(
         }
       }
 
-      const babelOpts = getBabelOpts({babelTransformOptions});
-      log.trace({babelOpts}, 'babelOpts for non-recast path');
-      const babelParseResult = babelParse(originalFileContents, babelOpts);
+      const babelParseResult = babelParse(originalFileContents, {
+        ...getBabelOpts(),
+        ..._.pick(codemod.babelTransformOptions, 'presets')
+      });
 
       assert(babelParseResult, 'Bug in jscodemod: expected the result of babel.parse to be truthy.');
 
@@ -238,7 +211,7 @@ export default async function runCodemodOnFile(
     // result.ast.end will be 0, and ast.end is originalFileContents.length.
     // Passing originalFileContents instead of '' solves that problem, but causes some other problem.
     let babelTransformResult: ReturnType<typeof babelTransformSync>;
-    const babelOptions = getBabelOpts({babelTransformOptions, plugins: pluginsToUse});
+    const babelOptions = getBabelOpts(pluginsToUse);
     try {
       babelTransformResult = useRecast
         ? babelTransformSync('', babelOptions)
