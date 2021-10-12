@@ -163,8 +163,11 @@ export default async function runCodemodOnFile(
       opts?: Record<string, unknown>
     }
 
+    // TODO: This function will add some properties that are only for Recast, even though it's sometimes called when
+    // recast isn't in use.
     const getBabelOpts = ({babelTransformOptions, plugins = [], opts = {}}: BabelOptionsConfig) =>
       mergeWithoutOverridingWithErrorMessage(_.omit(babelTransformOptions, 'plugins'), {
+        ...babelTransformOptions,
         filename: sourceCodeFile,
         plugins: babelTransformOptions?.plugins ? [...plugins, ...babelTransformOptions.plugins] : plugins,
         ast: true,
@@ -195,7 +198,7 @@ export default async function runCodemodOnFile(
         const parser = {
           parse(source: string, opts: Record<string, unknown>) {
             const babelOpts = getBabelOpts({babelTransformOptions, opts});
-            log.trace({babelOpts});
+            log.trace({babelOpts}, 'babelOpts in Recast parse');
             return babelParse(source, babelOpts);
           }
         };
@@ -209,7 +212,9 @@ export default async function runCodemodOnFile(
         }
       }
 
-      const babelParseResult = babelParse(originalFileContents, getBabelOpts({babelTransformOptions}));
+      const babelOpts = getBabelOpts({babelTransformOptions});
+      log.trace({babelOpts}, 'babelOpts for non-recast path');
+      const babelParseResult = babelParse(originalFileContents, babelOpts);
 
       assert(babelParseResult, 'Bug in jscodemod: expected the result of babel.parse to be truthy.');
 
