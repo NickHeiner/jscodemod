@@ -158,7 +158,7 @@ export default async function runCodemodOnFile(
       throw e;
     }
 
-    const getBabelOpts = (plugins: Exclude<TransformOptions['plugins'], null> = []): TransformOptions => ({
+    const getBabelOpts = (plugins: TransformOptions['plugins'] = []): TransformOptions => ({
       filename: sourceCodeFile,
       plugins,
       ast: true
@@ -168,8 +168,8 @@ export default async function runCodemodOnFile(
       if (useRecast) {
         const parser = {
           parse(source: string, opts: Record<string, unknown>) {
-            const babelOpts = mergeWithoutOverridingWithErrorMessage(_.pick(codemod.babelTransformOptions, 'presets'), {
-              ...getBabelOpts(),
+            const babelOpts = mergeWithoutOverridingWithErrorMessage(_.omit(codemod.babelTransformOptions, 'plugins'), {
+              ...getBabelOpts(codemod.babelTransformOptions?.plugins),
               // There are options that are recognized by recast but not babel. Babel errors when they're passed. To
               // avoid this, we'll omit them.
               ..._.omit(
@@ -202,8 +202,8 @@ export default async function runCodemodOnFile(
 
       const babelOpts = mergeWithoutOverridingWithErrorMessage(
         // @ts-expect-error
-        getBabelOpts(), 
-        _.pick(codemod.babelTransformOptions, 'presets')
+        getBabelOpts(codemod.babelTransformOptions?.plugins), 
+        _.omit(codemod.babelTransformOptions, 'plugins')
       );
 
       log.trace({babelOpts}, 'Babel options for parsing without recast');
