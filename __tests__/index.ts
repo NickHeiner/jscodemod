@@ -15,8 +15,15 @@ import resolveBin from 'resolve-bin';
 import sanitizeFilename from 'sanitize-filename';
 import {getTransformedContentsOfSingleFile, execBigCommand} from '../build';
 import gitRoot from 'git-root';
+import ncp from 'ncp';
+import {promisify} from 'util';
 
 const log = createLog({name: 'test'});
+
+// Tests run slower on GH CI.
+// Disable this lint rule because it's obvious what the number refers to.
+// eslint-disable-next-line no-magic-numbers
+jest.setTimeout(120 * 1000);
 
 type TestArgs = {
   fixtureName: string;
@@ -58,26 +65,26 @@ function createTest({
     const testDirSuffix = replaceAll(sanitizeFilename(testNameWithDefault), ' ', '-').toLowerCase();
     const testDirPrefix = `${packageJson.name.replace('/', '-')}-test-${testDirSuffix}`;
     const testDir = await tempy.directory({prefix: testDirPrefix});
-    log.debug({testDir});
 
     const repoRoot = path.resolve(__dirname, '..');
     const fixtureDir = path.resolve(repoRoot, 'fixtures', fixtureName);
 
-    await execa('cp', ['-r', fixtureDir + path.sep, testDir]);
+    log.debug({testDir, fixtureDir}, 'Copy fixture files into test dir');
+    await promisify(ncp)(fixtureDir, testDir);
 
     if (git) {
-      await execa('mv', ['git', '.git'], {cwd: testDir});
+      await fs.rename(path.join(testDir, 'git'), path.join(testDir, '.git'));
       const gitignores = await globby('**/gitignore', {cwd: testDir});
-      await Promise.all(gitignores.map(gitignorePath => {
+      await Promise.all(gitignores.map(async gitignorePath => {
         const dirname = path.dirname(gitignorePath);
-        return execa('mv', [gitignorePath, path.join(dirname, '.gitignore')], {cwd: testDir});
+        await fs.rename(path.join(testDir, gitignorePath), path.join(testDir, dirname, '.gitignore'));
       }));
     }
 
     if (setUpNodeModules) {
       await execa('yarn', {cwd: testDir});
       const symlinkLocation = path.join('node_modules', packageJson.name);
-      await execa('mkdir', ['-p', path.dirname(symlinkLocation)], {cwd: testDir});
+      await fs.mkdir(path.resolve(testDir, path.dirname(symlinkLocation)), {recursive: true});
       await execa('ln', ['-s', repoRoot, symlinkLocation], {cwd: testDir});
     }
 
