@@ -15,6 +15,7 @@ import * as recast from 'recast';
 import getCodemodName from './get-codemod-name';
 import prettyMs from 'pretty-ms';
 import assert from 'assert';
+import mergeWithoutOverriding, { MergeError } from './merge-without-overriding';
 
 const pFs = fs.promises;
 
@@ -29,6 +30,22 @@ export type CodemodMetaResult<TransformResultMeta> = {
   action: 'error';
   error: Error;
 })
+
+function mergeWithoutOverridingWithErrorMessage<
+T extends undefined | null | Record<string, unknown>,
+E extends Record<string, unknown>
+>(source1: T, source2: E): T extends undefined | null ? E : T & E {
+  try {
+    return mergeWithoutOverriding(source1, source2);
+  } catch (e) {
+    if (e instanceof MergeError) {
+      // eslint-disable-next-line max-len
+      throw new Error(`The following keys are not permitted in your codemod's babelTransformOptions: ${e.overlappingKeys}. jscodemod needs to control those values itself to make the babel interaction work. If this is a blocker for you, use the transform() API instead of the getPlugin() API.`);
+    }
+    throw e;
+  }
+}
+
 
 export default async function runCodemodOnFile(
   codemod: Codemod, sourceCodeFile: string, baseLog: NTHLogger,
@@ -151,9 +168,8 @@ export default async function runCodemodOnFile(
       if (useRecast) {
         const parser = {
           parse(source: string, opts: Record<string, unknown>) {
-            const babelOpts = {
+            const babelOpts = mergeWithoutOverridingWithErrorMessage(_.pick(codemod.babelTransformOptions, 'presets'), {
               ...getBabelOpts(),
-              ..._.pick(codemod.babelTransformOptions, 'presets'),
               // There are options that are recognized by recast but not babel. Babel errors when they're passed. To
               // avoid this, we'll omit them.
               ..._.omit(
@@ -169,7 +185,7 @@ export default async function runCodemodOnFile(
               parserOpts: {
                 tokens: true
               }
-            };
+            });
             log.trace({babelOpts}, 'Babel options for parsing with recast');
             return babelParse(source, babelOpts);
           }
@@ -184,10 +200,11 @@ export default async function runCodemodOnFile(
         }
       }
 
-      const babelOpts = {
-        ...getBabelOpts(),
-        ..._.pick(codemod.babelTransformOptions, 'presets')
-      };
+      const babelOpts = mergeWithoutOverridingWithErrorMessage(
+        // @ts-expect-error
+        getBabelOpts(), 
+        _.pick(codemod.babelTransformOptions, 'presets')
+      );
 
       log.trace({babelOpts}, 'Babel options for parsing without recast');
 
@@ -215,10 +232,11 @@ export default async function runCodemodOnFile(
     // result.ast.end will be 0, and ast.end is originalFileContents.length.
     // Passing originalFileContents instead of '' solves that problem, but causes some other problem.
     let babelTransformResult: ReturnType<typeof babelTransformSync>;
-    const babelOptions = {
-      ...getBabelOpts(pluginsToUse),
-      ..._.pick(codemod.babelTransformOptions, 'generatorOpts')
-    };
+    const babelOptions = mergeWithoutOverridingWithErrorMessage(
+      // @ts-expect-error
+      getBabelOpts(pluginsToUse),
+      _.pick(codemod.babelTransformOptions, 'generatorOpts')
+    );
 
     log.trace({babelOptions}, 'Babel options for generation');
     try {
