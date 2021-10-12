@@ -124,6 +124,10 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
   /**
    * The set of babel transform options needed to compile your code, such as `presets`. More details can be found
    * [in the Babel documentation](https://babeljs.io/docs/en/options).
+   * 
+   * You can't pass every Babel option, because some of them need to be controlled by jscodemod to implement the codemod
+   * runner logic. If you pass an option that won't work, you'll get a consistent runtime error. So just try it and see.
+   * Sorry for not providing compile-time feedback.
    */
   babelTransformOptions: TransformOptions;
 
