@@ -129,14 +129,11 @@ Primary
   -l, --inputFileList         A file containing a newline-delimited set of file
                               paths to run on                           [string]
 
-TypeScript
-      --tsconfig  (Only applicable if your codemod is written in TypeScript)
-                  path to the tsconfig.json                             [string]
-      --tsOutDir  (Only applicable if your codemod is written in TypeScript)
-                  directory in which to compile your codemod to. Defaults to a
+TypeScript (only applicable if your codemod is written in TypeScript)
+      --tsconfig  path to the tsconfig.json                             [string]
+      --tsOutDir  directory in which to compile your codemod to. Defaults to a
                   temporary directory.                                  [string]
-      --tsc       (Only applicable if your codemod is written in TypeScript)
-                  path to a \\"tsc\\" executable to compile your codemod. Defaults
+      --tsc       path to a \\"tsc\\" executable to compile your codemod. Defaults
                   to looking for a \\"tsc\\" bin accessible from the current working
                   directory.                                            [string]
 
