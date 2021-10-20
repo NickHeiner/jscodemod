@@ -54,8 +54,8 @@
   },
   "dependencies": {
     "@babel/core": "^7.15.0",
-    "@types/execa": "2.0.0",
     "ansi-colors": "4.1.1",
+    "execa": "5.1.1",
     "find-up": "5.0.0",
     "globby": "11.0.1",
     "ignore": "5.1.8",
