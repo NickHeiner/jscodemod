@@ -107,7 +107,7 @@ async function compileTS(
   const rootDir = tsconfig.compilerOptions?.rootDir;
   if (!rootDir) {
     const err = new Error('Your tsconfig must set compilerOptions.rootDir so jscodemod can find the compiled output.');
-    Object.assign(err, {tsconfig});
+    Object.assign(err, {tsconfig, tsconfigPath});
     throw err;
   }
 

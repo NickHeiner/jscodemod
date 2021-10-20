@@ -800,6 +800,7 @@ Array [
           "codemod/*.ts",
         ],
       },
+      "tsconfigPath": "tsconfig-no-root-dir.json",
     },
     "hostname": "<hostname placeholder>",
     "level": 50,
