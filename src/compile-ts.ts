@@ -78,6 +78,26 @@ async function compileTS(
   const tsOutDir = await getTSOutDir(specifiedTSOutDir);
 
   const tsconfig = jsoncParser.parse(await fs.readFile(tsconfigPath, 'utf-8'));
+
+  /**
+   * We ask the user to set rootDir so we know where to find the compiled output file.
+   *
+   * By default, TSC infers rootDir to be the longest common path of all included files. So, the following directory
+   * structures would all produce the same output structure:
+   *
+   *  Example 1: a.js
+   *  Example 2: b/a.js
+   *  Example 3: c/b/a.js
+   *
+   * In all of these cases, TSC will output `a.js`.
+   *
+   * This is tricky, because jscodemod needs to be able to find that file. If rootDir isn't set, then that means that
+   * jscodemod needs to be able to replicate TSC's inferrence logic, which feels brittle. So we'll ask the user to
+   * specify rootDir explicitly.
+   *
+   * Discarded alternative: using --outFile. This won't work, because it has a number of limitations, like limiting
+   * which "module" settings are ok.
+   */
   const rootDir = tsconfig.compilerOptions?.rootDir;
   if (!rootDir) {
     const err = new Error('Your tsconfig must set compilerOptions.rootDir so jscodemod can find the compiled output.');
@@ -102,6 +122,8 @@ async function compileTS(
 
   const resolvedRootDir = path.resolve(path.dirname(tsconfigPath), rootDir);
   const pathToCodemodJs = path.join(path.dirname(pathToCodemod), `${path.basename(pathToCodemod, '.ts')}.js`);
+  // This assumes that `pathToCodemodJs` will always be a subdirectory of `resolvedRootDir`, which I think is a safe
+  // assumption because TSC will throw an error if an included file is outside of the root dir.
   const pathFromRootDirToCodemod = path.relative(resolvedRootDir, pathToCodemodJs);
   const compiledPath = path.join(tsOutDir, pathFromRootDirToCodemod);
 
