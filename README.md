@@ -85,3 +85,4 @@ const codemod: Codemod = {
 ## More Docs
 * [Recipes](docs/recipes.md)
 * [Gotchas](docs/gotchas.md)
+* [API documentation](src/types.ts)
