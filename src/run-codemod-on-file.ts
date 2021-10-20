@@ -1,6 +1,6 @@
 import type {NTHLogger} from 'nth-log';
 import fs from 'fs';
-import type {Codemod} from './types';
+import type {Codemod, PhaseError} from './types';
 import {PromiseValue} from 'type-fest';
 import _ from 'lodash';
 import {
@@ -29,6 +29,15 @@ export type CodemodMetaResult<TransformResultMeta> = {
   action: 'error';
   error: Error;
 })
+
+function makePhaseError(err: unknown, phase: PhaseError['phase'], suggestion: PhaseError['suggestion']): PhaseError {
+  return {
+    // If someone throws a non-object, we can cross that bridge when we come to it.
+    ...(err as Error),
+    phase,
+    suggestion
+  };
+}
 
 export default async function runCodemodOnFile(
   codemod: Codemod, sourceCodeFile: string, baseLog: NTHLogger,
@@ -68,9 +77,11 @@ export default async function runCodemodOnFile(
       try {
         return codemod.transform(codemodOpts);
       } catch (e) {
-        e.phase = 'codemod.transform()';
-        e.suggestion = "Check your transform() method for a bug, or add this file to your codemod's ignore list.";
-        throw e;
+        throw makePhaseError(
+          e,
+          'codemod.transform()',
+          "Check your transform() method for a bug, or add this file to your codemod's ignore list."
+        );
       }
     }
 
@@ -107,6 +118,16 @@ export default async function runCodemodOnFile(
     let pluginChangedAst = false;
     let metaResult;
 
+    if (!codemod.getPlugin) {
+      throw makePhaseError(
+        new Error('Your codemod must define one of `getPlugin` or `transform`'),
+        'plugin validation',
+        'Define either `getPlugin` or `transform` methods.'
+      );
+      // This return is unnecessary, because throwPhaseError will always throw. But TS doesn't know that, so if we want
+      // type narrowing, we need to manually return.
+    }
+
     let codemodPlugin: PluginItem;
     let useRecast = true;
     try {
@@ -136,9 +157,7 @@ export default async function runCodemodOnFile(
         codemodPlugin = resultOfGetPlugin;
       }
     } catch (e) {
-      e.phase = 'codemod.getPlugin()';
-      e.suggestion = 'Check your getPlugin() method for a bug.';
-      throw e;
+      throw makePhaseError(e, 'codemod.getPlugin()', 'Check your getPlugin() method for a bug.');
     }
 
     const getBabelOpts = (plugins: Exclude<TransformOptions['plugins'], null> = []): TransformOptions => ({
@@ -178,9 +197,11 @@ export default async function runCodemodOnFile(
         try {
           return recast.parse(fileContentsForRecast, {parser});
         } catch (e) {
-          e.phase = 'recast.parse using the settings you passed';
-          e.suggestion = "Check that you passed the right babel preset in the codemod's `presets` field.";
-          throw e;
+          throw makePhaseError(
+            e,
+            'recast.parse using the settings you passed',
+            "Check that you passed the right babel preset in the codemod's `presets` field."
+          );
         }
       }
 
@@ -217,9 +238,12 @@ export default async function runCodemodOnFile(
         ? babelTransformSync('', babelOptions)
         : babelTransformFromAstSync(ast, originalFileContents, babelOptions);
     } catch (e) {
-      e.phase = "babelTransformSync using the plugin returned by your codemod's getPlugin()";
-      e.suggestion = 'Check your babel plugin for runtime errors.';
-      throw e;
+      makePhaseError(
+        e,
+        "babelTransformSync using the plugin returned by your codemod's getPlugin()",
+        'Check your babel plugin for runtime errors.'
+      );
+      return;
     }
 
     log.debug({pluginWillSignalWhenAstHasChanged, pluginChangedAst, useRecast});
@@ -273,9 +297,13 @@ export default async function runCodemodOnFile(
     codemodResult = await log.logPhase({phase: 'transform file', level: 'trace'}, transformFile);
   } catch (e) {
     thrownError = e;
+
+    const error = e as Error | PhaseError;
+    const errorMessageSuffix = 'phase' in error ? ` during ${error.phase}. ${error.suggestion}` : '';
+
     log.error({
       error: _.pick(e, 'message', 'stack', 'phase')
-    }, `File ${sourceCodeFile}: Codemod "${codemodName}" threw an error during ${e.phase}. ${e.suggestion}`);
+    }, `File ${sourceCodeFile}: Codemod "${codemodName}" threw an error${errorMessageSuffix}`);
   }
 
   const ostensiblyTransformedCode = typeof codemodResult === 'string' ? codemodResult : codemodResult?.code;
@@ -292,7 +320,7 @@ export default async function runCodemodOnFile(
 
   return {
     action,
-    error: thrownError,
+    error: thrownError as Error,
     codeModified,
     // if codeModified is true, we know ostensiblyTransformedCode is a string.
     fileContents: codeModified ? (ostensiblyTransformedCode as string) : originalFileContents,

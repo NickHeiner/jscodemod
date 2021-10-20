@@ -189,7 +189,7 @@ async function main() {
   } catch (err) {
     // TODO: Maybe known errors should be marked with a flag, since showing a stack trace for them probably
     // is just noise.
-    log.error({err}, err.message || 'Potential bug in jscodemod: uncaught error.');
+    log.error({err}, err instanceof Error ? err.message : 'Potential bug in jscodemod: uncaught error.');
     if (!argv.jsonOutput) {
       // This is intentional.
       // eslint-disable-next-line no-console

@@ -209,14 +209,17 @@ async function resetDirtyInputFiles(gitRoot: string | null, filesToModify: strin
   }
 }
 
+type GitignoreError = Error & {code?: string; file: string};
+
 async function getIsIgnoredByIgnoreFile(log: TODO, ignoreFiles: string[] | undefined) {
   if (ignoreFiles) {
     try {
       return await gitignore({paths: ignoreFiles});
     } catch (e) {
+      const err = e as GitignoreError;
       // TODO: throw an error if the ignorefile path isn't absolute.
-      if (e.code === 'ENOENT') {
-        log.error({invalidIgnoreFilePath: e.file}, `Ignore file "${e.file}" does not exist.`);
+      if (err.code === 'ENOENT') {
+        log.error({invalidIgnoreFilePath: err.file}, `Ignore file "${err.file}" does not exist.`);
         throw e;
       }
       throw e;

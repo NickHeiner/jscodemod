@@ -192,6 +192,21 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type TODO = any;
 
+/**
+ * An error with extra annotations indicating which part of the codemod it occurred in.
+ */
+export type PhaseError = Error & {
+  /**
+   * The name of the phase, like 'codemod.transform()'
+   */
+  phase: string;
+
+  /**
+   * A user-facing message giving a clue how to fix the issue.
+   */
+  suggestion: string;
+}
+
 // TODO: Maybe re-export this from the top level? If this file is on the top level itself, then tsc will output
 // the built files in build/src instead of build, which messes up relative paths from src, which expects to be only
 // one level down from the top.
