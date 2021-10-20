@@ -1,6 +1,8 @@
 import tempy from 'tempy';
 import findUpDetailed from './find-up-detailed';
 import loadJsonFile from 'load-json-file';
+import {promises as fs} from 'fs';
+import * as jsoncParser from 'jsonc-parser';
 import path from 'path';
 import type {TSOptions} from './';
 import {cyan} from 'ansi-colors';
@@ -71,11 +73,19 @@ async function compileTS(
   pathToCodemod: string,
   {tsconfig: specifiedTSConfig, tsOutDir: specifiedTSOutDir, tsc: specifiedTSC, log}: TSOptions
 ): Promise<string> {
-  const tscConfigPath = await getTSConfigPath(pathToCodemod, specifiedTSConfig);
+  const tsconfigPath = await getTSConfigPath(pathToCodemod, specifiedTSConfig);
   const tsc = await getTSCPath(specifiedTSC);
   const tsOutDir = await getTSOutDir(specifiedTSOutDir);
 
-  const tscArgs = ['--project', tscConfigPath, '--outDir', tsOutDir];
+  const tsconfig = jsoncParser.parse(await fs.readFile(tsconfigPath, 'utf-8'));
+  const rootDir = tsconfig.compilerOptions?.rootDir;
+  if (!rootDir) {
+    const err = new Error('Your tsconfig must set compilerOptions.rootDir so jscodemod can find the compiled output.');
+    Object.assign(err, {tsconfig});
+    throw err;
+  }
+
+  const tscArgs = ['--project', tsconfigPath, '--outDir', tsOutDir];
   log.debug({tsc, tscArgs}, 'exec');
   await execa(tsc, tscArgs);
 
@@ -90,7 +100,17 @@ async function compileTS(
   }
   log.debug({originalNodeModules}, 'Searched for original node_modules');
 
-  return path.join(tsOutDir, path.dirname(pathToCodemod), `${path.basename(pathToCodemod, '.ts')}.js`);
+  const resolvedRootDir = path.resolve(path.dirname(tsconfigPath), rootDir);
+  const pathToCodemodJs = path.join(path.dirname(pathToCodemod), `${path.basename(pathToCodemod, '.ts')}.js`);
+  const pathFromRootDirToCodemod = path.relative(resolvedRootDir, pathToCodemodJs);
+  const compiledPath = path.join(tsOutDir, pathFromRootDirToCodemod);
+
+  log.debug({
+    resolvedRootDir,
+    pathFromRootDirToCodemod,
+    compiledPath
+  }, 'Looking for compiled codemod JS at this path.');
+  return compiledPath;
 }
 
 export default compileTS;
