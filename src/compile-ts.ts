@@ -2,6 +2,7 @@ import tempy from 'tempy';
 import findUpDetailed from './find-up-detailed';
 import loadJsonFile from 'load-json-file';
 import {promises as fs} from 'fs';
+// Alternative: json5
 import * as jsoncParser from 'jsonc-parser';
 import path from 'path';
 import type {TSOptions} from './';
@@ -77,6 +78,10 @@ async function compileTS(
   const tsc = await getTSCPath(specifiedTSC);
   const tsOutDir = await getTSOutDir(specifiedTSOutDir);
 
+  /**
+   * We could also use the TS compiler API to parse tsconfig the "official" way. But I want this tool to be as agnostic
+   * to the user's version of TS as possible, and adding our own runtime dep on TS would go against that goal.
+   */
   const tsconfig = jsoncParser.parse(await fs.readFile(tsconfigPath, 'utf-8'));
 
   /**
