@@ -12,7 +12,7 @@ import {cyan} from 'ansi-colors';
 import ora from 'ora';
 import createLog from 'nth-log';
 import compileTS from './compile-ts';
-import {Codemod, TODO} from './types';
+import type {Codemod, TODO} from './types';
 import execBigCommand from './exec-big-command';
 import getGitRoot from './get-git-root';
 import loadCodemod from './load-codemod';
@@ -26,6 +26,7 @@ import prettyMs from 'pretty-ms';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
 export {default as execBigCommand} from './exec-big-command';
+export * from './types';
 
 export type TSOptions = {
   tsconfig?: string;

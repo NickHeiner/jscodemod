@@ -206,7 +206,3 @@ export type PhaseError = Error & {
    */
   suggestion: string;
 }
-
-// TODO: Maybe re-export this from the top level? If this file is on the top level itself, then tsc will output
-// the built files in build/src instead of build, which messes up relative paths from src, which expects to be only
-// one level down from the top.
