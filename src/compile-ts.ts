@@ -1,11 +1,15 @@
 import tempy from 'tempy';
 import findUpDetailed from './find-up-detailed';
 import loadJsonFile from 'load-json-file';
+import {promises as fs} from 'fs';
+// Alternative: json5
+import * as jsoncParser from 'jsonc-parser';
 import path from 'path';
 import type {TSOptions} from './';
 import {cyan} from 'ansi-colors';
 import execa from 'execa';
 import findUp from 'find-up';
+import type {CompilerOptions} from 'typescript';
 
 type PackageJson = {name: string};
 const packageJson = loadJsonFile.sync(path.resolve(__dirname, '..', 'package.json')) as PackageJson;
@@ -71,11 +75,43 @@ async function compileTS(
   pathToCodemod: string,
   {tsconfig: specifiedTSConfig, tsOutDir: specifiedTSOutDir, tsc: specifiedTSC, log}: TSOptions
 ): Promise<string> {
-  const tscConfigPath = await getTSConfigPath(pathToCodemod, specifiedTSConfig);
+  const tsconfigPath = await getTSConfigPath(pathToCodemod, specifiedTSConfig);
   const tsc = await getTSCPath(specifiedTSC);
   const tsOutDir = await getTSOutDir(specifiedTSOutDir);
 
-  const tscArgs = ['--project', tscConfigPath, '--outDir', tsOutDir];
+  /**
+   * We could also use the TS compiler API to parse tsconfig the "official" way. But I want this tool to be as agnostic
+   * to the user's version of TS as possible, and adding our own runtime dep on TS would go against that goal.
+   */
+  const tsconfig: {compilerOptions: CompilerOptions} = jsoncParser.parse(await fs.readFile(tsconfigPath, 'utf-8'));
+
+  /**
+   * We ask the user to set rootDir so we know where to find the compiled output file.
+   *
+   * By default, TSC infers rootDir to be the longest common path of all included files. So, the following directory
+   * structures would all produce the same output structure:
+   *
+   *  Example 1: a.js
+   *  Example 2: b/a.js
+   *  Example 3: c/b/a.js
+   *
+   * In all of these cases, TSC will output `a.js`.
+   *
+   * This is tricky, because jscodemod needs to be able to find that file. If rootDir isn't set, then that means that
+   * jscodemod needs to be able to replicate TSC's inferrence logic, which feels brittle. So we'll ask the user to
+   * specify rootDir explicitly.
+   *
+   * Discarded alternative: using --outFile. This won't work, because it has a number of limitations, like limiting
+   * which "module" settings are ok.
+   */
+  const rootDir = tsconfig.compilerOptions?.rootDir;
+  if (!rootDir) {
+    const err = new Error('Your tsconfig must set compilerOptions.rootDir so jscodemod can find the compiled output.');
+    Object.assign(err, {tsconfig});
+    throw err;
+  }
+
+  const tscArgs = ['--project', tsconfigPath, '--outDir', tsOutDir];
   log.debug({tsc, tscArgs}, 'exec');
   await execa(tsc, tscArgs);
 
@@ -90,7 +126,19 @@ async function compileTS(
   }
   log.debug({originalNodeModules}, 'Searched for original node_modules');
 
-  return path.join(tsOutDir, path.dirname(pathToCodemod), `${path.basename(pathToCodemod, '.ts')}.js`);
+  const resolvedRootDir = path.resolve(path.dirname(tsconfigPath), rootDir);
+  const pathToCodemodJs = path.join(path.dirname(pathToCodemod), `${path.basename(pathToCodemod, '.ts')}.js`);
+  // This assumes that `pathToCodemodJs` will always be a subdirectory of `resolvedRootDir`, which I think is a safe
+  // assumption because TSC will throw an error if an included file is outside of the root dir.
+  const pathFromRootDirToCodemod = path.relative(resolvedRootDir, pathToCodemodJs);
+  const compiledPath = path.join(tsOutDir, pathFromRootDirToCodemod);
+
+  log.debug({
+    resolvedRootDir,
+    pathFromRootDirToCodemod,
+    compiledPath
+  }, 'Looking for compiled codemod JS at this path.');
+  return compiledPath;
 }
 
 export default compileTS;
