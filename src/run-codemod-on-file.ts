@@ -30,13 +30,9 @@ export type CodemodMetaResult<TransformResultMeta> = {
   error: Error;
 })
 
-function makePhaseError(err: unknown, phase: PhaseError['phase'], suggestion: PhaseError['suggestion']): PhaseError {
-  return {
-    // If someone throws a non-object, we can cross that bridge when we come to it.
-    ...(err as Error),
-    phase,
-    suggestion
-  };
+function makePhaseError(err: unknown, phase: PhaseError['phase'], suggestion: PhaseError['suggestion']) {
+  Object.assign(err, {phase, suggestion});
+  return err;
 }
 
 export default async function runCodemodOnFile(
@@ -124,8 +120,6 @@ export default async function runCodemodOnFile(
         'plugin validation',
         'Define either `getPlugin` or `transform` methods.'
       );
-      // This return is unnecessary, because throwPhaseError will always throw. But TS doesn't know that, so if we want
-      // type narrowing, we need to manually return.
     }
 
     let codemodPlugin: PluginItem;
