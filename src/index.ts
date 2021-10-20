@@ -101,7 +101,6 @@ async function transformCode(
   log: TSOptions['log'],
   codemodPath: string,
   inputFiles: string[],
-  writeFiles: boolean,
   piscinaLowerBoundInclusive: NonTSOptions['piscinaLowerBoundInclusive'],
   logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>,
   codemodArgs?: string[]
@@ -109,7 +108,7 @@ async function transformCode(
   const rawArgs = codemodArgs ? JSON.stringify(codemodArgs) : undefined;
 
   const baseRunnerOpts = {
-    codemodArgs: rawArgs, writeFiles, codemodPath
+    codemodArgs: rawArgs, codemodPath
   };
 
   // We intentionally want a noop.
@@ -359,9 +358,24 @@ async function jscodemod(
     await resetDirtyInputFiles(gitRoot, filesToModify, log);
   }
 
-  const codemodMetaResults = await transformCode(codemod, log, codemodPath, filesToModify, writeFiles,
+  const codemodMetaResults = await transformCode(codemod, log, codemodPath, filesToModify,
     passedOptions.piscinaLowerBoundInclusive, _.pick(passedOptions, 'jsonOutput', 'porcelain'), options.codemodArgs
   );
+
+  if (writeFiles) {
+    const filesToWrite = _.filter(codemodMetaResults, 'codeModified');
+    safeConsoleLog(`🔨 Writing "${filesToWrite.length}" modified files`);
+    await Promise.all(filesToWrite.map(codemodMetaResult => {
+      // This next validation and throw is just to make TS happy.
+      if (codemodMetaResult.action !== 'modified') {
+        throw new Error('jscodemod logic error: Attempted to write an unmodified file.');
+      }
+
+      log.debug({filePath: codemodMetaResult.filePath}, 'Writing modified file');
+      return fs.writeFile(codemodMetaResult.filePath, codemodMetaResult.fileContents);
+    }));
+  }
+
   if (typeof codemod.postProcess === 'function' && doPostProcess) {
     const modifiedFiles = _(codemodMetaResults).filter('codeModified').map('filePath').value();
 

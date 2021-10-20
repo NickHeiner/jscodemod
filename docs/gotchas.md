@@ -1,21 +1,5 @@
 # Gotchas
 
-## Transforming files simultaneously
-If you have a codemod that reads other files, and those files are also being transformed in the same codemod pass, you may experience race conditions. For example:
-
-```js
-const codemod = {
-  async transform({source}) {
-    const otherFileContents = await readFile(otherFilePath);
-    return check(otherFileContents) ? modify(source) : source;
-  }
-}
-```
-
-If `otherFilePath` also refers to a file being transformed, you won't know if you'll read the file before or after the transform occurs. Or, if your codemod isn't atomic, and leaves the file in a dirty state for some period of time, you could read it in that dirty state.
-
-There is no current workaround for this, but this issue is more likely to occur when using the in-process transform, rather than the Piscina worker pool. To force use of Piscina, pass flag `--piscinaLowerBoundInclusive=1`. It'll make your codemod slower, but may change the timing such that your race conditions don't appear.
-
 ## Performance
 Some codemods will cause 30-40 second delays as the Piscina pool starts up. I've investigated but I'm not able to definitively say what the trigger is; it seems related to your codemod `require`ing a lot of JS code, and/or spawning subshells.
 

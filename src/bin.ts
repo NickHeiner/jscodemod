@@ -103,7 +103,8 @@ const {argv} = yargs
       type: 'boolean',
       default: false,
       describe: 'Output logs as JSON, instead of human-readable formatting. Useful if you want to consume the output ' +
-        ' of this tool from another tool, or process the logs using your own Bunyan log processor/formatter.'
+        'of this tool from another tool, or process the logs using your own Bunyan log processor/formatter. The ' +
+        'precise set of logs emitted is not considered to be part of the public API.'
     }
   })
   .group(['codemod', 'dry', 'resetDirtyInputFiles', 'inputFileList'], 'Primary')

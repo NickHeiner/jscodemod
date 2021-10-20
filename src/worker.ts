@@ -24,7 +24,7 @@ export default function main(
     codemod,
     inputFile,
     baseLog,
-    _.pick(piscina.workerData, 'codemodArgs', 'writeFiles', 'codemodPath'),
+    _.pick(piscina.workerData, 'codemodArgs', 'codemodPath'),
     runStartTimeMs
   );
 }
