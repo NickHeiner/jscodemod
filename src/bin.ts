@@ -12,8 +12,6 @@ import {CodemodMetaResult} from './run-codemod-on-file';
 import PrettyError from 'pretty-error';
 import ansiColors from 'ansi-colors';
 
-const tsOnlyNote = '(Only applicable if your codemod is written in TypeScript)';
-
 // Passing paths as file globs that start with `.` doesn't work.
 // https://github.com/sindresorhus/globby/issues/168
 
@@ -59,16 +57,16 @@ const {argv} = yargs
     // TODO: allow arbitrary TS arg passthrough at your own risk.
     tsconfig: {
       type: 'string',
-      describe: `${tsOnlyNote} path to the tsconfig.json`
+      describe: 'path to the tsconfig.json'
     },
     // I'm going to skip adding tests for this for now, because I'm not sure it's actually necessary.
     tsOutDir: {
       type: 'string',
-      describe: `${tsOnlyNote} directory in which to compile your codemod to. Defaults to a temporary directory.`
+      describe: 'directory in which to compile your codemod to. Defaults to a temporary directory.'
     },
     tsc: {
       type: 'string',
-      describe: `${tsOnlyNote} path to a "tsc" executable to compile your codemod. ` +
+      describe: 'path to a "tsc" executable to compile your codemod. ' +
        'Defaults to looking for a "tsc" bin accessible from the current working directory.'
     },
     dry: {
@@ -109,7 +107,7 @@ const {argv} = yargs
     }
   })
   .group(['codemod', 'dry', 'resetDirtyInputFiles', 'inputFileList'], 'Primary')
-  .group(['tsconfig', 'tsOutDir', 'tsc'], 'TypeScript')
+  .group(['tsconfig', 'tsOutDir', 'tsc'], 'TypeScript (only applicable if your codemod is written in TypeScript)')
   .group(['jsonOutput', 'porcelain'], 'Rarely Useful')
   .check(argv => {
     const log = getLogger(_.pick(argv, 'jsonOutput', 'porcelain'));
