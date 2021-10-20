@@ -304,7 +304,6 @@ describe('happy path', () => {
   });
 
   createTest({
-    modifier: 'only',
     testName: 'Run the codemod from outside the fixture dir',
     fixtureName: 'arrow-function-inline-return',
     spawnArgs: ['--codemod', path.join('..', 'codemod', 'index.ts'), '.'],
