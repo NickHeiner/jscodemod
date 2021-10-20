@@ -40,6 +40,7 @@ type TestArgs = {
     getRelativeFilePaths: (inputFilePaths: string[]) => string[]
   ) => void;
   modifier?: 'only' | 'skip';
+  getCodemodCwd?: (testDir: string) => string;
 }
 
 // I don't think we can import JSON via ESM.
@@ -53,7 +54,7 @@ const replaceAll = (string: string, pattern: string | RegExp, replacement: strin
 
 function createTest({
   fixtureName, testName, spawnArgs, expectedExitCode = 0, snapshot, git, setUpNodeModules = true, assert, modifier,
-  processOverrides = process.env
+  processOverrides = process.env, getCodemodCwd = (testDir: string) => testDir
 }: TestArgs) {
   // This is part of our dynamic testing approach.
   /* eslint-disable jest/no-conditional-expect */
@@ -92,9 +93,10 @@ function createTest({
 
     let spawnResult;
     try {
+      const codemodSpawnCwd = getCodemodCwd(testDir);
       spawnResult = await log.logPhase(
-        {phase: 'spawn codemod', level: 'debug', binPath, spawnArgs},
-        () => execa(binPath, spawnArgs, {cwd: testDir, env: processOverrides})
+        {phase: 'spawn codemod', level: 'debug', binPath, spawnArgs, codemodSpawnCwd},
+        () => execa(binPath, spawnArgs, {cwd: codemodSpawnCwd, env: processOverrides})
       );
     } catch (error) {
       spawnResult = error;
@@ -298,6 +300,15 @@ describe('happy path', () => {
     testName: 'TS without manually specifying any of the args determining how to compile',
     fixtureName: 'arrow-function-inline-return',
     spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), 'source'],
+    snapshot: true
+  });
+
+  createTest({
+    modifier: 'only',
+    testName: 'Run the codemod from outside the fixture dir',
+    fixtureName: 'arrow-function-inline-return',
+    spawnArgs: ['--codemod', path.join('..', 'codemod', 'index.ts'), '.'],
+    getCodemodCwd: testDir => path.join(testDir, 'source'),
     snapshot: true
   });
 
