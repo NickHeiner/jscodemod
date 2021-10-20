@@ -9,6 +9,7 @@ import type {TSOptions} from './';
 import {cyan} from 'ansi-colors';
 import execa from 'execa';
 import findUp from 'find-up';
+import type { CompilerOptions } from 'typescript';
 
 type PackageJson = {name: string};
 const packageJson = loadJsonFile.sync(path.resolve(__dirname, '..', 'package.json')) as PackageJson;
@@ -82,7 +83,7 @@ async function compileTS(
    * We could also use the TS compiler API to parse tsconfig the "official" way. But I want this tool to be as agnostic
    * to the user's version of TS as possible, and adding our own runtime dep on TS would go against that goal.
    */
-  const tsconfig = jsoncParser.parse(await fs.readFile(tsconfigPath, 'utf-8'));
+  const tsconfig: {compilerOptions: CompilerOptions} = jsoncParser.parse(await fs.readFile(tsconfigPath, 'utf-8'));
 
   /**
    * We ask the user to set rootDir so we know where to find the compiled output file.
