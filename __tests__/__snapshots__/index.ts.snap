@@ -777,8 +777,51 @@ const f = () => {
 `;
 
 exports[`happy path Omitting rootDir from tsconfig causes an error 2`] = `
-"{\\"name\\":\\"jscodemod-coordinator\\",\\"hostname\\":\\"nfml-nheinerTMM\\",\\"pid\\":1745,\\"level\\":50,\\"err\\":{\\"tsconfig\\":{\\"include\\":[\\"codemod/*.ts\\"],\\"compilerOptions\\":{\\"target\\":\\"ES2019\\",\\"module\\":\\"commonjs\\",\\"strict\\":true,\\"outDir\\":\\"should-be-ignored\\",\\"noUnusedLocals\\":true,\\"noUnusedParameters\\":true,\\"noImplicitReturns\\":true,\\"noFallthroughCasesInSwitch\\":true,\\"moduleResolution\\":\\"node\\",\\"esModuleInterop\\":true,\\"skipLibCheck\\":true,\\"forceConsistentCasingInFileNames\\":true}}},\\"msg\\":\\"Your tsconfig must set compilerOptions.rootDir so jscodemod can find the compiled output.\\",\\"time\\":\\"2021-10-20T16:32:38.131Z\\",\\"v\\":0}
-{\\"name\\":\\"jscodemod-coordinator\\",\\"hostname\\":\\"nfml-nheinerTMM\\",\\"pid\\":1745,\\"level\\":30,\\"msg\\":\\"If you need help, please see this project's README, or the --help output. If you're filing a bug report, please re-run this command with env var 'loglevel=debug', and provide the full output.\\",\\"time\\":\\"2021-10-20T16:32:38.132Z\\",\\"v\\":0}"
+Array [
+  Object {
+    "durationMs": 117,
+    "err": Object {
+      "tsconfig": Object {
+        "compilerOptions": Object {
+          "esModuleInterop": true,
+          "forceConsistentCasingInFileNames": true,
+          "module": "commonjs",
+          "moduleResolution": "node",
+          "noFallthroughCasesInSwitch": true,
+          "noImplicitReturns": true,
+          "noUnusedLocals": true,
+          "noUnusedParameters": true,
+          "outDir": "should-be-ignored",
+          "skipLibCheck": true,
+          "strict": true,
+          "target": "ES2019",
+        },
+        "include": Array [
+          "codemod/*.ts",
+        ],
+      },
+    },
+    "hostname": "<hostname placeholder>",
+    "level": 50,
+    "msg": "Your tsconfig must set compilerOptions.rootDir so jscodemod can find the compiled output.",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "durationMs": 117,
+    "hostname": "<hostname placeholder>",
+    "level": 30,
+    "msg": "If you need help, please see this project's README, or the --help output. If you're filing a bug report, please re-run this command with env var 'loglevel=debug', and provide the full output.",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+]
 `;
 
 exports[`happy path Run the codemod from outside the fixture dir 1`] = `

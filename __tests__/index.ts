@@ -320,7 +320,7 @@ describe('happy path', () => {
     expectedExitCode: 1,
     snapshot: true,
     assert(spawnResult, testDir) {
-      const sanitizedStdout = sanitizeOutput(spawnResult, testDir);
+      const sanitizedStdout = getJsonLogs(sanitizeOutput(spawnResult, testDir));
       expect(sanitizedStdout).toMatchSnapshot();
     }
   });
