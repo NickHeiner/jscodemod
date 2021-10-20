@@ -777,51 +777,8 @@ const f = () => {
 `;
 
 exports[`happy path Omitting rootDir from tsconfig causes an error 2`] = `
-"16:19:59.482Z ERROR jscodemod-coordinator: Your tsconfig must set compilerOptions.rootDir so jscodemod can find the compiled output.
-  err: {
-    \\"tsconfig\\": {
-      \\"include\\": [
-        \\"codemod/*.ts\\"
-      ],
-      \\"compilerOptions\\": {
-        \\"target\\": \\"ES2019\\",
-        \\"module\\": \\"commonjs\\",
-        \\"strict\\": true,
-        \\"outDir\\": \\"should-be-ignored\\",
-        \\"noUnusedLocals\\": true,
-        \\"noUnusedParameters\\": true,
-        \\"noImplicitReturns\\": true,
-        \\"noFallthroughCasesInSwitch\\": true,
-        \\"moduleResolution\\": \\"node\\",
-        \\"esModuleInterop\\": true,
-        \\"skipLibCheck\\": true,
-        \\"forceConsistentCasingInFileNames\\": true
-      }
-    }
-  }
-Error: Your tsconfig must set compilerOptions.rootDir so jscodemod can find the compiled output.
-    at Object.compileTS [as default] (<git-root>/build/compile-ts.js:109:21)
-    at async Object.jscodemod [as default] (<git-root>/build/index.js:168:25)
-    at async main (<git-root>/build/bin.js:168:36) {
-  tsconfig: {
-    include: [ 'codemod/*.ts' ],
-    compilerOptions: {
-      target: 'ES2019',
-      module: 'commonjs',
-      strict: true,
-      outDir: 'should-be-ignored',
-      noUnusedLocals: true,
-      noUnusedParameters: true,
-      noImplicitReturns: true,
-      noFallthroughCasesInSwitch: true,
-      moduleResolution: 'node',
-      esModuleInterop: true,
-      skipLibCheck: true,
-      forceConsistentCasingInFileNames: true
-    }
-  }
-}
-16:19:59.485Z  INFO jscodemod-coordinator: If you need help, please see this project's README, or the --help output. If you're filing a bug report, please re-run this command with env var 'loglevel=debug', and provide the full output."
+"{\\"name\\":\\"jscodemod-coordinator\\",\\"hostname\\":\\"nfml-nheinerTMM\\",\\"pid\\":1745,\\"level\\":50,\\"err\\":{\\"tsconfig\\":{\\"include\\":[\\"codemod/*.ts\\"],\\"compilerOptions\\":{\\"target\\":\\"ES2019\\",\\"module\\":\\"commonjs\\",\\"strict\\":true,\\"outDir\\":\\"should-be-ignored\\",\\"noUnusedLocals\\":true,\\"noUnusedParameters\\":true,\\"noImplicitReturns\\":true,\\"noFallthroughCasesInSwitch\\":true,\\"moduleResolution\\":\\"node\\",\\"esModuleInterop\\":true,\\"skipLibCheck\\":true,\\"forceConsistentCasingInFileNames\\":true}}},\\"msg\\":\\"Your tsconfig must set compilerOptions.rootDir so jscodemod can find the compiled output.\\",\\"time\\":\\"2021-10-20T16:32:38.131Z\\",\\"v\\":0}
+{\\"name\\":\\"jscodemod-coordinator\\",\\"hostname\\":\\"nfml-nheinerTMM\\",\\"pid\\":1745,\\"level\\":30,\\"msg\\":\\"If you need help, please see this project's README, or the --help output. If you're filing a bug report, please re-run this command with env var 'loglevel=debug', and provide the full output.\\",\\"time\\":\\"2021-10-20T16:32:38.132Z\\",\\"v\\":0}"
 `;
 
 exports[`happy path Run the codemod from outside the fixture dir 1`] = `

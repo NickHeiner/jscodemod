@@ -314,7 +314,9 @@ describe('happy path', () => {
   createTest({
     testName: 'Omitting rootDir from tsconfig causes an error',
     fixtureName: 'arrow-function-inline-return',
-    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), '--tsconfig', 'tsconfig-no-root-dir.json', 'source'],
+    spawnArgs: [
+      '--codemod', path.join('codemod', 'index.ts'), '--tsconfig', 'tsconfig-no-root-dir.json', '--jsonOutput', 'source'
+    ],
     expectedExitCode: 1,
     snapshot: true,
     assert(spawnResult, testDir) {
