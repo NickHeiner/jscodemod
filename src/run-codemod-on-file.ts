@@ -37,7 +37,7 @@ function makePhaseError(err: unknown, phase: PhaseError['phase'], suggestion: Ph
 
 export default async function runCodemodOnFile(
   codemod: Codemod, sourceCodeFile: string, baseLog: NTHLogger,
-  {codemodArgs, codemodPath, writeFiles}: {codemodArgs?: string, writeFiles: boolean; codemodPath: string},
+  {codemodArgs, codemodPath}: {codemodArgs?: string, codemodPath: string},
   runStartTimeMs: number
 ): Promise<CodemodMetaResult<unknown>> {
   const log = baseLog.child({sourceCodeFile});
@@ -304,13 +304,7 @@ export default async function runCodemodOnFile(
 
   const codeModified = Boolean(ostensiblyTransformedCode) && ostensiblyTransformedCode !== originalFileContents;
 
-  if (codeModified && writeFiles) {
-    // This non-null assertion is safe because `codeModified` includes a check on `transformedCode`.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    await pFs.writeFile(sourceCodeFile, ostensiblyTransformedCode!);
-  }
   const action = thrownError ? 'error' : codeModified ? 'modified' : 'skipped';
-  log.debug({action, writeFiles});
 
   return {
     action,

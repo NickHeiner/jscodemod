@@ -139,9 +139,11 @@ TypeScript (only applicable if your codemod is written in TypeScript)
 
 Rarely Useful
       --jsonOutput  Output logs as JSON, instead of human-readable formatting.
-                    Useful if you want to consume the output  of this tool from
+                    Useful if you want to consume the output of this tool from
                     another tool, or process the logs using your own Bunyan log
-                    processor/formatter.              [boolean] [default: false]
+                    processor/formatter. The precise set of logs emitted is not
+                    considered to be part of the public API.
+                                                      [boolean] [default: false]
   -p, --porcelain   Produce machine-readable output.  [boolean] [default: false]
 
 Options:
@@ -522,20 +524,6 @@ Array [
     "v": 0,
   },
   Object {
-    "action": "modified",
-    "durationMs": 117,
-    "hostname": "<hostname placeholder>",
-    "level": 20,
-    "msg": "",
-    "name": "jscodemod-coordinator",
-    "pid": 9001,
-    "prettyDuration": "<duration placeholder>",
-    "sourceCodeFile": "<test-dir>/source/a.js",
-    "time": 2012-01-01T00:00:00.000Z,
-    "v": 0,
-    "writeFiles": true,
-  },
-  Object {
     "durationMs": 117,
     "durationMsPretty": "<placeholder pretty ms duration>",
     "hostname": "<hostname placeholder>",
@@ -558,6 +546,18 @@ Array [
     "level": 20,
     "meta": "meta for <test-dir>/source/a.js",
     "msg": "",
+    "name": "jscodemod-coordinator",
+    "pid": 9001,
+    "prettyDuration": "<duration placeholder>",
+    "time": 2012-01-01T00:00:00.000Z,
+    "v": 0,
+  },
+  Object {
+    "durationMs": 117,
+    "filePath": "<test-dir>/source/a.js",
+    "hostname": "<hostname placeholder>",
+    "level": 20,
+    "msg": "Writing modified file",
     "name": "jscodemod-coordinator",
     "pid": 9001,
     "prettyDuration": "<duration placeholder>",
@@ -1375,7 +1375,8 @@ const f = () => {
 `;
 
 exports[`happy path getPlugin returns a meta 1`] = `
-"🔨 Running postProcess for \\"0\\" modified files...
+"🔨 Writing \\"0\\" modified files
+🔨 Running postProcess for \\"0\\" modified files...
 {
   \\"<test-dir>/source/a.js\\": 3,
   \\"<test-dir>/source/b.js\\": 1,
