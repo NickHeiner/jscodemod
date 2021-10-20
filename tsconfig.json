@@ -14,10 +14,14 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true, 
+    "resolveJsonModule": true,
+    "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
 
     "moduleResolution": "node",
     "esModuleInterop": true,
+
+    "declaration": true,
 
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true

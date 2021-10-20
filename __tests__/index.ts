@@ -20,7 +20,8 @@ import {promisify} from 'util';
 
 const log = createLog({name: 'test'});
 
-// Tests run slower on GH CI.
+// Tests run slower on GH CI, so I want to increase the timeout. But it's not obvious that this value is being 
+// respected.
 // Disable this lint rule because it's obvious what the number refers to.
 // eslint-disable-next-line no-magic-numbers
 jest.setTimeout(120 * 1000);

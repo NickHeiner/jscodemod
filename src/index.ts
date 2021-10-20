@@ -12,7 +12,7 @@ import {cyan} from 'ansi-colors';
 import ora from 'ora';
 import createLog from 'nth-log';
 import compileTS from './compile-ts';
-import {Codemod, TODO} from './types';
+import type {Codemod, TODO} from './types';
 import execBigCommand from './exec-big-command';
 import getGitRoot from './get-git-root';
 import loadCodemod from './load-codemod';
@@ -26,6 +26,7 @@ import prettyMs from 'pretty-ms';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
 export {default as execBigCommand} from './exec-big-command';
+export * from './types';
 
 export type TSOptions = {
   tsconfig?: string;
@@ -209,14 +210,17 @@ async function resetDirtyInputFiles(gitRoot: string | null, filesToModify: strin
   }
 }
 
+type GitignoreError = Error & {code?: string; file: string};
+
 async function getIsIgnoredByIgnoreFile(log: TODO, ignoreFiles: string[] | undefined) {
   if (ignoreFiles) {
     try {
       return await gitignore({paths: ignoreFiles});
     } catch (e) {
+      const err = e as GitignoreError;
       // TODO: throw an error if the ignorefile path isn't absolute.
-      if (e.code === 'ENOENT') {
-        log.error({invalidIgnoreFilePath: e.file}, `Ignore file "${e.file}" does not exist.`);
+      if (err.code === 'ENOENT') {
+        log.error({invalidIgnoreFilePath: err.file}, `Ignore file "${err.file}" does not exist.`);
         throw e;
       }
       throw e;

@@ -1,5 +1,29 @@
 # Recipes & Common patterns
 
+## (Experimental) TypeScript Codemod
+Using TS for your codemod will provide the most support, but it may have some bugs. You can always fall back to JS if 
+you run into issues.
+
+```ts
+import type { Codemod } from '@nick.heiner/jscodemod';
+import type { NodePath } from '@babel/traverse';
+import type { JSXOpeningElement } from '@babel/types';
+
+const codemod: Codemod = {
+    getPlugin() {
+        return () => ({
+            visitor: {
+                JSXOpeningElement(jsxPath: NodePath<JSXOpeningElement>) {
+                    /* ... */
+                }
+            }
+        })
+    }
+}
+
+export default codemod;
+```
+
 ## Commit all changed files
 ```js
 const execa = require('execa');
