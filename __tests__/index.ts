@@ -301,6 +301,18 @@ describe('happy path', () => {
     snapshot: true
   });
 
+  createTest({
+    testName: 'Omitting rootDir from tsconfig causes an error',
+    fixtureName: 'arrow-function-inline-return',
+    spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), '--tsconfig', 'tsconfig-no-root-dir.json', 'source'],
+    expectedExitCode: 1,
+    snapshot: true,
+    assert(spawnResult, testDir) {
+      const sanitizedStdout = sanitizeOutput(spawnResult, testDir);
+      expect(sanitizedStdout).toMatchSnapshot();
+    }
+  });
+
   // This test also verifies that, even if the babel plugin changes the AST, if it doesn't call astDidChange(),
   // then the file will not be updated.
   createTest({

@@ -1,24 +1,8 @@
 {
+  "extends": "./tsconfig-no-root-dir.json",
   "include": ["codemod/*.ts"],
 
   "compilerOptions": {
-    "target": "ES2019",
-    "module": "commonjs",
-    "strict": true,
-
     "rootDir": ".",
-
-    "outDir": "should-be-ignored",
-    
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true, 
-    "noFallthroughCasesInSwitch": true,
-
-    "moduleResolution": "node",
-    "esModuleInterop": true,
-
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
   }
 }
