@@ -267,7 +267,7 @@ async function jscodemod(
   const codemod = loadCodemod(codemodPath);
   const codemodName = getCodemodName(codemod, codemodPath);
 
-  log.debug({codemodPath, codemodName, codemodKeys: Object.keys(codemod)});
+  log.debug({codemodPath, codemodName, codemodKeys: Object.keys(codemod), codemodIgnoreFiles: codemod.ignoreFiles});
 
   // The next line is a bit gnarly to make TS happy.
   const codemodIgnores = _.compact(([] as (RegExp | string | undefined)[]).concat(codemod.ignore));
