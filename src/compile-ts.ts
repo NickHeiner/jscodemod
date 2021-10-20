@@ -9,7 +9,7 @@ import type {TSOptions} from './';
 import {cyan} from 'ansi-colors';
 import execa from 'execa';
 import findUp from 'find-up';
-import type { CompilerOptions } from 'typescript';
+import type {CompilerOptions} from 'typescript';
 
 type PackageJson = {name: string};
 const packageJson = loadJsonFile.sync(path.resolve(__dirname, '..', 'package.json')) as PackageJson;
