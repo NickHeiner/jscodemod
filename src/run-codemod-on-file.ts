@@ -30,7 +30,9 @@ export type CodemodMetaResult<TransformResultMeta> = {
   error: Error;
 })
 
-function makePhaseError(err: unknown, phase: PhaseError['phase'], suggestion: PhaseError['suggestion']) {
+export function makePhaseError(
+  err: unknown, phase: PhaseError['phase'], suggestion: PhaseError['suggestion']
+): unknown {
   Object.assign(err, {phase, suggestion});
   return err;
 }
