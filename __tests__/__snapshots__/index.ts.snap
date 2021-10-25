@@ -1375,6 +1375,74 @@ const f = () => {
 }
 `;
 
+exports[`happy path getPlugin pass generatorOpts useRecast = false 1`] = `
+Object {
+  "codemod/index.js": "const useRecast = process.env.USE_RECAST === 'true';
+
+const codemod = {
+  getPlugin: () => ({
+    useRecast,
+    plugin: () => ({
+      visitor: {
+        Identifier(path) {
+          path.node.name = path.node.name.split('').reverse().join('');
+        }
+      }
+    })
+  })
+};
+
+codemod.generatorOpts = useRecast ? {
+  trailingComma: true
+} : {
+  retainFunctionParens: true
+};
+
+module.exports = codemod;",
+  "input.js": "// Passing retainFunctionParens to babelTransformOptions.generatorOpts should result in these parens being kept.
+// If that option is not respected, these parens will be dropped.
+const noissepxEnoitcnuf = (function () {});
+
+eludom.stropxe = {
+  noissepxEnoitcnuf
+};",
+}
+`;
+
+exports[`happy path getPlugin pass generatorOpts useRecast = true 1`] = `
+Object {
+  "codemod/index.js": "const useRecast = process.env.USE_RECAST === 'true';
+
+const codemod = {
+  getPlugin: () => ({
+    useRecast,
+    plugin: () => ({
+      visitor: {
+        Identifier(path) {
+          path.node.name = path.node.name.split('').reverse().join('');
+        }
+      }
+    })
+  })
+};
+
+codemod.generatorOpts = useRecast ? {
+  trailingComma: true
+} : {
+  retainFunctionParens: true
+};
+
+module.exports = codemod;",
+  "input.js": "// Passing retainFunctionParens to babelTransformOptions.generatorOpts should result in these parens being kept.
+// If that option is not respected, these parens will be dropped.
+const noissepxEnoitcnuf = (function () {});
+
+eludom.stropxe = {
+  noissepxEnoitcnuf
+};",
+}
+`;
+
 exports[`happy path getPlugin returns a meta 1`] = `
 "🔨 Writing \\"0\\" modified files
 🔨 Running postProcess for \\"0\\" modified files...

@@ -233,6 +233,8 @@ export default async function runCodemodOnFile(
       generatorOpts: codemod.generatorOpts as TransformOptions['generatorOpts']
     };
 
+    log.debug({babelOptions}, 'Babel transforming');
+
     try {
       babelTransformResult = useRecast
         ? babelTransformSync('', babelOptions)
@@ -273,6 +275,10 @@ export default async function runCodemodOnFile(
         suggestion: "Check your plugin for a bug, or ignore this file in your codemod's ignore list."
       });
       throw err;
+    }
+
+    if (useRecast) {
+      log.debug({recastOptions: codemod.generatorOpts}, 'Recast printing');
     }
 
     let transformedCode = useRecast
