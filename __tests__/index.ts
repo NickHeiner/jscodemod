@@ -375,6 +375,7 @@ describe('happy path', () => {
       snapshot: true
     });
     createTest({
+      modifier: 'only',
       testName: 'useRecast = true',
       fixtureName: 'custom-babel-options',
       spawnArgs: ['--codemod', 'codemod/index.js', 'input.js'],

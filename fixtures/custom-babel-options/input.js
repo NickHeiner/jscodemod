@@ -2,6 +2,8 @@
 // If that option is not respected, these parens will be dropped.
 const functionExpession = (function () {});
 
+const string = 'starts with single quotes';
+
 module.exports = {
   functionExpession
 };

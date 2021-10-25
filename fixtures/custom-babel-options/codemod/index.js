@@ -14,7 +14,8 @@ const codemod = {
 };
 
 codemod.generatorOpts = useRecast ? {
-  trailingComma: true
+  trailingComma: true,
+  quote: 'double'
 } : {
   retainFunctionParens: true
 };
