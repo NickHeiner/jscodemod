@@ -367,6 +367,24 @@ describe('happy path', () => {
     snapshot: true
   });
 
+  describe('getPlugin pass generatorOpts', () => {
+    createTest({
+      testName: 'useRecast = false',
+      fixtureName: 'custom-babel-options',
+      spawnArgs: ['--codemod', 'codemod/index.js', 'input.js'],
+      snapshot: true
+    });
+    createTest({
+      testName: 'useRecast = true',
+      fixtureName: 'custom-babel-options',
+      spawnArgs: ['--codemod', 'codemod/index.js', 'input.js'],
+      processOverrides: {
+        USE_RECAST: 'true'
+      },
+      snapshot: true
+    });
+  });
+
   createTest({
     testName: 'codemodArgs parseArgs is passed to postProcess',
     fixtureName: 'parse-args',

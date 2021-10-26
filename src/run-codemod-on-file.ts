@@ -226,9 +226,15 @@ export default async function runCodemodOnFile(
     }
 
     // result.ast.end will be 0, and ast.end is originalFileContents.length.
-    // Passing originalFileContents instead of '' solves that problem, but causes some other problem.
+    // Passing originalFileContents instead of '' solves that problem, but causes another problem.
     let babelTransformResult: ReturnType<typeof babelTransformSync>;
-    const babelOptions = getBabelOpts(pluginsToUse);
+    const babelOptions = {
+      ...getBabelOpts(pluginsToUse),
+      generatorOpts: codemod.generatorOpts as TransformOptions['generatorOpts']
+    };
+
+    log.debug({babelOptions}, 'Babel transforming');
+
     try {
       babelTransformResult = useRecast
         ? babelTransformSync('', babelOptions)
@@ -271,8 +277,14 @@ export default async function runCodemodOnFile(
       throw err;
     }
 
+    if (useRecast) {
+      log.debug({recastOptions: codemod.generatorOpts}, 'Recast printing');
+    }
+
     let transformedCode = useRecast
-      ? fileContentsPrefixToReattachPostTransform + recast.print(babelTransformResult.ast as recast.types.ASTNode).code
+      ? fileContentsPrefixToReattachPostTransform + recast.print(
+          babelTransformResult.ast as recast.types.ASTNode,
+          codemod.generatorOpts as recast.Options).code
       : babelTransformResult.code;
 
     if (transformedCode && originalFileContents.endsWith('\n') && !transformedCode.endsWith('\n')) {
