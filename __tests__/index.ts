@@ -367,7 +367,7 @@ describe('happy path', () => {
     snapshot: true
   });
 
-  describe.only('getPlugin pass generatorOpts', () => {
+  describe('getPlugin pass generatorOpts', () => {
     createTest({
       testName: 'useRecast = false',
       fixtureName: 'custom-babel-options',

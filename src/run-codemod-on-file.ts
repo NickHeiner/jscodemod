@@ -284,8 +284,6 @@ export default async function runCodemodOnFile(
     let transformedCode = useRecast
       ? fileContentsPrefixToReattachPostTransform + recast.print(
           babelTransformResult.ast as recast.types.ASTNode,
-          // I don't think this matters.
-          // https://github.com/benjamn/recast/issues/997
           codemod.generatorOpts as recast.Options).code
       : babelTransformResult.code;
 

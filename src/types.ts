@@ -133,6 +133,9 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
    * If your getPlugin() method returns {useRecast: true}, these options will be passed to the Babel generator.
    * If your getPlugin() method returns {useRecast: false}, these options will be passed to `recast.print`.
    *
+   * Options passed to `recast.print` will only be used by recast if that part of the AST has actually been modified.
+   * (More detail: https://github.com/benjamn/recast/issues/997)
+   *
    * I recognize that `useRecast` can be changed on a per-file basis via getPlugin() returning a dynamic value,
    * but these generator options have to be statically declared. And you may not be able to pass one set of generator
    * options that works for both Babel and Recast. So this design may be a bit limiting. If this is an issue for you,
