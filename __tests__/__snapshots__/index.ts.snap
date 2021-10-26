@@ -1386,6 +1386,9 @@ const codemod = {
       visitor: {
         Identifier(path) {
           path.node.name = path.node.name.split('').reverse().join('');
+        },
+        StringLiteral(path) {
+          path.node.value = path.node.value.split('').reverse().join('');
         }
       }
     })
@@ -1393,7 +1396,7 @@ const codemod = {
 };
 
 codemod.generatorOpts = useRecast ? {
-  trailingComma: true
+  quote: 'single'
 } : {
   retainFunctionParens: true
 };
@@ -1401,8 +1404,11 @@ codemod.generatorOpts = useRecast ? {
 module.exports = codemod;",
   "input.js": "// Passing retainFunctionParens to babelTransformOptions.generatorOpts should result in these parens being kept.
 // If that option is not respected, these parens will be dropped.
-const noissepxEnoitcnuf = (function () {});
+const noissepxEnoitcnuf = (function () {}); // If useRecast = true, then this string literal should be formatted with single quotes, since the codemod
+// passes \`quote: 'single'\` to \`generatorOpts\`.
 
+
+const gnirts = \\"setouq elbuod htiw strats\\";
 eludom.stropxe = {
   noissepxEnoitcnuf
 };",
@@ -1420,6 +1426,9 @@ const codemod = {
       visitor: {
         Identifier(path) {
           path.node.name = path.node.name.split('').reverse().join('');
+        },
+        StringLiteral(path) {
+          path.node.value = path.node.value.split('').reverse().join('');
         }
       }
     })
@@ -1427,7 +1436,7 @@ const codemod = {
 };
 
 codemod.generatorOpts = useRecast ? {
-  trailingComma: true
+  quote: 'single'
 } : {
   retainFunctionParens: true
 };
@@ -1436,6 +1445,10 @@ module.exports = codemod;",
   "input.js": "// Passing retainFunctionParens to babelTransformOptions.generatorOpts should result in these parens being kept.
 // If that option is not respected, these parens will be dropped.
 const noissepxEnoitcnuf = (function () {});
+
+// If useRecast = true, then this string literal should be formatted with single quotes, since the codemod
+// passes \`quote: 'single'\` to \`generatorOpts\`.
+const gnirts = 'setouq elbuod htiw strats';
 
 eludom.stropxe = {
   noissepxEnoitcnuf

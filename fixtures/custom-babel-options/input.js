@@ -2,7 +2,9 @@
 // If that option is not respected, these parens will be dropped.
 const functionExpession = (function () {});
 
-const string = 'starts with single quotes';
+// If useRecast = true, then this string literal should be formatted with single quotes, since the codemod
+// passes `quote: 'single'` to `generatorOpts`.
+const string = "starts with double quotes";
 
 module.exports = {
   functionExpession

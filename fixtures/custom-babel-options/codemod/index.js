@@ -7,6 +7,9 @@ const codemod = {
       visitor: {
         Identifier(path) {
           path.node.name = path.node.name.split('').reverse().join('');
+        },
+        StringLiteral(path) {
+          path.node.value = path.node.value.split('').reverse().join('');
         }
       }
     })
@@ -14,8 +17,7 @@ const codemod = {
 };
 
 codemod.generatorOpts = useRecast ? {
-  trailingComma: true,
-  quote: 'double'
+  quote: 'single'
 } : {
   retainFunctionParens: true
 };
