@@ -369,14 +369,12 @@ describe('happy path', () => {
 
   describe('getPlugin pass generatorOpts', () => {
     createTest({
-      modifier: 'only',
       testName: 'useRecast = false',
       fixtureName: 'custom-babel-options',
       spawnArgs: ['--codemod', 'codemod/index.js', 'input.js'],
       snapshot: true
     });
     createTest({
-      modifier: 'only',
       testName: 'useRecast = true',
       fixtureName: 'custom-babel-options',
       spawnArgs: ['--codemod', 'codemod/index.js', 'input.js'],

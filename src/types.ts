@@ -141,7 +141,7 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
    * options that works for both Babel and Recast. So this design may be a bit limiting. If this is an issue for you,
    * let me know.
    */
-  generatorOpts: TransformOptions['generatorOpts'] | RecastOptions;
+  generatorOpts?: TransformOptions['generatorOpts'] | RecastOptions;
 
   /**
    * Return a plugin that will be used to codemod your code.
