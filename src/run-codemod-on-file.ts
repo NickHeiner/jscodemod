@@ -240,12 +240,11 @@ export default async function runCodemodOnFile(
         ? babelTransformSync('', babelOptions)
         : babelTransformFromAstSync(ast, originalFileContents, babelOptions);
     } catch (e) {
-      makePhaseError(
+      throw makePhaseError(
         e,
         "babelTransformSync using the plugin returned by your codemod's getPlugin()",
         'Check your babel plugin for runtime errors.'
       );
-      return;
     }
 
     log.debug({pluginWillSignalWhenAstHasChanged, pluginChangedAst, useRecast});
