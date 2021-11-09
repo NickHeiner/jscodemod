@@ -37,7 +37,7 @@ export type TSOptions = {
 
 export type NonTSOptions = {
   dry?: boolean;
-  writeFiles?: boolean;
+  writeFilesLimit?: number;
   porcelain?: boolean;
   jsonOutput?: boolean;
   codemodArgs?: string[];
@@ -96,13 +96,14 @@ function getProgressUI(logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, total
  */
 export const defaultPiscinaLowerBoundInclusive = 20;
 
-async function transformCode(
+function transformCode(
   codemod: Codemod,
   log: TSOptions['log'],
   codemodPath: string,
   inputFiles: string[],
   piscinaLowerBoundInclusive: NonTSOptions['piscinaLowerBoundInclusive'],
   logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>,
+  writeFilesLimit: number,
   codemodArgs?: string[]
 ) {
   const rawArgs = codemodArgs ? JSON.stringify(codemodArgs) : undefined;
@@ -161,24 +162,46 @@ async function transformCode(
       durationMsPretty: prettyMs(timeToChangeFirstFile)
     }, 'The first codemod worker to return has done so.');
   });
-  const allFilesCodemoddedPromise = Promise.all(inputFiles.map(async inputFile => {
-    const codemodMetaResult = await runCodemodOnSingleFile(inputFile);
-    logTimeToChangeFirstFile();
-    log.debug({
-      ...codemodMetaResult,
-      fileContents: '<truncated file contents>'
-    });
-    progressBar.tick();
-    return codemodMetaResult;
-  }));
 
-  registerForPiscinaDrain();
+  const codemodMetaResults: CodemodMetaResult<unknown>[] = [];
 
-  const allFilesCodemodded = await allFilesCodemoddedPromise;
+  const enoughFilesModified = new Promise<CodemodMetaResult<unknown>>(async (resolve, reject) => {
+    try {
+      let hasResolved = false;
+
+      const allFilesTransformed = inputFiles.map(async inputFile => {
+        if (hasResolved) {
+          return;
+        }
+        const codemodMetaResult = await runCodemodOnSingleFile(inputFile);
+        logTimeToChangeFirstFile();
+        log.debug({
+          ...codemodMetaResult,
+          fileContents: '<truncated file contents>'
+        });
+        progressBar.tick();
+
+        codemodMetaResults.push(codemodMetaResult);
+
+        if (codemodMetaResults.length === inputFiles.length ||
+          _.filter(codemodMetaResults, 'codeModified').length === writeFilesLimit) {
+          hasResolved = true;
+          // I don't understand why this is an error.
+          // @ts-expect-error
+          resolve(codemodMetaResults);
+        }
+      });
+      registerForPiscinaDrain();
+
+      await allFilesTransformed;
+    } catch (e) {
+      reject(e);
+    }
+  });
 
   destroyPiscinaIfNecessary();
 
-  return allFilesCodemodded;
+  return enoughFilesModified;
 }
 
 function execGit(gitRoot: string, args: string[]): Promise<execa.ExecaReturnValue> {
@@ -237,14 +260,14 @@ async function jscodemod(
   const {
     log,
     doPostProcess,
-    writeFiles,
+    writeFilesLimit,
     inputFilesPatterns,
     inputFileList,
     ...options
   }: InternalOptions = {
     log: noOpLogger,
     doPostProcess: true,
-    writeFiles: true,
+    writeFilesLimit: Infinity,
     respectIgnores: true,
     ...passedOptions
   };
@@ -359,22 +382,21 @@ async function jscodemod(
   }
 
   const codemodMetaResults = await transformCode(codemod, log, codemodPath, filesToModify,
-    passedOptions.piscinaLowerBoundInclusive, _.pick(passedOptions, 'jsonOutput', 'porcelain'), options.codemodArgs
+    passedOptions.piscinaLowerBoundInclusive, _.pick(passedOptions, 'jsonOutput', 'porcelain'), writeFilesLimit,
+    options.codemodArgs
   );
 
-  if (writeFiles) {
-    const filesToWrite = _.filter(codemodMetaResults, 'codeModified');
-    safeConsoleLog(`🔨 Writing "${filesToWrite.length}" modified files`);
-    await Promise.all(filesToWrite.map(codemodMetaResult => {
-      // This next validation and throw is just to make TS happy.
-      if (codemodMetaResult.action !== 'modified') {
-        throw new Error('jscodemod logic error: Attempted to write an unmodified file.');
-      }
+  const filesToWrite = _.filter(codemodMetaResults, 'codeModified');
+  safeConsoleLog(`🔨 Writing "${filesToWrite.length}" modified files`);
+  await Promise.all(filesToWrite.map(codemodMetaResult => {
+    // This next validation and throw is just to make TS happy.
+    if (codemodMetaResult.action !== 'modified') {
+      throw new Error('jscodemod logic error: Attempted to write an unmodified file.');
+    }
 
-      log.debug({filePath: codemodMetaResult.filePath}, 'Writing modified file');
-      return fs.writeFile(codemodMetaResult.filePath, codemodMetaResult.fileContents);
-    }));
-  }
+    log.debug({filePath: codemodMetaResult.filePath}, 'Writing modified file');
+    return fs.writeFile(codemodMetaResult.filePath, codemodMetaResult.fileContents);
+  }));
 
   if (typeof codemod.postProcess === 'function' && doPostProcess) {
     const modifiedFiles = _(codemodMetaResults).filter('codeModified').map('filePath').value();
