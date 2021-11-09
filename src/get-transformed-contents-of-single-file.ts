@@ -30,7 +30,7 @@ async function getTransformedContentsOfSingleFile(
       ..._.omit(codemodOptions, 'inputFileList'),
       inputFilesPatterns: [inputFile],
       doPostProcess: false,
-      writeFiles: false
+      writeFilesLimit: 0
     }
   ) as unknown as CodemodMetaResult<unknown>[];
 
