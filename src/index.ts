@@ -165,7 +165,7 @@ function transformCode(
 
   const codemodMetaResults: CodemodMetaResult<unknown>[] = [];
 
-  const enoughFilesModified = new Promise<CodemodMetaResult<unknown>>(async (resolve, reject) => {
+  const enoughFilesModified = new Promise<CodemodMetaResult<unknown>[]>(async (resolve, reject) => {
     try {
       let hasResolved = false;
 
@@ -186,8 +186,6 @@ function transformCode(
         if (codemodMetaResults.length === inputFiles.length ||
           _.filter(codemodMetaResults, {action: 'modified'}).length === writeFilesLimit) {
           hasResolved = true;
-          // I don't understand why this is an error.
-          // @ts-expect-error
           resolve(codemodMetaResults);
         }
       });
