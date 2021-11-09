@@ -38,6 +38,8 @@ Benefits to this include:
 1. If your codemod handles some input code cases but not all, you can start making migration progress before reaching 100% coverage. Just apply the codemod to the cases it can handle already.
 1. Applying the codemod in chunks lets you learn as you go, and possibly tweak the codemod in response to feedback. A single-shot migration doesn't give you that opportunity.
 
+One incrementalism strategy is to migrate a single code area at a time. If that doesn't provide a convenient, well-sized boundary, you can use flag `--writeFileLimit` to set an upper bound on how many files will be changed at once. For instance, if you have 2,000 files to change, but you want to split the migration up into chunks of 250 files at a time, you can run the codemod on your entire codebase, and pass `--writeFileLimit 250`.
+
 ## If your codemod is for a single repo, check it in to that repo.
 This maximizes historical context for later devs. It also gives other devs the ability to run your codemod against their branches, which may be an easier way to resolve merge conflicts than hand editing. And, if you make more codemods later, you'll often find that there are bits to copy/paste or share with older codemods.
 
