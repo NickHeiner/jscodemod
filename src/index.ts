@@ -184,7 +184,7 @@ function transformCode(
         codemodMetaResults.push(codemodMetaResult);
 
         if (codemodMetaResults.length === inputFiles.length ||
-          _.filter(codemodMetaResults, 'codeModified').length === writeFilesLimit) {
+          _.filter(codemodMetaResults, {action: 'modified'}).length === writeFilesLimit) {
           hasResolved = true;
           // I don't understand why this is an error.
           // @ts-expect-error
@@ -386,7 +386,7 @@ async function jscodemod(
     options.codemodArgs
   );
 
-  const filesToWrite = _.filter(codemodMetaResults, 'codeModified');
+  const filesToWrite = _.filter(codemodMetaResults, {action: 'modified'});
   safeConsoleLog(`🔨 Writing "${filesToWrite.length}" modified files`);
   await Promise.all(filesToWrite.map(codemodMetaResult => {
     // This next validation and throw is just to make TS happy.
@@ -399,7 +399,7 @@ async function jscodemod(
   }));
 
   if (typeof codemod.postProcess === 'function' && doPostProcess) {
-    const modifiedFiles = _(codemodMetaResults).filter('codeModified').map('filePath').value();
+    const modifiedFiles = _(codemodMetaResults).filter({action: 'modified'}).map('filePath').value();
 
     const codemodMeta = new Map(
       codemodMetaResults.map(({filePath, meta}) => [filePath, meta])

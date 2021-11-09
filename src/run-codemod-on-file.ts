@@ -23,7 +23,6 @@ export type CodemodMetaResult<TransformResultMeta> = {
   filePath: string;
 } & ({
   action: 'modified' | 'skipped';
-  codeModified: boolean;
   fileContents: string;
 } | {
   action: 'error';
@@ -322,7 +321,6 @@ export default async function runCodemodOnFile(
   return {
     action,
     error: thrownError as Error,
-    codeModified,
     // if codeModified is true, we know ostensiblyTransformedCode is a string.
     fileContents: codeModified ? (ostensiblyTransformedCode as string) : originalFileContents,
     meta: typeof codemodResult === 'string' ? undefined : codemodResult?.meta,
