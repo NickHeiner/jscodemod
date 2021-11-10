@@ -54,6 +54,7 @@
   },
   "dependencies": {
     "@babel/core": "^7.15.0",
+    "abort-controller": "3.0.0",
     "ansi-colors": "4.1.1",
     "execa": "5.1.1",
     "find-up": "5.0.0",
@@ -65,7 +66,7 @@
     "loud-rejection": "2.2.0",
     "nth-log": "2.0.3",
     "ora": "5.1.0",
-    "piscina": "1.6.3",
+    "piscina": "3.1.0",
     "pretty-error": "3.0.4",
     "pretty-ms": "7.0.1",
     "progress": "2.0.3",

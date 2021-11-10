@@ -2,6 +2,11 @@
 # yarn lockfile v1
 
 
+"@assemblyscript/loader@^0.10.1":
+  version "0.10.1"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/@assemblyscript/loader/-/loader-0.10.1.tgz#70e45678f06c72fa2e350e8553ec4a4d72b92e06"
+  integrity sha1-cORWePBscvouNQ6FU+xKTXK5LgY=
+
 "@babel/code-frame@^7.0.0", "@babel/code-frame@^7.10.4":
   version "7.10.4"
   resolved "https://registry.yarnpkg.com/@babel/code-frame/-/code-frame-7.10.4.tgz#168da1a36e90da68ae8d49c0f1b48c7c6249213a"
@@ -1988,6 +1993,13 @@ abab@^2.0.3, abab@^2.0.5:
   resolved "https://registry.yarnpkg.com/abab/-/abab-2.0.5.tgz#c0b678fb32d60fc1219c784d6a826fe385aeb79a"
   integrity sha512-9IK9EadsbHo6jLWIpxpR6pL0sazTXV6+SQv25ZB+F7Bj9mJNaOc4nCRabwd5M/JwmUa8idz6Eci6eKfJryPs6Q==
 
+abort-controller@3.0.0:
+  version "3.0.0"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/abort-controller/-/abort-controller-3.0.0.tgz#eaf54d53b62bae4138e809ca225c8439a6efb392"
+  integrity sha1-6vVNU7YrrkE46AnKIlyEOabvs5I=
+  dependencies:
+    event-target-shim "^5.0.0"
+
 acorn-globals@^6.0.0:
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/acorn-globals/-/acorn-globals-6.0.0.tgz#46cdd39f0f8ff08a876619b55f5ac8a6dc770b45"
@@ -3395,6 +3407,11 @@ esutils@^2.0.2:
   resolved "https://registry.yarnpkg.com/esutils/-/esutils-2.0.3.tgz#74d2eb4de0b8da1293711910d50775b9b710ef64"
   integrity sha512-kVscqXk4OCp68SZ0dkgEKVi6/8ij300KBWTJq32P/dYeWTSwK41WyTxalN1eRmA5Z9UU/LX9D7FWSmV9SAYx6g==
 
+event-target-shim@^5.0.0:
+  version "5.0.1"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/event-target-shim/-/event-target-shim-5.0.1.tgz#5d4d3ebdf9583d63a5333ce2deb7480ab2b05789"
+  integrity sha1-XU0+vflYPWOlMzzi3rdICrKwV4k=
+
 eventemitter-asyncresource@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/eventemitter-asyncresource/-/eventemitter-asyncresource-1.0.0.tgz#734ff2e44bf448e627f7748f905d6bdd57bdb65b"
@@ -3866,20 +3883,19 @@ has@^1.0.3:
   dependencies:
     function-bind "^1.1.1"
 
-hdr-histogram-js@^1.0.0, hdr-histogram-js@^1.2.0:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/hdr-histogram-js/-/hdr-histogram-js-1.2.0.tgz#1213c0b317f39b9c05bc4f208cb7931dbbc192ae"
-  integrity sha512-h0YToJ3ewqsaZ3nFTTa6dLOD7sqx+EgdC4+OcJ9Ou7zZDlT0sXSPHHr3cyenQsPqqbVHGn/oFY6zjfEKXGvzmQ==
+hdr-histogram-js@^2.0.1:
+  version "2.0.1"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/hdr-histogram-js/-/hdr-histogram-js-2.0.1.tgz#ecb1ff2bcb6181c3e93ff4af9472c28c7e97284e"
+  integrity sha1-7LH/K8thgcPpP/SvlHLCjH6XKE4=
   dependencies:
+    "@assemblyscript/loader" "^0.10.1"
     base64-js "^1.2.0"
     pako "^1.0.3"
 
-hdr-histogram-percentiles-obj@^2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/hdr-histogram-percentiles-obj/-/hdr-histogram-percentiles-obj-2.0.1.tgz#7a4d52fa02087118c66469e6b66b74f9fbb44d82"
-  integrity sha512-QBvbTxPlGwHj36IRF16XLoYEbUv5YEyO385kiS0IS3831fcSTNXTR785VtFFZ2ahY733z0ky8Jv4d6In+Ss+wQ==
-  dependencies:
-    hdr-histogram-js "^1.0.0"
+hdr-histogram-percentiles-obj@^3.0.0:
+  version "3.0.0"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/hdr-histogram-percentiles-obj/-/hdr-histogram-percentiles-obj-3.0.0.tgz#9409f4de0c2dda78e61de2d9d78b1e9f3cba283c"
+  integrity sha1-lAn03gwt2njmHeLZ14senzy6KDw=
 
 hosted-git-info@^2.1.4:
   version "2.8.8"
@@ -5681,14 +5697,14 @@ pirates@^4.0.0, pirates@^4.0.1:
   dependencies:
     node-modules-regexp "^1.0.0"
 
-piscina@1.6.3:
-  version "1.6.3"
-  resolved "https://registry.yarnpkg.com/piscina/-/piscina-1.6.3.tgz#1adfc09a835108561a8cdc7acfd2ab3119141155"
-  integrity sha512-I8aoBroMD6cRGYFsW1oN3X5YfJAyuT4pn+P2Tnk8ZYQ134ZqaQ0mjUztm9+NmKKawd0XlTY8wvz6bMxckrJX6g==
+piscina@3.1.0:
+  version "3.1.0"
+  resolved "https://artifacts.netflix.net/api/npm/npm-netflix/piscina/-/piscina-3.1.0.tgz#2333636865b6cb69c5a370bbc499a98cabcf3e04"
+  integrity sha1-IzNjaGW2y2nFo3C7xJmpjKvPPgQ=
   dependencies:
     eventemitter-asyncresource "^1.0.0"
-    hdr-histogram-js "^1.2.0"
-    hdr-histogram-percentiles-obj "^2.0.1"
+    hdr-histogram-js "^2.0.1"
+    hdr-histogram-percentiles-obj "^3.0.0"
   optionalDependencies:
     nice-napi "^1.0.2"
 

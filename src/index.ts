@@ -23,6 +23,7 @@ import noOpLogger from './no-op-logger';
 import {promises as fs} from 'fs';
 import {EOL} from 'os';
 import prettyMs from 'pretty-ms';
+import AbortController from 'abort-controller';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
 export {default as execBigCommand} from './exec-big-command';
@@ -96,7 +97,7 @@ function getProgressUI(logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, total
  */
 export const defaultPiscinaLowerBoundInclusive = 20;
 
-function transformCode(
+async function transformCode(
   codemod: Codemod,
   log: TSOptions['log'],
   codemodPath: string,
@@ -110,6 +111,8 @@ function transformCode(
   if (!writeFilesLimit) {
     return [];
   }
+
+  const abortController = new AbortController();
 
   const rawArgs = codemodArgs ? JSON.stringify(codemodArgs) : undefined;
 
@@ -145,10 +148,19 @@ function transformCode(
     return piscina;
   });
 
-  const runCodemodOnSingleFile = (inputFile: string): Promise<CodemodMetaResult<unknown>> => {
+  const runCodemodOnSingleFile = async (inputFile: string): Promise<CodemodMetaResult<unknown>> => {
     const runStartTimeMs = Date.now();
     if (inputFiles.length >= (piscinaLowerBoundInclusive ?? defaultPiscinaLowerBoundInclusive)) {
-      return getPiscina().runTask({inputFile, runStartTimeMs});
+      log.trace({inputFile}, 'Enqueuing Piscina task');
+      try {
+        return await getPiscina().run({inputFile, runStartTimeMs}, _.pick(abortController, 'signal'));
+      } catch (e) {
+        // If we abort a task, it will finish with an AbortError. We want to suppress those errors, because they're not
+        // actually an error for our purposes.
+        if ((e as {name?: string}).name !== 'AbortError') {
+          throw e;
+        }
+      }
     }
 
     return runCodemodOnFile(codemod, inputFile, log, baseRunnerOpts, runStartTimeMs);
@@ -170,7 +182,7 @@ function transformCode(
 
   const codemodMetaResults: CodemodMetaResult<unknown>[] = [];
 
-  const enoughFilesModified = new Promise<CodemodMetaResult<unknown>[]>(async (resolve, reject) => {
+  const enoughFilesTransformed = new Promise<void>(async (resolve, reject) => {
     try {
       let hasResolved = false;
 
@@ -193,9 +205,12 @@ function transformCode(
 
         if (codemodMetaResults.length === inputFiles.length ||
           _.filter(codemodMetaResults, {action: 'modified'}).length === writeFilesLimit) {
+
+          log.debug({hasResolved, resultsLen: codemodMetaResults.length, inputFile}, 'Bailing early');
           progressBar.update(1);
           hasResolved = true;
-          resolve(codemodMetaResults);
+          abortController.abort();
+          resolve();
         }
       });
       registerForPiscinaDrain();
@@ -206,9 +221,11 @@ function transformCode(
     }
   });
 
+  await enoughFilesTransformed;
+
   destroyPiscinaIfNecessary();
 
-  return enoughFilesModified;
+  return codemodMetaResults;
 }
 
 function execGit(gitRoot: string, args: string[]): Promise<execa.ExecaReturnValue> {
@@ -265,19 +282,19 @@ async function jscodemod(
 // TODO: encode that this return type depends on whether 'dry' is passed.
 ): Promise<CodemodMetaResult<unknown>[] | string[]> {
   const {
-    log,
     doPostProcess,
     writeFilesLimit,
     inputFilesPatterns,
     inputFileList,
     ...options
-  }: InternalOptions = {
-    log: noOpLogger,
+  }: Omit<InternalOptions, 'log'> = {
     doPostProcess: true,
     writeFilesLimit: Infinity,
     respectIgnores: true,
     ...passedOptions
   };
+
+  let log = passedOptions.log || noOpLogger;
 
   const codemodPath = await getCodemodPath(pathToCodemod, {
     ..._.pick(options, 'tsconfig', 'tsOutDir', 'tsc'),
@@ -296,6 +313,9 @@ async function jscodemod(
 
   const codemod = loadCodemod(codemodPath);
   const codemodName = getCodemodName(codemod, codemodPath);
+
+  // This is randy but I think it's the cleanest way to ensure that subsequent log calls use the right value.
+  log = log.child({codemodName});
 
   log.debug({codemodPath, codemodName, codemodKeys: Object.keys(codemod), codemodIgnoreFiles: codemod.ignoreFiles});
 
