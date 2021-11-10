@@ -79,7 +79,7 @@ function getProgressUI(logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, total
   if (logOpts.porcelain || logOpts.jsonOutput) {
     // This is intentional.
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    return {tick() {}};
+    return {tick() {}, update() {}};
   }
 
   return new ProgressBar(`[${codemodName}] :bar (:current/:total, :percent)`, {total: totalCount});
@@ -106,6 +106,11 @@ function transformCode(
   writeFilesLimit: number,
   codemodArgs?: string[]
 ) {
+  log.trace({writeFilesLimit}, 'transformCode');
+  if (!writeFilesLimit) {
+    return [];
+  }
+
   const rawArgs = codemodArgs ? JSON.stringify(codemodArgs) : undefined;
 
   const baseRunnerOpts = {
@@ -174,6 +179,9 @@ function transformCode(
           return;
         }
         const codemodMetaResult = await runCodemodOnSingleFile(inputFile);
+        if (hasResolved) {
+          return;
+        }
         logTimeToChangeFirstFile();
         log.debug({
           ...codemodMetaResult,
@@ -185,6 +193,7 @@ function transformCode(
 
         if (codemodMetaResults.length === inputFiles.length ||
           _.filter(codemodMetaResults, {action: 'modified'}).length === writeFilesLimit) {
+          progressBar.update(1);
           hasResolved = true;
           resolve(codemodMetaResults);
         }

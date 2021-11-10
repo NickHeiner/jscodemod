@@ -99,7 +99,7 @@ const {argv} = yargs
       describe: 'Use git to restore dirty files to a clean state before running the codemod. ' +
         'This assumes that all input files have the same .git root. If you use submodules, this may not work.'
     },
-    writeFileLimit: {
+    writeFilesLimit: {
       alias: 'w',
       type: 'number',
       default: Infinity,
@@ -114,7 +114,7 @@ const {argv} = yargs
         'precise set of logs emitted is not considered to be part of the public API.'
     }
   })
-  .group(['codemod', 'dry', 'resetDirtyInputFiles', 'inputFileList', 'writeFileLimit'], 'Primary')
+  .group(['codemod', 'dry', 'resetDirtyInputFiles', 'inputFileList', 'writeFilesLimit'], 'Primary')
   .group(['tsconfig', 'tsOutDir', 'tsc'], 'TypeScript (only applicable if your codemod is written in TypeScript)')
   .group(['jsonOutput', 'porcelain'], 'Rarely Useful')
   .check(argv => {
@@ -147,7 +147,7 @@ async function main() {
   try {
     const opts = {
       ..._.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'resetDirtyInputFiles', 'porcelain', 'jsonOutput',
-        'piscinaLowerBoundInclusive', 'inputFileList', 'inputFilesPatterns', 'writeFileLimit'),
+        'piscinaLowerBoundInclusive', 'inputFileList', 'inputFilesPatterns', 'writeFilesLimit'),
       log
     };
 

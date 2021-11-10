@@ -226,7 +226,7 @@ describe('happy path', () => {
   createTest({
     testName: '--writeFileLimit',
     fixtureName: 'prepend-string',
-    spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), '--inputFileList', 'input-file-list.txt', 
+    spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), '--inputFileList', 'input-file-list.txt',
       '--writeFileLimit', '1'],
     setUpNodeModules: false,
     snapshot: true
