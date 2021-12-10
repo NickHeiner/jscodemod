@@ -158,6 +158,6 @@ The recommended pattern is to add fixtures for each different type of case your 
 The `ignore` codemod entry allows you to omit files from processing. If you'd rather write an include-list than deny-list, you can use a [regex negative lookahead](https://stackoverflow.com/a/1749956/147601). For example:
 
 ```js
-// Only process files ending in .js or .tsx
-ignore: /\.(?!(js|tsx)$)/
+// Only process files ending in .js, .ts, or .tsx
+ignore: /\.(?!(js|tsx|ts))[^.]+$/
 ```
