@@ -94,7 +94,7 @@ function getProgressUI(logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, total
  * writing tests which by default ran simultaneously. 1 simultaneous worker pool took ~5 seconds, 2 took ~20, 3 took
  * ~50, etc.
  */
-export const defaultPiscinaLowerBoundInclusive = 20;
+export const defaultPiscinaLowerBoundInclusive = 500;
 
 async function transformCode(
   codemod: Codemod,
@@ -275,6 +275,7 @@ async function jscodemod(
 
   async function getInputFilesBeforeIgnores() {
     if (inputFilesPatterns) {
+      // Possible glob bug: https://github.com/sindresorhus/globby/issues/86
       return log.logPhase({
         phase: 'globbing',
         level: 'debug',
