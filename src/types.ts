@@ -105,6 +105,15 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
     ): ReturnType<typeof jscodemod>
   }) => void | Promise<unknown>;
 } & ({
+  transformAll(opts: {
+    fileNames: string[],
+    commandLineArgs?: ParsedArgs;
+  }): Promisable<string[]>,
+
+  presets?: never;
+  getPlugin?: never;
+  transform?: never;
+} | {
   /**
    * Transform a single file. Return null or undefined to indicate that the file should not be modified.
    *
@@ -119,8 +128,12 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
 
   presets?: never;
   getPlugin?: never;
+
+  transformAll: never;
 } | {
   transform?: never;
+
+  transformAll: never;
 
   /**
    * The set of babel presets needed to compile your code, like `@babel/preset-env`.
