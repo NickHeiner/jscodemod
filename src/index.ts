@@ -103,6 +103,7 @@ function transformCode(
   inputFiles: string[],
   piscinaLowerBoundInclusive: NonTSOptions['piscinaLowerBoundInclusive'],
   logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>,
+  parsedArgs: unknown,
   codemodArgs?: string[]
 ) {
   const rawArgs = codemodArgs ? JSON.stringify(codemodArgs) : undefined;
@@ -166,7 +167,7 @@ function transformCode(
     if ('transformAll' in codemod) {
       return codemod.transformAll({
         fileNames: inputFiles,
-        commandLineArgs: codemodArgs
+        commandLineArgs: parsedArgs
       });
     }
     const allFilesCodemoddedPromise = Promise.all(inputFiles.map(async inputFile => {
@@ -327,7 +328,7 @@ async function jscodemod(
 
   if (!filesToModify.length) {
     const err = new Error('No files were found to transform.');
-    Object.assign(err, {inputFilesPatterns});
+    Object.assign(err, {inputFilesPatterns, codemodName});
     throw err;
   }
 
@@ -370,7 +371,8 @@ async function jscodemod(
   }
 
   const transformResults = await transformCode(codemod, log, codemodPath, filesToModify,
-    passedOptions.piscinaLowerBoundInclusive, _.pick(passedOptions, 'jsonOutput', 'porcelain'), options.codemodArgs
+    passedOptions.piscinaLowerBoundInclusive,
+    _.pick(passedOptions, 'jsonOutput', 'porcelain'), parsedArgs, options.codemodArgs
   );
 
   if (writeFiles) {
