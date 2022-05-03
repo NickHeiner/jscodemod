@@ -96,6 +96,8 @@ function getProgressUI(logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, total
  */
 export const defaultPiscinaLowerBoundInclusive = 20;
 
+// TODO: multi-stage codemods currently need to be in separate files for each codemod, which can be a little awkward
+// and inhibit code sharing
 function transformCode(
   codemod: Codemod,
   log: TSOptions['log'],
@@ -275,6 +277,7 @@ async function jscodemod(
   }
 
   const codemod = loadCodemod(codemodPath);
+  // TODO: it would be nice if we used log.child to make all logs from here on out have the codemod name.
   const codemodName = getCodemodName(codemod, codemodPath);
   const codemodIsTransformAll = 'transformAll' in codemod;
   const writeFiles = !codemodIsTransformAll && options.writeFiles;
@@ -422,6 +425,7 @@ async function jscodemod(
       // @ts-expect-error TODO clean this up
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     }, () => codemod.postProcess!(modifiedFiles, {
+      // TODO: sometimes it's "codemodArgs", and sometimes it's "commandLineArgs"
       codemodArgs: parsedArgs,
       resultMeta: codemodMeta,
       jscodemod(pathToCodemod: string, optionsFromPostProcess: Partial<Options>) {
