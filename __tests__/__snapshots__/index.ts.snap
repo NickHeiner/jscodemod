@@ -1869,6 +1869,43 @@ exports[`happy path prepend-string with piscina 3`] = `"resultMeta as passed to 
 
 exports[`happy path prepend-string with piscina 4`] = `"commandLineArgs {}"`;
 
+exports[`happy path transform-all 1`] = `
+Object {
+  "codemod/codemod.js": "const fs = require('fs');
+const util = require('util');
+
+const silenceableLog = (...args) => {
+  if (process.env.SILENT === 'true') {
+    return;
+  }
+
+  console.log(...args);
+}
+
+module.exports = {
+  postProcess: (modifiedFiles, {resultMeta}) => {
+    silenceableLog('codemod post process', JSON.stringify(modifiedFiles));
+    silenceableLog('resultMeta as passed to post process', JSON.stringify([...resultMeta.entries()]));
+  },
+  async transformAll({fileNames}) {
+    for (const fileName of fileNames) {
+      await util.promisify(fs.rename)(fileName, \`\${fileName}.new\`)
+    }
+    return fileNames;
+  }
+};",
+  "source/a.js.new": "console.log('a');",
+  "source/b.js.new": "function b() {}",
+}
+`;
+
+exports[`happy path transform-all 2`] = `
+"🔨 Running postProcess for \\"2\\" modified files...
+codemod post process [\\"<test-dir>/source/a.js\\",\\"<test-dir>/source/b.js\\"]
+resultMeta as passed to post process []
+✅ postProcess done."
+`;
+
 exports[`ignore files happy path 1`] = `
 Object {
   "codemod-missing-ignore-file.js": "module.exports = {

@@ -216,6 +216,18 @@ describe('happy path', () => {
   });
 
   createTest({
+    modifier: 'only',
+    fixtureName: 'transform-all',
+    spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), '.', '!codemod'],
+    setUpNodeModules: false,
+    snapshot: true,
+    assert(spawnResult, testDir) {
+      const sanitizedStdout = sanitizeOutput(spawnResult, testDir);
+      expect(sanitizedStdout).toMatchSnapshot();
+    }
+  });
+
+  createTest({
     testName: '--inputFileList',
     fixtureName: 'prepend-string',
     spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), '--inputFileList', 'input-file-list.txt'],
