@@ -105,6 +105,20 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
     ): ReturnType<typeof jscodemod>
   }) => void | Promise<unknown>;
 } & ({
+  /**
+   * Transform every file at once. Use this when integrating with another tool, like ts-migrate. Or when you need
+   * finer-grained control over the file modification process.
+   *
+   * transform() and getPlugin() operate on a model where your code returns instructions on how to modify a single
+   * file, and jscodemod actually writes the files. transformAll() just takes a set of files, and does whatever it
+   * wants to do.
+   *
+   * Return a list of the modified files.
+   *
+   * @param opts
+   * @param opts.fileNames the file names to transform
+   * @param opts.commandLineArgs parsed arguments returned by `yourCodemod.parseArgs()`, if any.
+   */
   transformAll(opts: {
     fileNames: string[],
     commandLineArgs?: ParsedArgs;

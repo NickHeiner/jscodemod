@@ -161,3 +161,31 @@ The `ignore` codemod entry allows you to omit files from processing. If you'd ra
 // Only process files ending in .js, .ts, or .tsx
 ignore: /\.(?!(js|tsx|ts))[^.]+$/
 ```
+
+## How do I choose between the `getPlugin()`, `transform()`, and `transformAll()` APIs?
+When defining your codemod, you can specify one of three functions for transforming files. Choose the one that best fits your needs:
+
+### `getPlugin()`
+* Pro: ideal for transformations that can be expressed as Babel plugins. Babel provides a robust, somewhat-well-documented AST transformation API, so it tends to be my first choice.
+* Con: If your project isn't compatible with the version of Babel that jscodemod bundles, you might run into issues. And there are other funky things that can happen (as documented in [the types](../src/types.ts)) when using Babel + Recast.
+
+### `transform()`
+* Pro: Dead simple, low-level API with no coupling to other toolchain pieces like Babel.
+* Con: You have to handle all transformation logic yourself.
+
+### `transformAll()`
+Used for when you need fine-grained control over how files are written, or for when you're integrating with a third-party tool. For instance:
+
+```js
+import { rename } from 'ts-migrate';
+
+transformAll({fileNames}) {
+    rename({
+        ..._.pick(commandLineArgs, 'rootDir'),
+        sources: fileNames
+    });
+    /* ... */
+}
+```
+
+In this example, we're able to use `rename`, but still get jscodemod's other functionality (e.g. file ignoring, globbing, post processing).
