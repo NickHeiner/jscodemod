@@ -166,7 +166,7 @@ function transformCode(
   });
 
   async function codemodAllFiles() {
-    if ('transformAll' in codemod) {
+    if ('transformAll' in codemod && typeof codemod.transformAll === 'function') {
       return codemod.transformAll({
         fileNames: inputFiles,
         commandLineArgs: parsedArgs
