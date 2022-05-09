@@ -142,12 +142,10 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
 
   presets?: never;
   getPlugin?: never;
-
-  transformAll: never;
+  transformAll?: never;
 } | {
   transform?: never;
-
-  transformAll: never;
+  transformAll?: never;
 
   /**
    * The set of babel presets needed to compile your code, like `@babel/preset-env`.
