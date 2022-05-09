@@ -216,7 +216,6 @@ describe('happy path', () => {
   });
 
   createTest({
-    modifier: 'only',
     fixtureName: 'transform-all',
     spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), '.', '!codemod'],
     setUpNodeModules: false,
