@@ -174,7 +174,7 @@ When defining your codemod, you can specify one of three functions for transform
 * Con: You have to handle all transformation logic yourself.
 
 ### `transformAll()`
-Used for when you need fine-grained control over how files are written, or for when you're integrating with a third-party tool. For instance:
+Used for when you need fine-grained control over how files are written, when you're integrating with a third-party tool, or otherwise need a lower-level API. For instance:
 
 ```js
 import { rename } from 'ts-migrate';
