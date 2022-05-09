@@ -189,3 +189,5 @@ transformAll({fileNames}) {
 ```
 
 In this example, we're able to use `rename`, but still get jscodemod's other functionality (e.g. file ignoring, globbing, post processing).
+
+Additionally, using `transformAll` is the only way to rename files with jscodemod. `transform` and `getPlugin` will modify a file, but they don't change the file name.
