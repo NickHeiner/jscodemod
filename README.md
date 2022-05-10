@@ -86,3 +86,7 @@ const codemod: Codemod = {
 * [Recipes](docs/recipes.md)
 * [Gotchas](docs/gotchas.md)
 * [API documentation](src/types.ts)
+
+## Changelog
+### 2.0.0
+Drop support for NodeJs 12.
