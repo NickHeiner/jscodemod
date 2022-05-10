@@ -96,13 +96,16 @@ function getProgressUI(logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>, total
  */
 export const defaultPiscinaLowerBoundInclusive = 20;
 
-async function transformCode(
+// TODO: multi-stage codemods currently need to be in separate files for each codemod, which can be a little awkward
+// and inhibit code sharing
+function transformCode(
   codemod: Codemod,
   log: TSOptions['log'],
   codemodPath: string,
   inputFiles: string[],
   piscinaLowerBoundInclusive: NonTSOptions['piscinaLowerBoundInclusive'],
   logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>,
+  parsedArgs: unknown,
   codemodArgs?: string[]
 ) {
   const rawArgs = codemodArgs ? JSON.stringify(codemodArgs) : undefined;
@@ -161,24 +164,35 @@ async function transformCode(
       durationMsPretty: prettyMs(timeToChangeFirstFile)
     }, 'The first codemod worker to return has done so.');
   });
-  const allFilesCodemoddedPromise = Promise.all(inputFiles.map(async inputFile => {
-    const codemodMetaResult = await runCodemodOnSingleFile(inputFile);
-    logTimeToChangeFirstFile();
-    log.debug({
-      ...codemodMetaResult,
-      fileContents: '<truncated file contents>'
-    });
-    progressBar.tick();
-    return codemodMetaResult;
-  }));
 
-  registerForPiscinaDrain();
+  async function codemodAllFiles() {
+    if ('transformAll' in codemod && typeof codemod.transformAll === 'function') {
+      return codemod.transformAll({
+        fileNames: inputFiles,
+        commandLineArgs: parsedArgs
+      });
+    }
+    const allFilesCodemoddedPromise = Promise.all(inputFiles.map(async inputFile => {
+      const codemodMetaResult = await runCodemodOnSingleFile(inputFile);
+      logTimeToChangeFirstFile();
+      log.debug({
+        ...codemodMetaResult,
+        fileContents: '<truncated file contents>'
+      });
+      progressBar.tick();
+      return codemodMetaResult;
+    }));
 
-  const allFilesCodemodded = await allFilesCodemoddedPromise;
+    registerForPiscinaDrain();
 
-  destroyPiscinaIfNecessary();
+    const allFilesCodemodded = await allFilesCodemoddedPromise;
 
-  return allFilesCodemodded;
+    destroyPiscinaIfNecessary();
+
+    return allFilesCodemodded;
+  }
+
+  return codemodAllFiles();
 }
 
 function execGit(gitRoot: string, args: string[]): Promise<execa.ExecaReturnValue> {
@@ -237,7 +251,6 @@ async function jscodemod(
   const {
     log,
     doPostProcess,
-    writeFiles,
     inputFilesPatterns,
     inputFileList,
     ...options
@@ -248,7 +261,6 @@ async function jscodemod(
     respectIgnores: true,
     ...passedOptions
   };
-
   const codemodPath = await getCodemodPath(pathToCodemod, {
     ..._.pick(options, 'tsconfig', 'tsOutDir', 'tsc'),
     log
@@ -265,7 +277,10 @@ async function jscodemod(
   }
 
   const codemod = loadCodemod(codemodPath);
+  // TODO: it would be nice if we used log.child to make all logs from here on out have the codemod name.
   const codemodName = getCodemodName(codemod, codemodPath);
+  const codemodIsTransformAll = 'transformAll' in codemod;
+  const writeFiles = !codemodIsTransformAll && options.writeFiles;
 
   log.debug({codemodPath, codemodName, codemodKeys: Object.keys(codemod), codemodIgnoreFiles: codemod.ignoreFiles});
 
@@ -316,7 +331,7 @@ async function jscodemod(
 
   if (!filesToModify.length) {
     const err = new Error('No files were found to transform.');
-    Object.assign(err, {inputFilesPatterns});
+    Object.assign(err, {inputFilesPatterns, codemodName});
     throw err;
   }
 
@@ -358,11 +373,13 @@ async function jscodemod(
     await resetDirtyInputFiles(gitRoot, filesToModify, log);
   }
 
-  const codemodMetaResults = await transformCode(codemod, log, codemodPath, filesToModify,
-    passedOptions.piscinaLowerBoundInclusive, _.pick(passedOptions, 'jsonOutput', 'porcelain'), options.codemodArgs
+  const transformResults = await transformCode(codemod, log, codemodPath, filesToModify,
+    passedOptions.piscinaLowerBoundInclusive,
+    _.pick(passedOptions, 'jsonOutput', 'porcelain'), parsedArgs, options.codemodArgs
   );
 
   if (writeFiles) {
+    const codemodMetaResults = transformResults as Exclude<typeof transformResults, string[]>;
     const filesToWrite = _.filter(codemodMetaResults, 'codeModified');
     safeConsoleLog(`🔨 Writing "${filesToWrite.length}" modified files`);
     await Promise.all(filesToWrite.map(codemodMetaResult => {
@@ -377,11 +394,23 @@ async function jscodemod(
   }
 
   if (typeof codemod.postProcess === 'function' && doPostProcess) {
-    const modifiedFiles = _(codemodMetaResults).filter('codeModified').map('filePath').value();
+    function getPostProcessArgs() {
+      if (codemodIsTransformAll) {
+        return {
+          modifiedFiles: transformResults,
+          codemodMeta: new Map()
+        };
+      }
+      const codemodMetaResults = transformResults as Exclude<typeof transformResults, string[]>;
+      return {
+        modifiedFiles: _(codemodMetaResults).filter('codeModified').map('filePath').value(),
+        codemodMeta: new Map(
+          codemodMetaResults.map(({filePath, meta}) => [filePath, meta])
+        )
+      };
+    }
 
-    const codemodMeta = new Map(
-      codemodMetaResults.map(({filePath, meta}) => [filePath, meta])
-    );
+    const {modifiedFiles, codemodMeta} = getPostProcessArgs();
 
     safeConsoleLog(`🔨 Running postProcess for "${modifiedFiles.length}" modified files...`);
     // TODO: if the postProcess phase fails, there's no way for that to propagate back up to the caller, which means
@@ -396,6 +425,7 @@ async function jscodemod(
       // @ts-expect-error TODO clean this up
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     }, () => codemod.postProcess!(modifiedFiles, {
+      // TODO: sometimes it's "codemodArgs", and sometimes it's "commandLineArgs"
       codemodArgs: parsedArgs,
       resultMeta: codemodMeta,
       jscodemod(pathToCodemod: string, optionsFromPostProcess: Partial<Options>) {
@@ -414,7 +444,7 @@ async function jscodemod(
     }));
     safeConsoleLog('✅ postProcess done.');
   }
-  return codemodMetaResults;
+  return transformResults;
 }
 
 export default jscodemod;
