@@ -1,14 +1,14 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`TS compilation flags Path to TSC is specified 1`] = `
-Object {
+{
   "codemod/index.ts": "import {Codemod} from '@nick.heiner/jscodemod';
 
 // Compiling this will not work automatically, because no TSC will be found.
 
 const codemod: Codemod = {
   transform({source}) {
-    return \`/* prefix no-tsc */\\\\n\${source}\`;
+    return \`/* prefix no-tsc */\\n\${source}\`;
   }
 };
 
@@ -21,40 +21,40 @@ module.exports = {
 `;
 
 exports[`TS compilation flags Specified tsconfig path 1`] = `
-Object {
+{
   "codemod/index.ts": "import {Codemod} from '@nick.heiner/jscodemod';
 
 // Compiling this will not work, because no TSC will be found.
 
 const codemod: Codemod = {
   transform({source}) {
-    return \`/* prefix tsconfig-non-standard-location */\\\\n\${source}\`;
+    return \`/* prefix tsconfig-non-standard-location */\\n\${source}\`;
   }
 };
 
 export default codemod;",
   "configs/tsconfig.json": "{
-  \\"include\\": [\\"../codemod/*.ts\\"],
+  "include": ["../codemod/*.ts"],
 
-  \\"compilerOptions\\": {
-    \\"target\\": \\"ES2019\\",
-    \\"module\\": \\"commonjs\\",
-    \\"strict\\": true,
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "commonjs",
+    "strict": true,
 
-    \\"rootDir\\": \\"..\\",
+    "rootDir": "..",
 
-    \\"outDir\\": \\"should-be-ignored\\",
+    "outDir": "should-be-ignored",
     
-    \\"noUnusedLocals\\": true,
-    \\"noUnusedParameters\\": true,
-    \\"noImplicitReturns\\": true, 
-    \\"noFallthroughCasesInSwitch\\": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true, 
+    "noFallthroughCasesInSwitch": true,
 
-    \\"moduleResolution\\": \\"node\\",
-    \\"esModuleInterop\\": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
 
-    \\"skipLibCheck\\": true,
-    \\"forceConsistentCasingInFileNames\\": true
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
   }
 }
 ",
@@ -64,7 +64,7 @@ const file = 'asdf';",
 `;
 
 exports[`error handling handles codemod codemod-unnamed.js (codemod-unnamed.js) throwing an error 1`] = `
-Object {
+{
   "codemod/codemod-named.js": "module.exports = {
   name: 'my-codemod-name',
   transform({filePath}) {
@@ -82,7 +82,7 @@ Object {
 `;
 
 exports[`error handling handles codemod my-codemod-name (codemod-named.js) throwing an error 1`] = `
-Object {
+{
   "codemod/codemod-named.js": "module.exports = {
   name: 'my-codemod-name',
   transform({filePath}) {
@@ -112,7 +112,7 @@ The codemod's parseArgs method called process.exit(). This probably means the ar
 exports[`error handling passing both --inputFileList and glob pattern 1`] = `
 "bin.js [inputFilesPatterns...]
 
-Run the codemod. Any arguments after \\"--\\" will be passed through to the codemod.
+Run the codemod. Any arguments after "--" will be passed through to the codemod.
 
 Positionals:
   inputFilesPatterns                                                    [string]
@@ -133,8 +133,8 @@ TypeScript (only applicable if your codemod is written in TypeScript)
       --tsconfig  path to the tsconfig.json                             [string]
       --tsOutDir  directory in which to compile your codemod to. Defaults to a
                   temporary directory.                                  [string]
-      --tsc       path to a \\"tsc\\" executable to compile your codemod. Defaults
-                  to looking for a \\"tsc\\" bin accessible from the current working
+      --tsc       path to a "tsc" executable to compile your codemod. Defaults
+                  to looking for a "tsc" bin accessible from the current working
                   directory.                                            [string]
 
 Rarely Useful
@@ -154,6 +154,12 @@ Options:
                                     benefits.             [number] [default: 20]
       --help                        Show help                          [boolean]
 
+Examples:
+  bin.js --codemod codemod.js               Run codemod.js against JS files in
+  "source/**/*.js"                          source
+  bin.js --codemod codemod.js               Run the codemod against a set of
+  --inputFileList files-to-modify.txt       files listed in the text file.
+
 You can't pass both an --inputFileList and a globby pattern."
 `;
 
@@ -172,11 +178,11 @@ function b() {}"
 exports[`getTransformedContentsOfSingleFile throws an error if the codemod throws an error 1`] = `"Error: Error for: <git-root>/fixtures/will-throw-error/source/a.js"`;
 
 exports[`git Modify dirty files 1`] = `
-Object {
+{
   "codemod/codemod.js": "module.exports = {
   ignore: 'dirty-transformed-by-second-codemod',
   transform({source}) {
-    return \`/* prefix git dirty */\\\\n\${source}\`;
+    return \`/* prefix git dirty */\\n\${source}\`;
   },
   async postProcess(modifiedFiles, {jscodemod}) {
     console.log(JSON.stringify({modifiedFiles}));
@@ -188,7 +194,7 @@ Object {
 };",
   "codemod/second-codemod.js": "module.exports = {
   transform({source}) {
-    return \`/* prefix git dirty second codemod */\\\\n\${source}\`;
+    return \`/* prefix git dirty second codemod */\\n\${source}\`;
   }
 };",
   "git-ignored.js": "console.log('git ignored');
@@ -206,11 +212,11 @@ const x = 'starting state';",
 `;
 
 exports[`git Reset dirty files 1`] = `
-Object {
+{
   "codemod/codemod.js": "module.exports = {
   ignore: 'dirty-transformed-by-second-codemod',
   transform({source}) {
-    return \`/* prefix git dirty */\\\\n\${source}\`;
+    return \`/* prefix git dirty */\\n\${source}\`;
   },
   async postProcess(modifiedFiles, {jscodemod}) {
     console.log(JSON.stringify({modifiedFiles}));
@@ -222,7 +228,7 @@ Object {
 };",
   "codemod/second-codemod.js": "module.exports = {
   transform({source}) {
-    return \`/* prefix git dirty second codemod */\\\\n\${source}\`;
+    return \`/* prefix git dirty second codemod */\\n\${source}\`;
   }
 };",
   "git-ignored.js": "console.log('git ignored');
@@ -240,7 +246,7 @@ const x = 'starting state';",
 `;
 
 exports[`happy path --inputFileList 1`] = `
-Object {
+{
   "codemod/codemod.js": "const silenceableLog = (...args) => {
   if (process.env.SILENT === 'true') {
     return;
@@ -264,11 +270,11 @@ module.exports = {
     silenceableLog('commandLineArgs', JSON.stringify(commandLineArgs));
     return {
       meta: \`meta for \${filePath}\`,
-      code: \`/* prefix prepend string */\\\\n\${source}\`
+      code: \`/* prefix prepend string */\\n\${source}\`
     };
   }
 };",
-  "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
+  "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\n\${source}\`;",
   "input-file-list.txt": "source/a.js
 source/codemod-ignored.js",
   "source/a.js": "/* prefix prepend string */
@@ -281,7 +287,7 @@ console.log('a');",
 `;
 
 exports[`happy path All logging enabled 1`] = `
-Object {
+{
   "codemod/codemod.js": "const silenceableLog = (...args) => {
   if (process.env.SILENT === 'true') {
     return;
@@ -305,11 +311,11 @@ module.exports = {
     silenceableLog('commandLineArgs', JSON.stringify(commandLineArgs));
     return {
       meta: \`meta for \${filePath}\`,
-      code: \`/* prefix prepend string */\\\\n\${source}\`
+      code: \`/* prefix prepend string */\\n\${source}\`
     };
   }
 };",
-  "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
+  "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\n\${source}\`;",
   "input-file-list.txt": "source/a.js
 source/codemod-ignored.js",
   "source/a.js": "/* prefix prepend string */
@@ -322,11 +328,11 @@ console.log('a');",
 `;
 
 exports[`happy path All logging enabled 2`] = `
-Array [
-  Object {
-    "argv": Object {
+[
+  {
+    "argv": {
       "$0": "<git-root>/build/bin.js",
-      "_": Array [],
+      "_": [],
       "b": 20,
       "c": "codemod/codemod.js",
       "codemod": "codemod/codemod.js",
@@ -353,8 +359,8 @@ Array [
     "time": 2012-01-01T00:00:00.000Z,
     "v": 0,
   },
-  Object {
-    "codemodKeys": Array [
+  {
+    "codemodKeys": [
       "ignore",
       "postProcess",
       "parseArgs",
@@ -372,8 +378,8 @@ Array [
     "time": 2012-01-01T00:00:00.000Z,
     "v": 0,
   },
-  Object {
-    "codemodIgnores": Array [
+  {
+    "codemodIgnores": [
       "/codemod-ignored/",
       "input-file-list.txt",
       "omitted-via-string-pattern",
@@ -381,7 +387,7 @@ Array [
     "codemodName": "codemod.js",
     "durationMs": 117,
     "hostname": "<hostname placeholder>",
-    "inputFilesBeforeIgnores": Array [
+    "inputFilesBeforeIgnores": [
       "source/a.js",
       "source/codemod-ignored.js",
     ],
@@ -393,11 +399,11 @@ Array [
     "time": 2012-01-01T00:00:00.000Z,
     "v": 0,
   },
-  Object {
+  {
     "codemodName": "codemod.js",
     "count": 1,
     "durationMs": 117,
-    "filesToModify": Array [
+    "filesToModify": [
       "<test-dir>/source/a.js",
     ],
     "hostname": "<hostname placeholder>",
@@ -409,20 +415,20 @@ Array [
     "time": 2012-01-01T00:00:00.000Z,
     "v": 0,
   },
-  Object {
+  {
     "codemodName": "codemod.js",
     "durationMs": 117,
     "hostname": "<hostname placeholder>",
     "level": 20,
     "msg": "",
     "name": "jscodemod-coordinator",
-    "parsedArgs": Object {},
+    "parsedArgs": {},
     "pid": 9001,
     "prettyDuration": "<duration placeholder>",
     "time": 2012-01-01T00:00:00.000Z,
     "v": 0,
   },
-  Object {
+  {
     "codemodName": "codemod.js",
     "durationMs": 117,
     "gitRoot": null,
@@ -435,7 +441,7 @@ Array [
     "time": 2012-01-01T00:00:00.000Z,
     "v": 0,
   },
-  Object {
+  {
     "action": "Codemod ready to start",
     "codemod": "codemod.js",
     "durationMs": 117,
@@ -451,7 +457,7 @@ Array [
     "timeSinceRunStartPretty": "<placeholder timeSinceRunStartPretty>",
     "v": 0,
   },
-  Object {
+  {
     "durationMs": 117,
     "hostname": "<hostname placeholder>",
     "level": 10,
@@ -463,7 +469,7 @@ Array [
     "time": 2012-01-01T00:00:00.000Z,
     "v": 0,
   },
-  Object {
+  {
     "durationMs": 117,
     "hostname": "<hostname placeholder>",
     "level": 10,
@@ -475,7 +481,7 @@ Array [
     "time": 2012-01-01T00:00:00.000Z,
     "v": 0,
   },
-  Object {
+  {
     "durationMs": 117,
     "hostname": "<hostname placeholder>",
     "level": 10,
@@ -487,7 +493,7 @@ Array [
     "time": 2012-01-01T00:00:00.000Z,
     "v": 0,
   },
-  Object {
+  {
     "durationMs": 117,
     "hostname": "<hostname placeholder>",
     "level": 10,
@@ -499,7 +505,7 @@ Array [
     "time": 2012-01-01T00:00:00.000Z,
     "v": 0,
   },
-  Object {
+  {
     "durationMs": 117,
     "hostname": "<hostname placeholder>",
     "level": 10,
@@ -511,7 +517,7 @@ Array [
     "time": 2012-01-01T00:00:00.000Z,
     "v": 0,
   },
-  Object {
+  {
     "durationMs": 117,
     "hostname": "<hostname placeholder>",
     "level": 10,
@@ -523,7 +529,7 @@ Array [
     "time": 2012-01-01T00:00:00.000Z,
     "v": 0,
   },
-  Object {
+  {
     "durationMs": 117,
     "durationMsPretty": "<placeholder pretty ms duration>",
     "hostname": "<hostname placeholder>",
@@ -535,7 +541,7 @@ Array [
     "time": 2012-01-01T00:00:00.000Z,
     "v": 0,
   },
-  Object {
+  {
     "action": "modified",
     "codeModified": true,
     "durationMs": 117,
@@ -552,7 +558,7 @@ Array [
     "time": 2012-01-01T00:00:00.000Z,
     "v": 0,
   },
-  Object {
+  {
     "durationMs": 117,
     "filePath": "<test-dir>/source/a.js",
     "hostname": "<hostname placeholder>",
@@ -564,12 +570,12 @@ Array [
     "time": 2012-01-01T00:00:00.000Z,
     "v": 0,
   },
-  Object {
+  {
     "codemodName": "codemod.js",
     "durationMs": 117,
     "hostname": "<hostname placeholder>",
     "level": 20,
-    "modifiedFiles": Array [
+    "modifiedFiles": [
       "<test-dir>/source/a.js",
     ],
     "msg": "Starting postProcess",
@@ -579,12 +585,12 @@ Array [
     "time": 2012-01-01T00:00:00.000Z,
     "v": 0,
   },
-  Object {
+  {
     "codemodName": "codemod.js",
     "durationMs": 117,
     "hostname": "<hostname placeholder>",
     "level": 20,
-    "modifiedFiles": Array [
+    "modifiedFiles": [
       "<test-dir>/source/a.js",
     ],
     "msg": "Completed postProcess",
@@ -594,9 +600,9 @@ Array [
     "time": 2012-01-01T00:00:00.000Z,
     "v": 0,
   },
-  Object {
-    "codemodMetaResults": Array [
-      Object {
+  {
+    "codemodMetaResults": [
+      {
         "action": "modified",
         "codeModified": true,
         "error": null,
@@ -620,7 +626,7 @@ console.log('a');",
 `;
 
 exports[`happy path Omitting rootDir from tsconfig causes an error 1`] = `
-Object {
+{
   "codemod/do-not-use-recast.ts": "import {Codemod} from '@nick.heiner/jscodemod';
 import _ from 'lodash';
 import * as BabelTypes from '@babel/types';
@@ -726,7 +732,7 @@ const y = 1;
 let x = 1; /* trailing comment */
 
 /**
- * I was previously seeing issues where this would transform \`return (\\\\n expr \\\\n)\` to \`return expr\`, but I'm not seeing
+ * I was previously seeing issues where this would transform \`return (\\n expr \\n)\` to \`return expr\`, but I'm not seeing
  * that any more.
  */
 function f() {
@@ -751,25 +757,25 @@ const f = () => {
   return 1
 };",
   "tsconfig-no-root-dir.json": "{
-  \\"include\\": [\\"codemod/*.ts\\"],
+  "include": ["codemod/*.ts"],
 
-  \\"compilerOptions\\": {
-    \\"target\\": \\"ES2019\\",
-    \\"module\\": \\"commonjs\\",
-    \\"strict\\": true,
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "commonjs",
+    "strict": true,
 
-    \\"outDir\\": \\"should-be-ignored\\",
+    "outDir": "should-be-ignored",
     
-    \\"noUnusedLocals\\": true,
-    \\"noUnusedParameters\\": true,
-    \\"noImplicitReturns\\": true, 
-    \\"noFallthroughCasesInSwitch\\": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true, 
+    "noFallthroughCasesInSwitch": true,
 
-    \\"moduleResolution\\": \\"node\\",
-    \\"esModuleInterop\\": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
 
-    \\"skipLibCheck\\": true,
-    \\"forceConsistentCasingInFileNames\\": true
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
   }
 }
 ",
@@ -777,12 +783,12 @@ const f = () => {
 `;
 
 exports[`happy path Omitting rootDir from tsconfig causes an error 2`] = `
-Array [
-  Object {
+[
+  {
     "durationMs": 117,
-    "err": Object {
-      "tsconfig": Object {
-        "compilerOptions": Object {
+    "err": {
+      "tsconfig": {
+        "compilerOptions": {
           "esModuleInterop": true,
           "forceConsistentCasingInFileNames": true,
           "module": "commonjs",
@@ -796,7 +802,7 @@ Array [
           "strict": true,
           "target": "ES2019",
         },
-        "include": Array [
+        "include": [
           "codemod/*.ts",
         ],
       },
@@ -811,7 +817,7 @@ Array [
     "time": 2012-01-01T00:00:00.000Z,
     "v": 0,
   },
-  Object {
+  {
     "durationMs": 117,
     "hostname": "<hostname placeholder>",
     "level": 30,
@@ -1132,7 +1138,7 @@ const f = () => 1;",
 `;
 
 exports[`happy path dry 1`] = `
-Object {
+{
   "codemod/codemod.js": "const silenceableLog = (...args) => {
   if (process.env.SILENT === 'true') {
     return;
@@ -1156,11 +1162,11 @@ module.exports = {
     silenceableLog('commandLineArgs', JSON.stringify(commandLineArgs));
     return {
       meta: \`meta for \${filePath}\`,
-      code: \`/* prefix prepend string */\\\\n\${source}\`
+      code: \`/* prefix prepend string */\\n\${source}\`
     };
   }
 };",
-  "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
+  "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\n\${source}\`;",
   "input-file-list.txt": "source/a.js
 source/codemod-ignored.js",
   "source/a.js": "console.log('a');",
@@ -1172,7 +1178,7 @@ source/codemod-ignored.js",
 `;
 
 exports[`happy path dry porcelain 1`] = `
-Object {
+{
   "codemod/codemod.js": "const silenceableLog = (...args) => {
   if (process.env.SILENT === 'true') {
     return;
@@ -1196,11 +1202,11 @@ module.exports = {
     silenceableLog('commandLineArgs', JSON.stringify(commandLineArgs));
     return {
       meta: \`meta for \${filePath}\`,
-      code: \`/* prefix prepend string */\\\\n\${source}\`
+      code: \`/* prefix prepend string */\\n\${source}\`
     };
   }
 };",
-  "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
+  "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\n\${source}\`;",
   "input-file-list.txt": "source/a.js
 source/codemod-ignored.js",
   "source/a.js": "console.log('a');",
@@ -1219,7 +1225,7 @@ exports[`happy path dry porcelain 2`] = `
 `;
 
 exports[`happy path getPlugin calls astDidChange() but forgot to call willNotifyOnAstChange() 1`] = `
-Object {
+{
   "codemod/do-not-use-recast.ts": "import {Codemod} from '@nick.heiner/jscodemod';
 import _ from 'lodash';
 import * as BabelTypes from '@babel/types';
@@ -1325,7 +1331,7 @@ const y = 1;
 let x = 1; /* trailing comment */
 
 /**
- * I was previously seeing issues where this would transform \`return (\\\\n expr \\\\n)\` to \`return expr\`, but I'm not seeing
+ * I was previously seeing issues where this would transform \`return (\\n expr \\n)\` to \`return expr\`, but I'm not seeing
  * that any more.
  */
 function f() {
@@ -1350,25 +1356,25 @@ const f = () => {
   return 1
 };",
   "tsconfig-no-root-dir.json": "{
-  \\"include\\": [\\"codemod/*.ts\\"],
+  "include": ["codemod/*.ts"],
 
-  \\"compilerOptions\\": {
-    \\"target\\": \\"ES2019\\",
-    \\"module\\": \\"commonjs\\",
-    \\"strict\\": true,
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "commonjs",
+    "strict": true,
 
-    \\"outDir\\": \\"should-be-ignored\\",
+    "outDir": "should-be-ignored",
     
-    \\"noUnusedLocals\\": true,
-    \\"noUnusedParameters\\": true,
-    \\"noImplicitReturns\\": true, 
-    \\"noFallthroughCasesInSwitch\\": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true, 
+    "noFallthroughCasesInSwitch": true,
 
-    \\"moduleResolution\\": \\"node\\",
-    \\"esModuleInterop\\": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
 
-    \\"skipLibCheck\\": true,
-    \\"forceConsistentCasingInFileNames\\": true
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
   }
 }
 ",
@@ -1376,7 +1382,7 @@ const f = () => {
 `;
 
 exports[`happy path getPlugin pass generatorOpts useRecast = false 1`] = `
-Object {
+{
   "codemod/index.js": "const useRecast = process.env.USE_RECAST === 'true';
 
 const codemod = {
@@ -1404,11 +1410,11 @@ codemod.generatorOpts = useRecast ? {
 module.exports = codemod;",
   "input.js": "// Passing retainFunctionParens to babelTransformOptions.generatorOpts should result in these parens being kept.
 // If that option is not respected, these parens will be dropped.
-const noissepxEnoitcnuf = (function () {}); // If useRecast = true, then this string literal should be formatted with single quotes, since the codemod
+const noissepxEnoitcnuf = (function () {});
+
+// If useRecast = true, then this string literal should be formatted with single quotes, since the codemod
 // passes \`quote: 'single'\` to \`generatorOpts\`.
-
-
-const gnirts = \\"setouq elbuod htiw strats\\";
+const gnirts = "setouq elbuod htiw strats";
 eludom.stropxe = {
   noissepxEnoitcnuf
 };",
@@ -1416,7 +1422,7 @@ eludom.stropxe = {
 `;
 
 exports[`happy path getPlugin pass generatorOpts useRecast = true 1`] = `
-Object {
+{
   "codemod/index.js": "const useRecast = process.env.USE_RECAST === 'true';
 
 const codemod = {
@@ -1457,12 +1463,12 @@ eludom.stropxe = {
 `;
 
 exports[`happy path getPlugin returns a meta 1`] = `
-"🔨 Writing \\"0\\" modified files
-🔨 Running postProcess for \\"0\\" modified files...
+"🔨 Writing "0" modified files
+🔨 Running postProcess for "0" modified files...
 {
-  \\"<test-dir>/source/a.js\\": 3,
-  \\"<test-dir>/source/b.js\\": 1,
-  \\"<test-dir>/source/c.js\\": 7
+  "<test-dir>/source/a.js": 3,
+  "<test-dir>/source/b.js": 1,
+  "<test-dir>/source/c.js": 7
 }
 ✅ postProcess done."
 `;
@@ -1772,7 +1778,7 @@ const f = () => {
 `;
 
 exports[`happy path prepend-string 1`] = `
-Object {
+{
   "codemod/codemod.js": "const silenceableLog = (...args) => {
   if (process.env.SILENT === 'true') {
     return;
@@ -1796,11 +1802,11 @@ module.exports = {
     silenceableLog('commandLineArgs', JSON.stringify(commandLineArgs));
     return {
       meta: \`meta for \${filePath}\`,
-      code: \`/* prefix prepend string */\\\\n\${source}\`
+      code: \`/* prefix prepend string */\\n\${source}\`
     };
   }
 };",
-  "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
+  "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\n\${source}\`;",
   "input-file-list.txt": "source/a.js
 source/codemod-ignored.js",
   "source/a.js": "/* prefix prepend string */
@@ -1814,14 +1820,14 @@ function b() {}",
 }
 `;
 
-exports[`happy path prepend-string 2`] = `"codemod post process [\\"<test-dir>/source/.dotfile.js\\",\\"<test-dir>/source/a.js\\",\\"<test-dir>/source/b.js\\",\\"<test-dir>/source/blank.js\\"]"`;
+exports[`happy path prepend-string 2`] = `"codemod post process ["<test-dir>/source/.dotfile.js","<test-dir>/source/a.js","<test-dir>/source/b.js","<test-dir>/source/blank.js"]"`;
 
-exports[`happy path prepend-string 3`] = `"resultMeta as passed to post process [[\\"<test-dir>/source/.dotfile.js\\",\\"meta for <test-dir>/source/.dotfile.js\\"],[\\"<test-dir>/source/a.js\\",\\"meta for <test-dir>/source/a.js\\"],[\\"<test-dir>/source/b.js\\",\\"meta for <test-dir>/source/b.js\\"],[\\"<test-dir>/source/blank.js\\",\\"meta for <test-dir>/source/blank.js\\"]]"`;
+exports[`happy path prepend-string 3`] = `"resultMeta as passed to post process [["<test-dir>/source/.dotfile.js","meta for <test-dir>/source/.dotfile.js"],["<test-dir>/source/a.js","meta for <test-dir>/source/a.js"],["<test-dir>/source/b.js","meta for <test-dir>/source/b.js"],["<test-dir>/source/blank.js","meta for <test-dir>/source/blank.js"]]"`;
 
 exports[`happy path prepend-string 4`] = `"commandLineArgs {}"`;
 
 exports[`happy path prepend-string with piscina 1`] = `
-Object {
+{
   "codemod/codemod.js": "const silenceableLog = (...args) => {
   if (process.env.SILENT === 'true') {
     return;
@@ -1845,11 +1851,11 @@ module.exports = {
     silenceableLog('commandLineArgs', JSON.stringify(commandLineArgs));
     return {
       meta: \`meta for \${filePath}\`,
-      code: \`/* prefix prepend string */\\\\n\${source}\`
+      code: \`/* prefix prepend string */\\n\${source}\`
     };
   }
 };",
-  "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\\\n\${source}\`;",
+  "codemod/jscodeshift-codemod.js": "module.exports = ({source}) => \`/* prefix */\\n\${source}\`;",
   "input-file-list.txt": "source/a.js
 source/codemod-ignored.js",
   "source/a.js": "/* prefix prepend string */
@@ -1863,14 +1869,14 @@ function b() {}",
 }
 `;
 
-exports[`happy path prepend-string with piscina 2`] = `"codemod post process [\\"<test-dir>/source/.dotfile.js\\",\\"<test-dir>/source/a.js\\",\\"<test-dir>/source/b.js\\",\\"<test-dir>/source/blank.js\\"]"`;
+exports[`happy path prepend-string with piscina 2`] = `"codemod post process ["<test-dir>/source/.dotfile.js","<test-dir>/source/a.js","<test-dir>/source/b.js","<test-dir>/source/blank.js"]"`;
 
-exports[`happy path prepend-string with piscina 3`] = `"resultMeta as passed to post process [[\\"<test-dir>/source/.dotfile.js\\",\\"meta for <test-dir>/source/.dotfile.js\\"],[\\"<test-dir>/source/a.js\\",\\"meta for <test-dir>/source/a.js\\"],[\\"<test-dir>/source/b.js\\",\\"meta for <test-dir>/source/b.js\\"],[\\"<test-dir>/source/blank.js\\",\\"meta for <test-dir>/source/blank.js\\"]]"`;
+exports[`happy path prepend-string with piscina 3`] = `"resultMeta as passed to post process [["<test-dir>/source/.dotfile.js","meta for <test-dir>/source/.dotfile.js"],["<test-dir>/source/a.js","meta for <test-dir>/source/a.js"],["<test-dir>/source/b.js","meta for <test-dir>/source/b.js"],["<test-dir>/source/blank.js","meta for <test-dir>/source/blank.js"]]"`;
 
 exports[`happy path prepend-string with piscina 4`] = `"commandLineArgs {}"`;
 
 exports[`happy path transform-all 1`] = `
-Object {
+{
   "codemod/codemod.js": "const fs = require('fs');
 const util = require('util');
 
@@ -1900,14 +1906,14 @@ module.exports = {
 `;
 
 exports[`happy path transform-all 2`] = `
-"🔨 Running postProcess for \\"2\\" modified files...
-codemod post process [\\"<test-dir>/source/a.js\\",\\"<test-dir>/source/b.js\\"]
+"🔨 Running postProcess for "2" modified files...
+codemod post process ["<test-dir>/source/a.js","<test-dir>/source/b.js"]
 resultMeta as passed to post process []
 ✅ postProcess done."
 `;
 
 exports[`ignore files happy path 1`] = `
-Object {
+{
   "codemod-missing-ignore-file.js": "module.exports = {
   transform() { 
     return 'transformed';

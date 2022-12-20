@@ -15,7 +15,7 @@ import ansiColors from 'ansi-colors';
 // Passing paths as file globs that start with `.` doesn't work.
 // https://github.com/sindresorhus/globby/issues/168
 
-const {argv} = yargs
+const argv = yargs
   // TODO: Some of these options should be hidden.
   .command(
     /**
@@ -28,8 +28,6 @@ const {argv} = yargs
       yargs.positional('inputFilesPatterns', {
         type: 'string'
       })
-      // Yargs' types are wrong.
-      // @ts-expect-error
         .example([
           ['$0 --codemod codemod.js "source/**/*.js"', 'Run codemod.js against JS files in source'],
           [
@@ -40,7 +38,6 @@ const {argv} = yargs
     })
   .middleware(argv => {
     argv.codemodArgs = argv['--'];
-    return argv;
   }, true)
   .options({
     codemod: {
@@ -130,7 +127,8 @@ const {argv} = yargs
     return true;
   })
   .strict()
-  .help();
+  .help()
+  .parseSync();
 
 async function main() {
   const log = getLogger(_.pick(argv, 'jsonOutput', 'porcelain'));
