@@ -1,7 +1,6 @@
 import type {NTHLogger} from 'nth-log';
 import fs from 'fs';
 import type {Codemod, PhaseError} from './types';
-import {PromiseValue} from 'type-fest';
 import _ from 'lodash';
 import {
   parse as babelParse,
@@ -297,7 +296,7 @@ export default async function runCodemodOnFile(
     return transformedCode;
   };
 
-  let codemodResult: PromiseValue<ReturnType<typeof transformFile>> = null;
+  let codemodResult: Awaited<ReturnType<typeof transformFile>> = null;
   let thrownError = null;
 
   try {
