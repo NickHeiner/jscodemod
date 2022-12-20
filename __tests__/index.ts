@@ -673,7 +673,7 @@ describe('getTransformedContentsOfSingleFile', () => {
       // For now, this is fine. But if I start having to do this in more places, I'll revisit the snapshot serializer,
       // which has the benefit of a centralized approach.
       //
-      // eslint-disable-next-line jest/no-conditional-expect,jest/no-try-expect
+      // eslint-disable-next-line jest/no-conditional-expect,jest/no-conditional-expect
       expect(replaceAll(e.toString(), gitRootFilePath, '<git-root>')).toMatchSnapshot();
     }
 

@@ -2,7 +2,7 @@
   "name": "parse-args",
   "dependencies": {
     "@types/yargs": "11.0.0",
-    "typescript": "4.1.5",
+    "typescript": "4.9.4",
     "yargs": "16.2.0"
   }
 }
