@@ -30,11 +30,11 @@ export type CodemodMetaResult<TransformResultMeta> = {
   error: Error;
 })
 
-export function makePhaseError(
-  err: unknown, phase: PhaseError['phase'], suggestion: PhaseError['suggestion']
-): unknown {
+export function makePhaseError<E extends Error>(
+  err: E, phase: PhaseError['phase'], suggestion: PhaseError['suggestion']
+): E & Pick<PhaseError, 'phase' | 'suggestion'> {
   Object.assign(err, {phase, suggestion});
-  return err;
+  return err as E & Pick<PhaseError, 'phase' | 'suggestion'>;
 }
 
 export default async function runCodemodOnFile(
@@ -74,9 +74,9 @@ export default async function runCodemodOnFile(
     if (codemod.transform) {
       try {
         return codemod.transform(codemodOpts);
-      } catch (e) {
+      } catch (e: unknown) {
         throw makePhaseError(
-          e,
+          e as Error,
           'codemod.transform()',
           "Check your transform() method for a bug, or add this file to your codemod's ignore list."
         );
@@ -152,8 +152,8 @@ export default async function runCodemodOnFile(
       } else {
         codemodPlugin = resultOfGetPlugin;
       }
-    } catch (e) {
-      throw makePhaseError(e, 'codemod.getPlugin()', 'Check your getPlugin() method for a bug.');
+    } catch (e: unknown) {
+      throw makePhaseError(e as Error, 'codemod.getPlugin()', 'Check your getPlugin() method for a bug.');
     }
 
     const getBabelOpts = (plugins: Exclude<TransformOptions['plugins'], null> = []): TransformOptions => ({
@@ -192,9 +192,9 @@ export default async function runCodemodOnFile(
 
         try {
           return recast.parse(fileContentsForRecast, {parser});
-        } catch (e) {
+        } catch (e: unknown) {
           throw makePhaseError(
-            e,
+            e as Error,
             'recast.parse using the settings you passed',
             "Check that you passed the right babel preset in the codemod's `presets` field."
           );
@@ -239,9 +239,9 @@ export default async function runCodemodOnFile(
       babelTransformResult = useRecast
         ? babelTransformSync('', babelOptions)
         : babelTransformFromAstSync(ast, originalFileContents, babelOptions);
-    } catch (e) {
+    } catch (e: unknown) {
       throw makePhaseError(
-        e,
+        e as Error,
         "babelTransformSync using the plugin returned by your codemod's getPlugin()",
         'Check your babel plugin for runtime errors.'
       );
