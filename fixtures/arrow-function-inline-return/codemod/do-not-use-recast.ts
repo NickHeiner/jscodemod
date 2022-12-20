@@ -24,6 +24,9 @@ const codemod: Codemod = {
           Literal(literalPath) {
           // This tests to make sure that getPlugin is called for each file, and is not reused between files.
             if (literalPath.node.type === 'StringLiteral') {
+              // This snippet works in the playground, but fails here. I don't know why.
+              // https://www.typescriptlang.org/play?#code/JYWwDg9gTgLgBDAnmApnA3gNWAZ2DaAXzgDMoIQ4ByAAQCMBDOlAGwHoYoGA3FKHFFQDcAKFCRYcAFRwGOOACEmrACrIU8shWr1l7JKhzCRIgCYoAxiwZQ0FiADsc8GAC4E6iCUV61h0SL2TvDc7th4BFAAPAwOiAB8cAC8GCJw6XAAMvh8DCwAFCw5XCwACgwwABYAlKkZ9XBFMLllFZUAdLZg1hYoAOr4lfkw7c5QwA4A5tnNJflUcqYkVNXVaRmEIoRAA
+              // @ts-expect-error
               literalPath.replaceWith(t.stringLiteral('new string literal'));
               literalPath.skip();
             }

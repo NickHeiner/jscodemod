@@ -653,6 +653,9 @@ const codemod: Codemod = {
           Literal(literalPath) {
           // This tests to make sure that getPlugin is called for each file, and is not reused between files.
             if (literalPath.node.type === 'StringLiteral') {
+              // This snippet works in the playground, but fails here. I don't know why.
+              // https://www.typescriptlang.org/play?#code/JYWwDg9gTgLgBDAnmApnA3gNWAZ2DaAXzgDMoIQ4ByAAQCMBDOlAGwHoYoGA3FKHFFQDcAKFCRYcAFRwGOOACEmrACrIU8shWr1l7JKhzCRIgCYoAxiwZQ0FiADsc8GAC4E6iCUV61h0SL2TvDc7th4BFAAPAwOiAB8cAC8GCJw6XAAMvh8DCwAFCw5XCwACgwwABYAlKkZ9XBFMLllFZUAdLZg1hYoAOr4lfkw7c5QwA4A5tnNJflUcqYkVNXVaRmEIoRAA
+              // @ts-expect-error
               literalPath.replaceWith(t.stringLiteral('new string literal'));
               literalPath.skip();
             }
@@ -700,6 +703,9 @@ const codemod: Codemod = {
           Literal(literalPath) {
             // This tests to make sure that getPlugin is called for each file, and is not reused between files.
             if (literalPath.node.type === 'StringLiteral') {
+              // This snippet works in the playground, but fails here. I don't know why.
+              // https://www.typescriptlang.org/play?#code/JYWwDg9gTgLgBDAnmApnA3gNWAZ2DaAXzgDMoIQ4ByAAQCMBDOlAGwHoYoGA3FKHFFQDcAKFCRYcAFRwGOOACEmrACrIU8shWr1l7JKhzCRIgCYoAxiwZQ0FiADsc8GAC4E6iCUV61h0SL2TvDc7th4BFAAPAwOiAB8cAC8GCJw6XAAMvh8DCwAFCw5XCwACgwwABYAlKkZ9XBFMLllFZUAdLZg1hYoAOr4lfkw7c5QwA4A5tnNJflUcqYkVNXVaRmEIoRAA
+              // @ts-expect-error
               literalPath.replaceWith(t.stringLiteral(path.basename(filePath)));
               literalPath.skip();
             }
@@ -832,7 +838,7 @@ exports[`happy path Omitting rootDir from tsconfig causes an error 2`] = `
 `;
 
 exports[`happy path Run the codemod from outside the fixture dir 1`] = `
-Object {
+{
   "codemod/do-not-use-recast.ts": "import {Codemod} from '@nick.heiner/jscodemod';
 import _ from 'lodash';
 import * as BabelTypes from '@babel/types';
@@ -859,6 +865,9 @@ const codemod: Codemod = {
           Literal(literalPath) {
           // This tests to make sure that getPlugin is called for each file, and is not reused between files.
             if (literalPath.node.type === 'StringLiteral') {
+              // This snippet works in the playground, but fails here. I don't know why.
+              // https://www.typescriptlang.org/play?#code/JYWwDg9gTgLgBDAnmApnA3gNWAZ2DaAXzgDMoIQ4ByAAQCMBDOlAGwHoYoGA3FKHFFQDcAKFCRYcAFRwGOOACEmrACrIU8shWr1l7JKhzCRIgCYoAxiwZQ0FiADsc8GAC4E6iCUV61h0SL2TvDc7th4BFAAPAwOiAB8cAC8GCJw6XAAMvh8DCwAFCw5XCwACgwwABYAlKkZ9XBFMLllFZUAdLZg1hYoAOr4lfkw7c5QwA4A5tnNJflUcqYkVNXVaRmEIoRAA
+              // @ts-expect-error
               literalPath.replaceWith(t.stringLiteral('new string literal'));
               literalPath.skip();
             }
@@ -906,6 +915,9 @@ const codemod: Codemod = {
           Literal(literalPath) {
             // This tests to make sure that getPlugin is called for each file, and is not reused between files.
             if (literalPath.node.type === 'StringLiteral') {
+              // This snippet works in the playground, but fails here. I don't know why.
+              // https://www.typescriptlang.org/play?#code/JYWwDg9gTgLgBDAnmApnA3gNWAZ2DaAXzgDMoIQ4ByAAQCMBDOlAGwHoYoGA3FKHFFQDcAKFCRYcAFRwGOOACEmrACrIU8shWr1l7JKhzCRIgCYoAxiwZQ0FiADsc8GAC4E6iCUV61h0SL2TvDc7th4BFAAPAwOiAB8cAC8GCJw6XAAMvh8DCwAFCw5XCwACgwwABYAlKkZ9XBFMLllFZUAdLZg1hYoAOr4lfkw7c5QwA4A5tnNJflUcqYkVNXVaRmEIoRAA
+              // @ts-expect-error
               literalPath.replaceWith(t.stringLiteral(path.basename(filePath)));
               literalPath.skip();
             }
@@ -917,8 +929,8 @@ const codemod: Codemod = {
 };
 
 export default codemod;",
-  "source/change-string-literal-0.js": "const a = \\"change-string-literal-0.js\\";",
-  "source/change-string-literal-1.js": "const a = \\"change-string-literal-1.js\\";",
+  "source/change-string-literal-0.js": "const a = "change-string-literal-0.js";",
+  "source/change-string-literal-1.js": "const a = "change-string-literal-1.js";",
   "source/commented-out.js": "// const g = a => {
 //   return a?.b?.c?.d
 // };",
@@ -936,7 +948,7 @@ const y = 1;
 let x = 1;/* trailing comment */
 
 /**
- * I was previously seeing issues where this would transform \`return (\\\\n expr \\\\n)\` to \`return expr\`, but I'm not seeing
+ * I was previously seeing issues where this would transform \`return (\\n expr \\n)\` to \`return expr\`, but I'm not seeing
  * that any more.
  */
 function f() {
@@ -959,25 +971,25 @@ const e = () => (function(g, h) {
 
 const f = () => 1;",
   "tsconfig-no-root-dir.json": "{
-  \\"include\\": [\\"codemod/*.ts\\"],
+  "include": ["codemod/*.ts"],
 
-  \\"compilerOptions\\": {
-    \\"target\\": \\"ES2019\\",
-    \\"module\\": \\"commonjs\\",
-    \\"strict\\": true,
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "commonjs",
+    "strict": true,
 
-    \\"outDir\\": \\"should-be-ignored\\",
+    "outDir": "should-be-ignored",
     
-    \\"noUnusedLocals\\": true,
-    \\"noUnusedParameters\\": true,
-    \\"noImplicitReturns\\": true, 
-    \\"noFallthroughCasesInSwitch\\": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true, 
+    "noFallthroughCasesInSwitch": true,
 
-    \\"moduleResolution\\": \\"node\\",
-    \\"esModuleInterop\\": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
 
-    \\"skipLibCheck\\": true,
-    \\"forceConsistentCasingInFileNames\\": true
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
   }
 }
 ",
@@ -985,7 +997,7 @@ const f = () => 1;",
 `;
 
 exports[`happy path TS without manually specifying any of the args determining how to compile 1`] = `
-Object {
+{
   "codemod/do-not-use-recast.ts": "import {Codemod} from '@nick.heiner/jscodemod';
 import _ from 'lodash';
 import * as BabelTypes from '@babel/types';
@@ -1012,6 +1024,9 @@ const codemod: Codemod = {
           Literal(literalPath) {
           // This tests to make sure that getPlugin is called for each file, and is not reused between files.
             if (literalPath.node.type === 'StringLiteral') {
+              // This snippet works in the playground, but fails here. I don't know why.
+              // https://www.typescriptlang.org/play?#code/JYWwDg9gTgLgBDAnmApnA3gNWAZ2DaAXzgDMoIQ4ByAAQCMBDOlAGwHoYoGA3FKHFFQDcAKFCRYcAFRwGOOACEmrACrIU8shWr1l7JKhzCRIgCYoAxiwZQ0FiADsc8GAC4E6iCUV61h0SL2TvDc7th4BFAAPAwOiAB8cAC8GCJw6XAAMvh8DCwAFCw5XCwACgwwABYAlKkZ9XBFMLllFZUAdLZg1hYoAOr4lfkw7c5QwA4A5tnNJflUcqYkVNXVaRmEIoRAA
+              // @ts-expect-error
               literalPath.replaceWith(t.stringLiteral('new string literal'));
               literalPath.skip();
             }
@@ -1059,6 +1074,9 @@ const codemod: Codemod = {
           Literal(literalPath) {
             // This tests to make sure that getPlugin is called for each file, and is not reused between files.
             if (literalPath.node.type === 'StringLiteral') {
+              // This snippet works in the playground, but fails here. I don't know why.
+              // https://www.typescriptlang.org/play?#code/JYWwDg9gTgLgBDAnmApnA3gNWAZ2DaAXzgDMoIQ4ByAAQCMBDOlAGwHoYoGA3FKHFFQDcAKFCRYcAFRwGOOACEmrACrIU8shWr1l7JKhzCRIgCYoAxiwZQ0FiADsc8GAC4E6iCUV61h0SL2TvDc7th4BFAAPAwOiAB8cAC8GCJw6XAAMvh8DCwAFCw5XCwACgwwABYAlKkZ9XBFMLllFZUAdLZg1hYoAOr4lfkw7c5QwA4A5tnNJflUcqYkVNXVaRmEIoRAA
+              // @ts-expect-error
               literalPath.replaceWith(t.stringLiteral(path.basename(filePath)));
               literalPath.skip();
             }
@@ -1070,8 +1088,8 @@ const codemod: Codemod = {
 };
 
 export default codemod;",
-  "source/change-string-literal-0.js": "const a = \\"change-string-literal-0.js\\";",
-  "source/change-string-literal-1.js": "const a = \\"change-string-literal-1.js\\";",
+  "source/change-string-literal-0.js": "const a = "change-string-literal-0.js";",
+  "source/change-string-literal-1.js": "const a = "change-string-literal-1.js";",
   "source/commented-out.js": "// const g = a => {
 //   return a?.b?.c?.d
 // };",
@@ -1089,7 +1107,7 @@ const y = 1;
 let x = 1;/* trailing comment */
 
 /**
- * I was previously seeing issues where this would transform \`return (\\\\n expr \\\\n)\` to \`return expr\`, but I'm not seeing
+ * I was previously seeing issues where this would transform \`return (\\n expr \\n)\` to \`return expr\`, but I'm not seeing
  * that any more.
  */
 function f() {
@@ -1112,25 +1130,25 @@ const e = () => (function(g, h) {
 
 const f = () => 1;",
   "tsconfig-no-root-dir.json": "{
-  \\"include\\": [\\"codemod/*.ts\\"],
+  "include": ["codemod/*.ts"],
 
-  \\"compilerOptions\\": {
-    \\"target\\": \\"ES2019\\",
-    \\"module\\": \\"commonjs\\",
-    \\"strict\\": true,
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "commonjs",
+    "strict": true,
 
-    \\"outDir\\": \\"should-be-ignored\\",
+    "outDir": "should-be-ignored",
     
-    \\"noUnusedLocals\\": true,
-    \\"noUnusedParameters\\": true,
-    \\"noImplicitReturns\\": true, 
-    \\"noFallthroughCasesInSwitch\\": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true, 
+    "noFallthroughCasesInSwitch": true,
 
-    \\"moduleResolution\\": \\"node\\",
-    \\"esModuleInterop\\": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
 
-    \\"skipLibCheck\\": true,
-    \\"forceConsistentCasingInFileNames\\": true
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
   }
 }
 ",
@@ -1252,6 +1270,9 @@ const codemod: Codemod = {
           Literal(literalPath) {
           // This tests to make sure that getPlugin is called for each file, and is not reused between files.
             if (literalPath.node.type === 'StringLiteral') {
+              // This snippet works in the playground, but fails here. I don't know why.
+              // https://www.typescriptlang.org/play?#code/JYWwDg9gTgLgBDAnmApnA3gNWAZ2DaAXzgDMoIQ4ByAAQCMBDOlAGwHoYoGA3FKHFFQDcAKFCRYcAFRwGOOACEmrACrIU8shWr1l7JKhzCRIgCYoAxiwZQ0FiADsc8GAC4E6iCUV61h0SL2TvDc7th4BFAAPAwOiAB8cAC8GCJw6XAAMvh8DCwAFCw5XCwACgwwABYAlKkZ9XBFMLllFZUAdLZg1hYoAOr4lfkw7c5QwA4A5tnNJflUcqYkVNXVaRmEIoRAA
+              // @ts-expect-error
               literalPath.replaceWith(t.stringLiteral('new string literal'));
               literalPath.skip();
             }
@@ -1299,6 +1320,9 @@ const codemod: Codemod = {
           Literal(literalPath) {
             // This tests to make sure that getPlugin is called for each file, and is not reused between files.
             if (literalPath.node.type === 'StringLiteral') {
+              // This snippet works in the playground, but fails here. I don't know why.
+              // https://www.typescriptlang.org/play?#code/JYWwDg9gTgLgBDAnmApnA3gNWAZ2DaAXzgDMoIQ4ByAAQCMBDOlAGwHoYoGA3FKHFFQDcAKFCRYcAFRwGOOACEmrACrIU8shWr1l7JKhzCRIgCYoAxiwZQ0FiADsc8GAC4E6iCUV61h0SL2TvDc7th4BFAAPAwOiAB8cAC8GCJw6XAAMvh8DCwAFCw5XCwACgwwABYAlKkZ9XBFMLllFZUAdLZg1hYoAOr4lfkw7c5QwA4A5tnNJflUcqYkVNXVaRmEIoRAA
+              // @ts-expect-error
               literalPath.replaceWith(t.stringLiteral(path.basename(filePath)));
               literalPath.skip();
             }
@@ -1474,7 +1498,7 @@ exports[`happy path getPlugin returns a meta 1`] = `
 `;
 
 exports[`happy path getPlugin sets useRecast = false 1`] = `
-Object {
+{
   "codemod/do-not-use-recast.ts": "import {Codemod} from '@nick.heiner/jscodemod';
 import _ from 'lodash';
 import * as BabelTypes from '@babel/types';
@@ -1501,6 +1525,9 @@ const codemod: Codemod = {
           Literal(literalPath) {
           // This tests to make sure that getPlugin is called for each file, and is not reused between files.
             if (literalPath.node.type === 'StringLiteral') {
+              // This snippet works in the playground, but fails here. I don't know why.
+              // https://www.typescriptlang.org/play?#code/JYWwDg9gTgLgBDAnmApnA3gNWAZ2DaAXzgDMoIQ4ByAAQCMBDOlAGwHoYoGA3FKHFFQDcAKFCRYcAFRwGOOACEmrACrIU8shWr1l7JKhzCRIgCYoAxiwZQ0FiADsc8GAC4E6iCUV61h0SL2TvDc7th4BFAAPAwOiAB8cAC8GCJw6XAAMvh8DCwAFCw5XCwACgwwABYAlKkZ9XBFMLllFZUAdLZg1hYoAOr4lfkw7c5QwA4A5tnNJflUcqYkVNXVaRmEIoRAA
+              // @ts-expect-error
               literalPath.replaceWith(t.stringLiteral('new string literal'));
               literalPath.skip();
             }
@@ -1548,6 +1575,9 @@ const codemod: Codemod = {
           Literal(literalPath) {
             // This tests to make sure that getPlugin is called for each file, and is not reused between files.
             if (literalPath.node.type === 'StringLiteral') {
+              // This snippet works in the playground, but fails here. I don't know why.
+              // https://www.typescriptlang.org/play?#code/JYWwDg9gTgLgBDAnmApnA3gNWAZ2DaAXzgDMoIQ4ByAAQCMBDOlAGwHoYoGA3FKHFFQDcAKFCRYcAFRwGOOACEmrACrIU8shWr1l7JKhzCRIgCYoAxiwZQ0FiADsc8GAC4E6iCUV61h0SL2TvDc7th4BFAAPAwOiAB8cAC8GCJw6XAAMvh8DCwAFCw5XCwACgwwABYAlKkZ9XBFMLllFZUAdLZg1hYoAOr4lfkw7c5QwA4A5tnNJflUcqYkVNXVaRmEIoRAA
+              // @ts-expect-error
               literalPath.replaceWith(t.stringLiteral(path.basename(filePath)));
               literalPath.skip();
             }
@@ -1559,13 +1589,12 @@ const codemod: Codemod = {
 };
 
 export default codemod;",
-  "source/change-string-literal-0.js": "const a = \\"new string literal\\";",
-  "source/change-string-literal-1.js": "const a = \\"new string literal\\";",
+  "source/change-string-literal-0.js": "const a = "new string literal";",
+  "source/change-string-literal-1.js": "const a = "new string literal";",
   "source/commented-out.js": "// const g = a => {
 //   return a?.b?.c?.d
 // };",
   "source/optional-chaining.js": "const g = a => a?.b?.c?.d;
-
 const C = <img />;
 const Empty = <div></div>;
 ",
@@ -1573,47 +1602,44 @@ const Empty = <div></div>;
 
 /* leading comment */
 const y = 1;
-let x = 1;
-/* trailing comment */
+let x = 1; /* trailing comment */
 
 /**
- * I was previously seeing issues where this would transform \`return (\\\\n expr \\\\n)\` to \`return expr\`, but I'm not seeing
+ * I was previously seeing issues where this would transform \`return (\\n expr \\n)\` to \`return expr\`, but I'm not seeing
  * that any more.
  */
-
 function f() {
   return true || false;
-} // Will be erroneously transformed because of https://github.com/benjamn/recast/issues/914.
+}
 
-
+// Will be erroneously transformed because of https://github.com/benjamn/recast/issues/914.
 const e = () => function (g, h) {
   return i;
 };",
   "source/ts.ts": "function g(a: string, b: number, c: boolean) {
   return 0;
 }
-
 const f = () => 1;",
   "tsconfig-no-root-dir.json": "{
-  \\"include\\": [\\"codemod/*.ts\\"],
+  "include": ["codemod/*.ts"],
 
-  \\"compilerOptions\\": {
-    \\"target\\": \\"ES2019\\",
-    \\"module\\": \\"commonjs\\",
-    \\"strict\\": true,
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "commonjs",
+    "strict": true,
 
-    \\"outDir\\": \\"should-be-ignored\\",
+    "outDir": "should-be-ignored",
     
-    \\"noUnusedLocals\\": true,
-    \\"noUnusedParameters\\": true,
-    \\"noImplicitReturns\\": true, 
-    \\"noFallthroughCasesInSwitch\\": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true, 
+    "noFallthroughCasesInSwitch": true,
 
-    \\"moduleResolution\\": \\"node\\",
-    \\"esModuleInterop\\": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
 
-    \\"skipLibCheck\\": true,
-    \\"forceConsistentCasingInFileNames\\": true
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
   }
 }
 ",
@@ -1621,7 +1647,7 @@ const f = () => 1;",
 `;
 
 exports[`happy path getPlugin uses the willNotifyOnAstChange API 1`] = `
-Object {
+{
   "codemod/do-not-use-recast.ts": "import {Codemod} from '@nick.heiner/jscodemod';
 import _ from 'lodash';
 import * as BabelTypes from '@babel/types';
@@ -1648,6 +1674,9 @@ const codemod: Codemod = {
           Literal(literalPath) {
           // This tests to make sure that getPlugin is called for each file, and is not reused between files.
             if (literalPath.node.type === 'StringLiteral') {
+              // This snippet works in the playground, but fails here. I don't know why.
+              // https://www.typescriptlang.org/play?#code/JYWwDg9gTgLgBDAnmApnA3gNWAZ2DaAXzgDMoIQ4ByAAQCMBDOlAGwHoYoGA3FKHFFQDcAKFCRYcAFRwGOOACEmrACrIU8shWr1l7JKhzCRIgCYoAxiwZQ0FiADsc8GAC4E6iCUV61h0SL2TvDc7th4BFAAPAwOiAB8cAC8GCJw6XAAMvh8DCwAFCw5XCwACgwwABYAlKkZ9XBFMLllFZUAdLZg1hYoAOr4lfkw7c5QwA4A5tnNJflUcqYkVNXVaRmEIoRAA
+              // @ts-expect-error
               literalPath.replaceWith(t.stringLiteral('new string literal'));
               literalPath.skip();
             }
@@ -1695,6 +1724,9 @@ const codemod: Codemod = {
           Literal(literalPath) {
             // This tests to make sure that getPlugin is called for each file, and is not reused between files.
             if (literalPath.node.type === 'StringLiteral') {
+              // This snippet works in the playground, but fails here. I don't know why.
+              // https://www.typescriptlang.org/play?#code/JYWwDg9gTgLgBDAnmApnA3gNWAZ2DaAXzgDMoIQ4ByAAQCMBDOlAGwHoYoGA3FKHFFQDcAKFCRYcAFRwGOOACEmrACrIU8shWr1l7JKhzCRIgCYoAxiwZQ0FiADsc8GAC4E6iCUV61h0SL2TvDc7th4BFAAPAwOiAB8cAC8GCJw6XAAMvh8DCwAFCw5XCwACgwwABYAlKkZ9XBFMLllFZUAdLZg1hYoAOr4lfkw7c5QwA4A5tnNJflUcqYkVNXVaRmEIoRAA
+              // @ts-expect-error
               literalPath.replaceWith(t.stringLiteral(path.basename(filePath)));
               literalPath.skip();
             }
@@ -1727,7 +1759,7 @@ const y = 1;
 let x = 1; /* trailing comment */
 
 /**
- * I was previously seeing issues where this would transform \`return (\\\\n expr \\\\n)\` to \`return expr\`, but I'm not seeing
+ * I was previously seeing issues where this would transform \`return (\\n expr \\n)\` to \`return expr\`, but I'm not seeing
  * that any more.
  */
 function f() {
@@ -1752,25 +1784,25 @@ const f = () => {
   return 1
 };",
   "tsconfig-no-root-dir.json": "{
-  \\"include\\": [\\"codemod/*.ts\\"],
+  "include": ["codemod/*.ts"],
 
-  \\"compilerOptions\\": {
-    \\"target\\": \\"ES2019\\",
-    \\"module\\": \\"commonjs\\",
-    \\"strict\\": true,
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "commonjs",
+    "strict": true,
 
-    \\"outDir\\": \\"should-be-ignored\\",
+    "outDir": "should-be-ignored",
     
-    \\"noUnusedLocals\\": true,
-    \\"noUnusedParameters\\": true,
-    \\"noImplicitReturns\\": true, 
-    \\"noFallthroughCasesInSwitch\\": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true, 
+    "noFallthroughCasesInSwitch": true,
 
-    \\"moduleResolution\\": \\"node\\",
-    \\"esModuleInterop\\": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
 
-    \\"skipLibCheck\\": true,
-    \\"forceConsistentCasingInFileNames\\": true
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
   }
 }
 ",
