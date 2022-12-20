@@ -51,7 +51,7 @@ In conjunction with the flag `jscodemod --resetDirtyInputFiles`, this creates a 
 After inspecting the changes, if you want to discard the commit, use this one-liner to rebase it out of your history:
 
 ```
-$ git rebase -r --onto <SHA>~1 <SHA>
+$ git rebase -r --onto <COMMIT_SHA>~1 <COMMIT_SHA>
 ```
 
 ## Run multiple codemods sequentially
