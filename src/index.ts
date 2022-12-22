@@ -12,7 +12,7 @@ import {cyan} from 'ansi-colors';
 import ora from 'ora';
 import createLog from 'nth-log';
 import compileTS from './compile-ts';
-import type {Codemod, TODO} from './types';
+import type {AICodemod, Codemod, TODO} from './types';
 import execBigCommand from './exec-big-command';
 import getGitRoot from './get-git-root';
 import loadCodemod from './load-codemod';
@@ -23,11 +23,16 @@ import noOpLogger from './no-op-logger';
 import {promises as fs} from 'fs';
 import {EOL} from 'os';
 import prettyMs from 'pretty-ms';
+import type {CreateCompletionRequest} from 'openai';
+import buildFullPrompt from './build-full-prompt';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
 export {default as execBigCommand} from './exec-big-command';
 export * from './types';
 
+/**
+ * Options regarding how a TS codemod will be run.
+ */
 export type TSOptions = {
   tsconfig?: string;
   tsOutDir?: string
@@ -35,7 +40,7 @@ export type TSOptions = {
   log: ReturnType<typeof createLog>;
 }
 
-export type NonTSOptions = {
+export type BaseOptions = {
   dry?: boolean;
   writeFiles?: boolean;
   porcelain?: boolean;
@@ -48,6 +53,7 @@ export type NonTSOptions = {
   doPostProcess?: boolean;
   respectIgnores?: boolean;
   piscinaLowerBoundInclusive?: number;
+  createCompletionRequestParams?: CreateCompletionRequest
 }
 & ({
   inputFileList: string;
@@ -57,13 +63,13 @@ export type NonTSOptions = {
   inputFilesPatterns: string[];
 })
 
-export type Options = Omit<TSOptions, 'log'> & Partial<Pick<TSOptions, 'log'>> & NonTSOptions;
+export type Options = Omit<TSOptions, 'log'> & Partial<Pick<TSOptions, 'log'>> & BaseOptions;
 
 type FalseyDefaultOptions = 'dry' | 'porcelain' | 'codemodArgs' | 'resetDirtyInputFiles' | 'jsonOutput'
-  | 'piscinaLowerBoundInclusive' | 'inputFileList' | 'inputFilesPatterns';
+  | 'piscinaLowerBoundInclusive' | 'inputFileList' | 'inputFilesPatterns' | 'createCompletionRequestParams';
 export type InternalOptions = TSOptions
-  & Pick<NonTSOptions, FalseyDefaultOptions>
-  & Required<Omit<NonTSOptions, FalseyDefaultOptions>>;
+  & Pick<BaseOptions, FalseyDefaultOptions>
+  & Required<Omit<BaseOptions, FalseyDefaultOptions>>;
 
 // The rule is too broad.
 // eslint-disable-next-line require-await
@@ -101,9 +107,9 @@ export const defaultPiscinaLowerBoundInclusive = 20;
 function transformCode(
   codemod: Codemod,
   log: TSOptions['log'],
-  codemodPath: string,
+  codemodPath: string | null,
   inputFiles: string[],
-  piscinaLowerBoundInclusive: NonTSOptions['piscinaLowerBoundInclusive'],
+  piscinaLowerBoundInclusive: BaseOptions['piscinaLowerBoundInclusive'],
   logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>,
   parsedArgs: unknown,
   codemodArgs?: string[]
@@ -124,7 +130,11 @@ function transformCode(
   const getPiscina = _.once(() => {
     const piscina = new Piscina({
       filename: require.resolve('./worker'),
-      argv: [codemodPath],
+      argv: [
+        // We've proven by this point in the code that this is safe.
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        codemodPath!
+      ],
       workerData: {...baseRunnerOpts, logOpts}
     });
 
@@ -142,15 +152,6 @@ function transformCode(
     return piscina;
   });
 
-  const runCodemodOnSingleFile = (inputFile: string): Promise<CodemodMetaResult<unknown>> => {
-    const runStartTimeMs = Date.now();
-    if (inputFiles.length >= (piscinaLowerBoundInclusive ?? defaultPiscinaLowerBoundInclusive)) {
-      return getPiscina().runTask({inputFile, runStartTimeMs});
-    }
-
-    return runCodemodOnFile(codemod, inputFile, log, baseRunnerOpts, runStartTimeMs);
-  };
-
   const codemodName = getCodemodName(codemod, codemodPath);
   const progressBar = getProgressUI(logOpts, inputFiles.length, codemodName);
   // We might be doing something to hurt perf here.
@@ -166,13 +167,21 @@ function transformCode(
   });
 
   async function codemodAllFiles() {
-    if ('transformAll' in codemod && typeof codemod.transformAll === 'function') {
+    if ('transformAll' in codemod) {
       return codemod.transformAll({
         fileNames: inputFiles,
         commandLineArgs: parsedArgs
       });
     }
     const allFilesCodemoddedPromise = Promise.all(inputFiles.map(async inputFile => {
+      const runCodemodOnSingleFile = (inputFile: string): Promise<CodemodMetaResult<unknown>> => {
+        const runStartTimeMs = Date.now();
+        if (inputFiles.length >= (piscinaLowerBoundInclusive ?? defaultPiscinaLowerBoundInclusive)) {
+          return getPiscina().runTask({inputFile, runStartTimeMs});
+        }
+
+        return runCodemodOnFile(codemod, inputFile, log, baseRunnerOpts, runStartTimeMs);
+      };
       const codemodMetaResult = await runCodemodOnSingleFile(inputFile);
       logTimeToChangeFirstFile();
       log.debug({
@@ -244,7 +253,7 @@ async function getIsIgnoredByIgnoreFile(log: TODO, ignoreFiles: string[] | undef
 }
 
 async function jscodemod(
-  pathToCodemod: string,
+  pathToCodemod: string | undefined,
   passedOptions: Options
 // TODO: encode that this return type depends on whether 'dry' is passed.
 ): Promise<CodemodMetaResult<unknown>[] | string[]> {
@@ -261,10 +270,46 @@ async function jscodemod(
     respectIgnores: true,
     ...passedOptions
   };
-  const codemodPath = await getCodemodPath(pathToCodemod, {
-    ..._.pick(options, 'tsconfig', 'tsOutDir', 'tsc'),
-    log
-  });
+
+  async function getCodemod() {
+    const {createCompletionRequestParams} = options;
+    if (createCompletionRequestParams) {
+      if (typeof createCompletionRequestParams.prompt !== 'string') {
+        /* eslint-disable max-len */
+        throw new Error(`To run an AI codemod, you can do one of two things:
+1. Pass \`createCompletionRequestParams\`
+2. Pass a path to a codemod that implements the AICodemod type.
+
+In case (1), your prompt must be a string. However, your prompt was a "${typeof createCompletionRequestParams.prompt}". If you want a non-string prompt, use option (2) listed above.`);
+        /* eslint-enable max-len */
+      }
+      const {prompt} = createCompletionRequestParams;
+
+      const codemod: AICodemod = {
+        name: 'codemod-generated-from-CLI-flags',
+        getCompletionRequestParams: ({source}) => ({
+          ...createCompletionRequestParams,
+          prompt: buildFullPrompt(prompt, source)
+        })
+      };
+
+      return {codemod, codemodName: codemod.name, codemodPath: null};
+    }
+    if (!pathToCodemod) {
+      throw new Error('You must pass either `createCompletionRequestParams`, or a path to a codemod.');
+    }
+
+    const codemodPath = await getCodemodPath(pathToCodemod, {
+      ..._.pick(options, 'tsconfig', 'tsOutDir', 'tsc'),
+      log
+    });
+    const codemod = loadCodemod(codemodPath);
+    const codemodName = getCodemodName(codemod, codemodPath);
+
+    return {codemod, codemodName, codemodPath};
+  }
+
+  const {codemod, codemodPath, codemodName} = await getCodemod();
 
   // This is intentional.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -276,9 +321,7 @@ async function jscodemod(
     console.log(...args);
   }
 
-  const codemod = loadCodemod(codemodPath);
   // TODO: it would be nice if we used log.child to make all logs from here on out have the codemod name.
-  const codemodName = getCodemodName(codemod, codemodPath);
   const codemodIsTransformAll = 'transformAll' in codemod;
   const writeFiles = !codemodIsTransformAll && options.writeFiles;
 
@@ -373,8 +416,10 @@ async function jscodemod(
     await resetDirtyInputFiles(gitRoot, filesToModify, log);
   }
 
+  const piscinaLowerBoundInclusive = passedOptions.createCompletionRequestParams
+    ? Infinity : passedOptions.piscinaLowerBoundInclusive;
   const transformResults = await transformCode(codemod, log, codemodPath, filesToModify,
-    passedOptions.piscinaLowerBoundInclusive,
+    piscinaLowerBoundInclusive,
     _.pick(passedOptions, 'jsonOutput', 'porcelain'), parsedArgs, options.codemodArgs
   );
 

@@ -431,7 +431,7 @@ describe('error handling', () => {
     spawnArgs: ['--codemod', path.join('codemod', 'index.ts'), '*.js'],
     expectedExitCode: 1,
     assert({stderr}) {
-      expect(stderr).toMatchSnapshot();
+      expect(stderr).toMatch(/Missing required argument: requiredFlag/);
     }
   });
 
@@ -441,7 +441,7 @@ describe('error handling', () => {
     spawnArgs: ['--codemod', path.join('codemod', 'codemod.js'), '--inputFileList', 'input_files.txt', 'source/*.js'],
     expectedExitCode: 1,
     assert({stderr}) {
-      expect(stderr).toMatchSnapshot();
+      expect(stderr).toMatch(/You can't pass both an --inputFileList and a globby pattern./);
     }
   });
 

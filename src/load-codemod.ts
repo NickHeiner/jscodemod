@@ -1,4 +1,4 @@
-import {makePhaseError} from './run-codemod-on-file';
+import {makePhaseError} from './make-phase-error';
 import {Codemod} from './types';
 
 function loadCodemod(codemodPath: string): Codemod {

@@ -1,7 +1,14 @@
 import {Codemod} from './types';
 import path from 'path';
 
-const getCodemodName = (codemod: Codemod, pathToCodemod: string): string =>
-  codemod.name ?? path.basename(pathToCodemod);
+function getCodemodName(codemod: Codemod, pathToCodemod: string | null): string {
+  if (codemod.name) {
+    return codemod.name;
+  }
+  if (pathToCodemod) {
+    return path.basename(pathToCodemod);
+  }
+  return 'could-not-determine-name';
+}
 
 export default getCodemodName;

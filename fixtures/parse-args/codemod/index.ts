@@ -1,4 +1,4 @@
-import {Codemod} from '@nick.heiner/jscodemod';
+import {LowLevelCodemod} from '@nick.heiner/jscodemod';
 import yargs from 'yargs';
 
 const yargsBuilder = yargs.options({
@@ -11,7 +11,7 @@ const yargsBuilder = yargs.options({
 })
   .help();
 
-const codemod: Codemod<ReturnType<typeof yargsBuilder.parse>> = {
+const codemod: LowLevelCodemod<ReturnType<typeof yargsBuilder.parse>> = {
   parseArgs(rawCommandLineArgs) {
     return yargsBuilder.parse(rawCommandLineArgs!);
   },

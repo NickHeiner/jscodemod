@@ -11,6 +11,9 @@ import getLogger from './get-logger';
 import {CodemodMetaResult} from './run-codemod-on-file';
 import PrettyError from 'pretty-error';
 import ansiColors from 'ansi-colors';
+import path from 'path';
+import fs from 'fs';
+import {CreateCompletionRequest} from 'openai';
 
 // Passing paths as file globs that start with `.` doesn't work.
 // https://github.com/sindresorhus/globby/issues/168
@@ -33,6 +36,10 @@ const argv = yargs
           [
             '$0 --codemod codemod.js --inputFileList files-to-modify.txt',
             'Run the codemod against a set of files listed in the text file.'
+          ],
+          [
+            '$0 --prompt "Translate the file above from ES5 to modern JS" "source/**/*.js"',
+            'Run an AI-powered codemod against the files matching the passed glob.'
           ]
         ]);
     })
@@ -43,7 +50,6 @@ const argv = yargs
     codemod: {
       alias: 'c',
       type: 'string',
-      required: true,
       describe: 'Path to the codemod to run'
     },
     inputFileList: {
@@ -102,9 +108,47 @@ const argv = yargs
       describe: 'Output logs as JSON, instead of human-readable formatting. Useful if you want to consume the output ' +
         'of this tool from another tool, or process the logs using your own Bunyan log processor/formatter. The ' +
         'precise set of logs emitted is not considered to be part of the public API.'
+    },
+    prompt: {
+      type: 'string',
+      required: false,
+      // eslint-disable-next-line max-len
+      describe: "A prompt for an AI-powered codemod. The AI will be asked to complete an input. The input will be form: `${input file source code}\n//${the value you pass for this flag}`. If that format doesn't work for you, implement an AICodemod instead and pass the --codemod flag.",
+      conflicts: ['codemod']
+    },
+    promptFile: {
+      type: 'string',
+      required: false,
+      // eslint-disable-next-line max-len
+      describe: "A prompt for an AI-powered codemod. The AI will be asked to complete an input. The input will be form: `${input file source code}\n//${the contents of the file pointed to by this flag}`. If that format doesn't work for you, implement an AICodemod instead and pass the --codemod flag.",
+      conflicts: ['prompt', 'codemod']
+    },
+    openAICompletionRequestConfig: {
+      alias: 'aiConfig',
+      required: false,
+      type: 'string',
+      conflicts: ['codemod'],
+      describe:
+        // eslint-disable-next-line max-len
+        "API params to pass to OpenAI's createCompletionRequest API. See https://beta.openai.com/docs/api-reference/completions/create. The argument you pass to this flag will be interpreted as JSON."
+    },
+    openAICompletionRequestFile: {
+      alias: 'aiConfigFile',
+      config: true,
+      required: false,
+      type: 'string',
+      conflicts: ['openAICompletionRequestConfig', 'codemod'],
+      describe:
+        // eslint-disable-next-line max-len
+        "A path to a JSON file containing request params for OpenAI's createCompletionRequest API. See https://beta.openai.com/docs/api-reference/completions/create."
     }
   })
   .group(['codemod', 'dry', 'resetDirtyInputFiles', 'inputFileList'], 'Primary')
+  .group(
+    ['prompt', 'promptFile', 'openAICompletionRequestConfig', 'openAICompletionRequestFile'],
+    // eslint-disable-next-line max-len
+    `AI. Only applicable if you're using AI for your codemod. See ${path.resolve(__filename, path.join('..', '..', 'docs', 'ai.md'))}.`
+  )
   .group(['tsconfig', 'tsOutDir', 'tsc'], 'TypeScript (only applicable if your codemod is written in TypeScript)')
   .group(['jsonOutput', 'porcelain'], 'Rarely Useful')
   .check(argv => {
@@ -124,11 +168,49 @@ const argv = yargs
     if (argv.porcelain && !argv.dry) {
       throw new Error('Porcelain is only supported for dry mode.');
     }
+
+    const prompt = validateAndGetAIOpts(argv)?.prompt;
+    if (!(prompt || argv.codemod)) {
+      throw new Error('You must pass either the --codemod or --prompt flags.');
+    }
+
     return true;
   })
   .strict()
   .help()
   .parseSync();
+
+function validateAndGetAIOpts(
+  {openAICompletionRequestConfig, openAICompletionRequestFile, promptFile, prompt}: typeof argv) {
+
+  if (!(openAICompletionRequestConfig || openAICompletionRequestFile || promptFile || prompt)) {
+    return null;
+  }
+
+  const createCompletionRequestParams: CreateCompletionRequest | undefined = openAICompletionRequestConfig
+    ? JSON.parse(openAICompletionRequestConfig) : openAICompletionRequestFile;
+  const promptFromFile = promptFile && fs.readFileSync(promptFile, 'utf8');
+  const promptFromFlags = promptFromFile || prompt;
+
+  if (promptFromFlags && createCompletionRequestParams?.prompt) {
+    throw new Error(
+      'If your API params includes a prompt, you must not pass a separate prompt via the other command line flags.'
+    );
+  }
+
+  return {
+    prompt: promptFromFlags,
+    model: 'code-davinci-002',
+
+    // If you set this value too high, you'll get status code 429.
+    // eslint-disable-next-line camelcase
+    max_tokens: 2048,
+
+    temperature: 0,
+
+    ...createCompletionRequestParams
+  } satisfies CreateCompletionRequest;
+}
 
 async function main() {
   const log = getLogger(_.pick(argv, 'jsonOutput', 'porcelain'));
@@ -139,6 +221,7 @@ async function main() {
     const opts = {
       ..._.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'resetDirtyInputFiles', 'porcelain', 'jsonOutput',
         'piscinaLowerBoundInclusive', 'inputFileList', 'inputFilesPatterns'),
+      createCompletionRequestParams: validateAndGetAIOpts(argv),
       log
     };
 
@@ -152,12 +235,11 @@ async function main() {
       console.log(...args);
     }
 
-    // Yarg's types are messed up.
     Object.assign(opts, _.pick(argv, 'codemodArgs'));
 
     const codemodMetaResults = await jscodemod(
       argv.codemod,
-      // Yarg's types are messed up.
+      // I'm not sure why this is an error, but I think the code is correct.
       // @ts-expect-error
       opts
     );

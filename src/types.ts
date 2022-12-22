@@ -1,5 +1,6 @@
 import type {Promisable} from 'type-fest';
 import type {Options as RecastOptions} from 'recast';
+import type {CreateCompletionRequest, CreateCompletionResponse} from 'openai';
 
 import {PluginItem, TransformOptions} from '@babel/core';
 
@@ -8,10 +9,23 @@ import jscodemod, {Options} from './';
 export type TransformedCode = string | undefined | null;
 export type CodemodResult<TransformResultMeta> = TransformedCode | {code: TransformedCode, meta: TransformResultMeta};
 
-export type BaseCodemodArgs<ParsedArgs> = {
+export type BaseCodemodArgs<ParsedArgs = unknown> = {
+  /**
+   * The path to the file to transform.
+   */
   filePath: string;
   // TODO: only specify this as an option to transform if parseArgs is present.
+  /**
+   * Parsed arguments returned by `yourCodemod.parseArgs()`, if any.
+   */
   commandLineArgs?: ParsedArgs;
+}
+
+export interface CodemodArgsWithSource<ParsedArgs = unknown> extends BaseCodemodArgs<ParsedArgs> {
+  /**
+   * the contents of the file to transform.
+   */
+  source: string;
 }
 
 export type GetPluginResult = PluginItem | {
@@ -28,7 +42,7 @@ export type GetPluginResult = PluginItem | {
   plugin: PluginItem;
 };
 
-export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
+interface BaseCodemod<ParsedArgs = unknown, TransformResultMeta = unknown> {
   /**
    * A name for the codemod, like "transform-cjs-to-esm". Defaults to the file name. Used for logging.
    */
@@ -104,48 +118,49 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
       options: Partial<Options>
     ): ReturnType<typeof jscodemod>
   }) => void | Promise<unknown>;
-} & ({
+}
+
+/**
+ * A codemod that takes a list of files, and processes them all at once. Use this when integrating with another tool,
+ * like ts-migrate. Or when you need finer-grained control over the file modification process.
+ *
+ * LowLevelCodemod and BabelCodemod operate on a model where your code returns instructions on how to modify a single
+ * file, and jscodemod actually writes the files. transformAll() just takes a set of files, and does whatever it wants
+ * to do. So, if you want files to be written, with this codemod, you do it yourself.
+ */
+export interface LowLevelBulkCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
+  extends BaseCodemod<ParsedArgs, TransformResultMeta> {
   /**
-   * Transform every file at once. Use this when integrating with another tool, like ts-migrate. Or when you need
-   * finer-grained control over the file modification process.
-   *
-   * transform() and getPlugin() operate on a model where your code returns instructions on how to modify a single
-   * file, and jscodemod actually writes the files. transformAll() just takes a set of files, and does whatever it
-   * wants to do.
-   *
-   * Return a list of the modified files.
+   * Transform every file at once.
    *
    * @param opts
    * @param opts.fileNames the file names to transform
    * @param opts.commandLineArgs parsed arguments returned by `yourCodemod.parseArgs()`, if any.
+   * @return A list of the modified files.
    */
   transformAll(opts: {
     fileNames: string[],
     commandLineArgs?: ParsedArgs;
   }): Promisable<string[]>,
+}
 
-  presets?: never;
-  getPlugin?: never;
-  transform?: never;
-} | {
+/**
+ * A simple codemod that simply takes a file and returns a result indicating how it should be transformed. Use this when
+ * the other higher-level codemod types don't fit your usecase.
+ */
+export interface LowLevelCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
+  extends BaseCodemod<ParsedArgs, TransformResultMeta> {
   /**
    * Transform a single file. Return null or undefined to indicate that the file should not be modified.
-   *
-   * @param opts
-   * @param opts.source the contents of the file to transform.
-   * @param opts.filePath the path to the file to transform.
-   * @param opts.commandLineArgs parsed arguments returned by `yourCodemod.parseArgs()`, if any.
    */
-  transform(opts: {
-    source: string;
-  } & BaseCodemodArgs<ParsedArgs>): CodemodResult<TransformResultMeta> | Promise<CodemodResult<TransformResultMeta>>;
+  transform(opts: CodemodArgsWithSource<ParsedArgs>): Promisable<CodemodResult<TransformResultMeta>>;
+}
 
-  presets?: never;
-  getPlugin?: never;
-  transformAll?: never;
-} | {
-  transform?: never;
-  transformAll?: never;
+/**
+ * A codemod that uses a Babel plugin to indicate how the code will be transformed.
+ */
+export interface BabelCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
+  extends BaseCodemod<ParsedArgs, TransformResultMeta> {
 
   /**
    * The set of babel presets needed to compile your code, like `@babel/preset-env`.
@@ -228,7 +243,57 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
     /** Set a meta result to be associated with this file. This value will be passed to the postProcess hook. */
     setMetaResult: (meta: TransformResultMeta) => void;
   }) => Promisable<GetPluginResult>;
-})
+}
+
+/**
+ * A nondeterministic codemod that uses AI to transform your code. It uses OpenAI's large language models.
+ *
+ * See [the AI codemod guide](../docs/ai.md) for more detail.
+ *
+ * ## When to use this
+ * ### Pros
+ * * Creating the codemod can be as simple as specifying the transformation you want, in plain language.
+ * * Some transformations are possible this way that would be extremely expensive to write as a traditional codemod.
+ *
+ * ### Cons
+ * * The results are non-deterministic. Specifying a seed will help with consistency, but this works by making an OpenAI
+ * API call, and they could change their results at any time.
+ * * Because the results are non-deterministic, you need to manually review all outputs. You may also need to tweak
+ * the output.
+ * * It runs much more slowly. Normal codemods are limited by your machine's CPU and IO concurrency limits. This codemod
+ * is limited by OpenAI's API latency and rate limiting.
+ *
+ * ## Requirements
+ * * You need an [OpenAI API key](https://beta.openai.com/overview).
+ */
+export interface AICodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
+  extends BaseCodemod<ParsedArgs, TransformResultMeta> {
+
+    /**
+     * @see https://beta.openai.com/docs/api-reference/completions/create
+     * @returns Parameters for a call to OpenAI's API.
+     */
+    getCompletionRequestParams: (opts: CodemodArgsWithSource<ParsedArgs>) => Promisable<CreateCompletionRequest>;
+
+    /**
+     * Optional. Only add this if you're getting bad results without it.
+     *
+     * Given a response from the AI, return a result indicating how your file should be transformed.
+     *
+     * In particular, if you pass an input param that causes the model to return multiple results, you can use this
+     * method to pick which result you want.
+     *
+     * Sometimes, the AI will return extra content at the end of your transformed code. If that happens, this function
+     * gives you a chance to cut it out. But before you try that, it's probably better to tweak your prompt to be more
+     * specific about what you want.
+     */
+    extractTransformationFromCompletion?: (response: CreateCompletionResponse) => CodemodResult<TransformResultMeta>
+
+    // TODO: Specify the types such that extractTransformationFromCompletion is required when the prompt is a string.
+}
+
+export type CodemodThatUsesTheRunner = BabelCodemod | LowLevelCodemod | AICodemod;
+export type Codemod = CodemodThatUsesTheRunner | LowLevelBulkCodemod;
 
 // The `any` here is intentional.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
