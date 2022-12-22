@@ -163,7 +163,7 @@ const argv = yargs
       throw new Error('Porcelain is only supported for dry mode.');
     }
 
-    const {prompt} = validateAndGetAIOpts(argv);
+    const prompt = validateAndGetAIOpts(argv)?.prompt;
     if (!(prompt || argv.codemod)) {
       throw new Error('You must pass either the --codemod or --prompt flags.');
     }
@@ -174,11 +174,17 @@ const argv = yargs
   .help()
   .parseSync();
 
-function validateAndGetAIOpts(args: typeof argv) {
-  const createCompletionRequestParams: CreateCompletionRequest | undefined = args.openAICompletionRequestConfig
-    ? JSON.parse(args.openAICompletionRequestConfig) : args.openAICompletionRequestFile;
-  const promptFromFile = args.promptFile && fs.readFileSync(args.promptFile, 'utf8');
-  const promptFromFlags = promptFromFile || args.prompt;
+function validateAndGetAIOpts(
+  {openAICompletionRequestConfig, openAICompletionRequestFile, promptFile, prompt}: typeof argv) {
+
+  if (!(openAICompletionRequestConfig || openAICompletionRequestFile || promptFile || prompt)) {
+    return null;
+  }
+
+  const createCompletionRequestParams: CreateCompletionRequest | undefined = openAICompletionRequestConfig
+    ? JSON.parse(openAICompletionRequestConfig) : openAICompletionRequestFile;
+  const promptFromFile = promptFile && fs.readFileSync(promptFile, 'utf8');
+  const promptFromFlags = promptFromFile || prompt;
 
   if (promptFromFlags && createCompletionRequestParams?.prompt) {
     throw new Error(

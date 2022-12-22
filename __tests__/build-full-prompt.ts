@@ -24,7 +24,7 @@ it('handles multiline inputs', () => {
 
 "
 `);
-})
+});
 
 it('handles single line inputs', () => {
   expect(buildFullPrompt('// my prompt', 'source_code')).toMatchInlineSnapshot(`
@@ -33,4 +33,4 @@ it('handles single line inputs', () => {
 //// my prompt
 "
 `);
-})
+});
