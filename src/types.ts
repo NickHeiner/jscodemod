@@ -128,10 +128,6 @@ interface LowLevelBulkCodemod<ParsedArgs = unknown, TransformResultMeta = unknow
     fileNames: string[],
     commandLineArgs?: ParsedArgs;
   }): Promisable<string[]>,
-
-  presets?: never;
-  getPlugin?: never;
-  transform?: never;
 }
 
 /**
@@ -151,10 +147,6 @@ interface LowLevelCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
   transform(opts: {
     source: string;
   } & BaseCodemodArgs<ParsedArgs>): CodemodResult<TransformResultMeta> | Promise<CodemodResult<TransformResultMeta>>;
-
-  presets?: never;
-  getPlugin?: never;
-  transformAll?: never;
 }
 
 /**
@@ -162,8 +154,6 @@ interface LowLevelCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
  */
 interface BabelCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
   extends BaseCodemod<ParsedArgs, TransformResultMeta> {
-  transform?: never;
-  transformAll?: never;
 
   /**
    * The set of babel presets needed to compile your code, like `@babel/preset-env`.

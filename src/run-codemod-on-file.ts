@@ -70,7 +70,7 @@ export default async function runCodemodOnFile(
   };
 
   const transformFile = async () => {
-    if (codemod.transform) {
+    if ('transform' in codemod) {
       try {
         return codemod.transform(codemodOpts);
       } catch (e: unknown) {
@@ -115,7 +115,7 @@ export default async function runCodemodOnFile(
     let pluginChangedAst = false;
     let metaResult;
 
-    if (!codemod.getPlugin) {
+    if (!('getPlugin' in codemod)) {
       throw makePhaseError(
         new Error('Your codemod must define one of `getPlugin` or `transform`'),
         'plugin validation',
