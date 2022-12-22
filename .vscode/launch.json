@@ -1,0 +1,22 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch AI Demo",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "env": {
+        "OPENAI_API_KEY": "${env:OPENAI_API_KEY}"  
+      },
+      "program": "${workspaceFolder}/build/bin.js",
+      "args": ["--prompt", "The Javascript code above is written in ES5. Here's what it looks like translated to modern JS:", "fixtures/ai/source/es5.js"],
+      "preLaunchTask": "npm: build",
+    }
+  ]
+}
