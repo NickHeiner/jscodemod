@@ -1,5 +1,6 @@
 import type {Promisable} from 'type-fest';
 import type {Options as RecastOptions} from 'recast';
+import type {CreateCompletionRequest} from 'openai';
 
 import {PluginItem, TransformOptions} from '@babel/core';
 
@@ -9,9 +10,22 @@ export type TransformedCode = string | undefined | null;
 export type CodemodResult<TransformResultMeta> = TransformedCode | {code: TransformedCode, meta: TransformResultMeta};
 
 export type BaseCodemodArgs<ParsedArgs> = {
+  /**
+   * The path to the file to transform.
+   */
   filePath: string;
   // TODO: only specify this as an option to transform if parseArgs is present.
+  /**
+   * Parsed arguments returned by `yourCodemod.parseArgs()`, if any.
+   */
   commandLineArgs?: ParsedArgs;
+}
+
+export interface CodemodArgsWithSource<ParsedArgs> extends BaseCodemodArgs<ParsedArgs> {
+  /**
+   * the contents of the file to transform.
+   */
+  source: string;
 }
 
 export type GetPluginResult = PluginItem | {
@@ -138,15 +152,8 @@ interface LowLevelCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
   extends BaseCodemod<ParsedArgs, TransformResultMeta> {
   /**
    * Transform a single file. Return null or undefined to indicate that the file should not be modified.
-   *
-   * @param opts
-   * @param opts.source the contents of the file to transform.
-   * @param opts.filePath the path to the file to transform.
-   * @param opts.commandLineArgs parsed arguments returned by `yourCodemod.parseArgs()`, if any.
    */
-  transform(opts: {
-    source: string;
-  } & BaseCodemodArgs<ParsedArgs>): CodemodResult<TransformResultMeta> | Promise<CodemodResult<TransformResultMeta>>;
+  transform(opts: CodemodArgsWithSource<ParsedArgs>): Promisable<CodemodResult<TransformResultMeta>>;
 }
 
 /**
@@ -238,7 +245,41 @@ interface BabelCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
   }) => Promisable<GetPluginResult>;
 }
 
-export type Codemod = BabelCodemod | LowLevelBulkCodemod | LowLevelCodemod;
+/**
+ * A nondeterministic codemod that uses AI to transform your code. It uses OpenAI's large language models.
+ *
+ * See [the AI codemod guide](../docs/ai.md) for more detail.
+ *
+ * ## When to use this
+ * ### Pros
+ * * Creating the codemod can be as simple as specifying the transformation you want, in plain language.
+ * * Some transformations are possible this way that would be extremely expensive to write as a traditional codemod.
+ *
+ * ### Cons
+ * * The results are non-deterministic. Specifying a seed will help with consistency, but this works by making an OpenAI
+ * API call, and they could change their results at any time.
+ * * Because the results are non-deterministic, you need to manually review all outputs. You may also need to tweak
+ * the output.
+ * * It runs much more slowly. Normal codemods are limited by your machine's CPU and IO concurrency limits. This codemod
+ * is limited by OpenAI's API latency and rate limiting.
+ *
+ * ## Requirements
+ * * You need an OpenAI API key.
+ *
+ */
+export interface AICodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
+  extends BaseCodemod<ParsedArgs, TransformResultMeta> {
+
+    /**
+     * @see https://beta.openai.com/docs/api-reference/completions/create
+     * @returns Parameters for a call to OpenAI's API.
+     */
+    getCompletionRequestParams: (opts: CodemodArgsWithSource<ParsedArgs>) => Promisable<CreateCompletionRequest>;
+    extractTransformationFromCompletion: (response: string) => CodemodResult<TransformResultMeta>
+
+}
+
+export type Codemod = BabelCodemod | LowLevelBulkCodemod | LowLevelCodemod | AICodemod;
 
 // The `any` here is intentional.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
