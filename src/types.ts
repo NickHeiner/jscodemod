@@ -245,6 +245,8 @@ export interface BabelCodemod<ParsedArgs = unknown, TransformResultMeta = unknow
   }) => Promisable<GetPluginResult>;
 }
 
+export type AIPrompt = string;
+
 /**
  * A nondeterministic codemod that uses AI to transform your code. It uses OpenAI's large language models.
  *
@@ -270,10 +272,14 @@ export interface AICodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
   extends BaseCodemod<ParsedArgs, TransformResultMeta> {
 
     /**
+     * If you omit this method, the values default to those set in `./default-completion-request-params.ts`.
+     *
      * @see https://beta.openai.com/docs/api-reference/completions/create
      * @returns Parameters for a call to OpenAI's API.
      */
-    getCompletionRequestParams: (opts: CodemodArgsWithSource<ParsedArgs>) => Promisable<CreateCompletionRequest>;
+    getGlobalCompletionRequestParams?: (opts: BaseCodemodArgs<ParsedArgs>) => Promisable<CreateCompletionRequest>;
+
+    getPrompt: (source: string) => Promisable<AIPrompt>;
 
     /**
      * Optional. Only add this if you're getting bad results without it.

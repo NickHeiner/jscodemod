@@ -70,6 +70,8 @@
     "nth-log": "2.0.3",
     "openai": "^3.1.0",
     "ora": "5.1.0",
+    "p-debounce": "^4.0.0",
+    "p-throttle": "^5.0.0",
     "piscina": "1.6.3",
     "pretty-error": "3.0.4",
     "pretty-ms": "7.0.1",

@@ -5184,6 +5184,11 @@ ora@5.1.0:
     strip-ansi "^6.0.0"
     wcwidth "^1.0.1"
 
+p-debounce@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/p-debounce/-/p-debounce-4.0.0.tgz#348e3f44489baa9435cc7d807f17b3bb2fb16b24"
+  integrity sha512-4Ispi9I9qYGO4lueiLDhe4q4iK5ERK8reLsuzH6BPaXn53EGaua8H66PXIFGrW897hwjXp+pVLrm/DLxN0RF0A==
+
 p-finally@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/p-finally/-/p-finally-1.0.0.tgz#3fbcfb15b899a44123b34b6dcc18b724336a2cae"
@@ -5251,6 +5256,11 @@ p-map@^4.0.0:
   integrity sha512-/bjOqmgETBYB5BoEeGVea8dmvHb2m9GLy1E9W43yeyfP6QQCZGFNa+XRceJEuDB6zqr+gKpIAmlLebMpykw/MQ==
   dependencies:
     aggregate-error "^3.0.0"
+
+p-throttle@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/p-throttle/-/p-throttle-5.0.0.tgz#b85e9dc56cbf5b54808a2ae29886b0da12537103"
+  integrity sha512-iXBFjW4kP/5Ivw7uC9EDnj+/xo3pNn4Rws3zgMGPwXnWTv1M3P0LVdZxLrqRUI5JK0Fp3Du0bt6lCaVrI3WF7g==
 
 p-try@^1.0.0:
   version "1.0.0"

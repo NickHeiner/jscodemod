@@ -14,6 +14,7 @@ import ansiColors from 'ansi-colors';
 import path from 'path';
 import fs from 'fs';
 import {CreateCompletionRequest} from 'openai';
+import defaultCompletionRequestParams from './default-completion-request-params';
 
 // Passing paths as file globs that start with `.` doesn't work.
 // https://github.com/sindresorhus/globby/issues/168
@@ -200,14 +201,7 @@ function validateAndGetAIOpts(
 
   return {
     prompt: promptFromFlags,
-    model: 'code-davinci-002',
-
-    // If you set this value too high, you'll get status code 429.
-    // eslint-disable-next-line camelcase
-    max_tokens: 2048,
-
-    temperature: 0,
-
+    ...defaultCompletionRequestParams,
     ...createCompletionRequestParams
   } satisfies CreateCompletionRequest;
 }
