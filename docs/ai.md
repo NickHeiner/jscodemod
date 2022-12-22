@@ -1,6 +1,20 @@
 # AI Codemods
 This tool supports running AI-powered codemods using OpenAI's models. This allows you to transform code without needing to know how AST transformers work.
 
+* [Demos](#demo)
+  * [Converting old JS to modern JS](#simple-prompt-converting-old-js-to-modern-js)
+  * [Converting a React class component to a functional one](#simple-prompt-converting-a-react-class-component-to-a-functional-one)
+  * [Making up your own transformation](#long-prompt)
+* [Best Practices & Guide](#best-practices--guide)
+  * [Mindset](#mindset)
+  * [Prompt Engineering](#prompt-engineering)
+  * [API Params](#api-params)
+* Examples
+  * [Markdown file as codemod](../fixtures/ai/codemod/add-exports.md)
+  * [Programmatic codemod](../fixtures/ai/codemod/5to6.ts)
+* [API documentation](../src/types.ts)
+* [Command line interface](../src/bin.ts)
+
 ## Demo
 ### Simple Prompt: Converting old JS to modern JS
 If the transformation you want is common, you can simply ask for it in plain language.
