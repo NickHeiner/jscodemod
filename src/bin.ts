@@ -35,6 +35,10 @@ const argv = yargs
           [
             '$0 --codemod codemod.js --inputFileList files-to-modify.txt',
             'Run the codemod against a set of files listed in the text file.'
+          ],
+          [
+            '$0 --prompt "Translate the file above from ES5 to modern JS" "source/**/*.js"',
+            'Run an AI-powered codemod against the files matching the passed glob.'
           ]
         ]);
     })
@@ -107,13 +111,13 @@ const argv = yargs
     prompt: {
       type: 'string',
       required: false,
-      describe: '',
+      describe: "A prompt for an AI-powered codemod. The AI will be asked to complete an input. The input will be form: `${input file source code}\n//${the value you pass for this flag}`. If that format doesn't work for you, implement an AICodemod instead and pass the --codemod flag.",
       conflicts: ['codemod']
     },
     promptFile: {
       type: 'string',
       required: false,
-      describe: '',
+      describe: "A prompt for an AI-powered codemod. The AI will be asked to complete an input. The input will be form: `${input file source code}\n//${the contents of the file pointed to by this flag}`. If that format doesn't work for you, implement an AICodemod instead and pass the --codemod flag.",
       conflicts: ['prompt', 'codemod']
     },
     openAICompletionRequestConfig: {

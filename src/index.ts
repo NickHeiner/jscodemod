@@ -273,9 +273,20 @@ async function jscodemod(
   async function getCodemod() {
     const {createCompletionRequestParams} = options;
     if (createCompletionRequestParams) {
+      if (typeof createCompletionRequestParams.prompt !== 'string') {
+        throw new Error(`To run an AI codemod, you can do one of two things:
+1. Pass \`createCompletionRequestParams\`
+2. Pass a path to a codemod that implements the AICodemod type.
+
+In case (1), your prompt must be a string. However, your prompt was a "${typeof createCompletionRequestParams.prompt}". If you want a non-string prompt, use option (2) listed above.`)
+      }
+
       const codemod: AICodemod = {
         name: 'codemod-generated-from-CLI-flags',
-        getCompletionRequestParams: () => createCompletionRequestParams
+        getCompletionRequestParams: ({source}) => ({
+          ...createCompletionRequestParams,
+          prompt: `${source}\n//${createCompletionRequestParams.prompt}`
+        })
       };
 
       return {codemod, codemodName: codemod.name, codemodPath: null};
