@@ -62,6 +62,7 @@ export default async function runAICodemod(codemod: AICodemod, codemodOpts: Code
   }
 
   const configuration = new Configuration({
+    // TODO: make this configurable
     organization: 'org-Gxi40GyAs8FnliemJe5YJJaK',
     apiKey
   });
