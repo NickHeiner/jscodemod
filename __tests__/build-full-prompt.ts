@@ -30,7 +30,7 @@ it('handles single line inputs', () => {
   expect(buildFullPrompt('// my prompt', 'source_code')).toMatchInlineSnapshot(`
 "source_code
 
-//// my prompt
+/*// my prompt*/
 "
 `);
 });
