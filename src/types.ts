@@ -106,21 +106,23 @@ interface BaseCodemod<ParsedArgs = unknown, TransformResultMeta = unknown> {
   }) => void | Promise<unknown>;
 }
 
-interface BulkCodemod<ParsedArgs = unknown, TransformResultMeta = unknown> 
+/**
+ * A codemod that takes a list of files, and processes them all at once. Use this when integrating with another tool,
+ * like ts-migrate. Or when you need finer-grained control over the file modification process.
+ *
+ * LowLevelCodemod and BabelCodemod operate on a model where your code returns instructions on how to modify a single
+ * file, and jscodemod actually writes the files. transformAll() just takes a set of files, and does whatever it wants
+ * to do. So, if you want files to be written, with this codemod, you do it yourself.
+ */
+interface LowLevelBulkCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
   extends BaseCodemod<ParsedArgs, TransformResultMeta> {
   /**
-   * Transform every file at once. Use this when integrating with another tool, like ts-migrate. Or when you need
-   * finer-grained control over the file modification process.
-   *
-   * transform() and getPlugin() operate on a model where your code returns instructions on how to modify a single
-   * file, and jscodemod actually writes the files. transformAll() just takes a set of files, and does whatever it
-   * wants to do.
-   *
-   * Return a list of the modified files.
+   * Transform every file at once.
    *
    * @param opts
    * @param opts.fileNames the file names to transform
    * @param opts.commandLineArgs parsed arguments returned by `yourCodemod.parseArgs()`, if any.
+   * @return A list of the modified files.
    */
   transformAll(opts: {
     fileNames: string[],
@@ -132,7 +134,11 @@ interface BulkCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
   transform?: never;
 }
 
-interface LowLevelCodemod<ParsedArgs = unknown, TransformResultMeta = unknown> 
+/**
+ * A simple codemod that simply takes a file and returns a result indicating how it should be transformed. Use this when
+ * the other higher-level codemod types don't fit your usecase.
+ */
+interface LowLevelCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
   extends BaseCodemod<ParsedArgs, TransformResultMeta> {
   /**
    * Transform a single file. Return null or undefined to indicate that the file should not be modified.
@@ -151,7 +157,11 @@ interface LowLevelCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
   transformAll?: never;
 }
 
-interface BabelCodemod<ParsedArgs = unknown, TransformResultMeta = unknown> extends BaseCodemod<ParsedArgs, TransformResultMeta> {
+/**
+ * A codemod that uses a Babel plugin to indicate how the code will be transformed.
+ */
+interface BabelCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
+  extends BaseCodemod<ParsedArgs, TransformResultMeta> {
   transform?: never;
   transformAll?: never;
 
@@ -238,7 +248,7 @@ interface BabelCodemod<ParsedArgs = unknown, TransformResultMeta = unknown> exte
   }) => Promisable<GetPluginResult>;
 }
 
-export type Codemod = BabelCodemod | BulkCodemod | LowLevelCodemod;
+export type Codemod = BabelCodemod | LowLevelBulkCodemod | LowLevelCodemod;
 
 // The `any` here is intentional.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
