@@ -205,6 +205,8 @@ Your normal workflow loop looks something like:
 
 With an AI codemod, you skip the "implement" and "write tests" step. However, you'll likely need to apply a little more editing to the result of what the codemod gives you. It probably won't be safe to run the codemod on 5000 files and merge without further verification. But moving from "I need to migrate all this myself" to "someone else gets it 95% of the way and I just have to edit their output" is a big help.
 
+Additionally, **AI model responses are not deterministic.** Every time you run, you could get something different. If you like a result, save it. So rather than say, "I like this prompt's results for 5 files, but I'm going to keep tweaking my prompt until I like it for all 10", just save your 5 good files and move on.
+
 ### Prompt Engineering
 As with all generative AI, finding a good prompt (and other parameters) is the key to getting the result you're looking for. It seems like something you just need to [experiment with](https://beta.openai.com/playground/p/gXdPByzqByPdjMoJXmNvBnmj?model=code-davinci-002). Here are some heuristics I've found:
 

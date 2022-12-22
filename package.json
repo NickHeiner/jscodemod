@@ -19,6 +19,7 @@
     "build": "rm -rf build && tsc && chmod a+x ./build/bin.js",
     "demo": "yarn build && yarn jscodemod --codemod fixtures/prepend-string/codemod.js fixtures/prepend-string/source",
     "demo:ai": "yarn build && yarn jscodemod --prompt \"The Javascript code above is written in ES5. Transform it to ES6. Include only the transformed code; do not include any other comments, context, or metadata. Do not create new comments. Make sure to apply the following transformations: 1. Use optional chaining. 2. Use the object property shorthand.\" fixtures/ai/source/es5.js --resetDirtyInputFiles",
+    "demo:ai:react": "yarn build && yarn jscodemod --prompt \"Above, we have a React class component. Convert it to be a functional component, which uses hooks instead of this.setState and the lifecycle methods. Only return a single example. Do not include any other comments or prose.\" fixtures/ai/source/react-component.js --resetDirtyInputFiles",
     "demo:ai:file_prompt": "yarn build && yarn jscodemod --promptFile fixtures/ai/codemod/add-exports.md fixtures/ai/source/export.js --resetDirtyInputFiles && yarn jscodemod --promptFile fixtures/ai/codemod/remove-exports.md fixtures/ai/source/export.js",
     "unit": "jest",
     "test": "yarn lint && yarn build && yarn unit",
