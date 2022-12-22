@@ -45,7 +45,6 @@ const argv = yargs
     codemod: {
       alias: 'c',
       type: 'string',
-      required: true,
       describe: 'Path to the codemod to run'
     },
     inputFileList: {
@@ -158,17 +157,34 @@ const argv = yargs
     if (argv.porcelain && !argv.dry) {
       throw new Error('Porcelain is only supported for dry mode.');
     }
+
+    const {prompt} = validateAndGetAIOpts();
+    if (!(prompt || argv.codemod)) {
+      throw new Error('You must pass either the --codemod or --prompt flags.');
+    }
+
     return true;
   })
   .strict()
   .help()
   .parseSync();
 
-function getAIOpts() {
-  const prompt = argv.promptFile ? fs.readFileSync(argv.promptFile, 'utf8') : argv.prompt;
-  const createCompletionRequestParams = argv.openAICompletionRequestConfig ? JSON.parse(argv.openAICompletionRequestConfig) : argv.openAICompletionRequestFile;
+function validateAndGetAIOpts() {
+  const createCompletionRequestParams = argv.openAICompletionRequestConfig
+    ? JSON.parse(argv.openAICompletionRequestConfig) : argv.openAICompletionRequestFile;
+  const promptFromFile = argv.promptFile && fs.readFileSync(argv.promptFile, 'utf8');
+  const promptFromFlags = promptFromFile || argv.prompt;
 
-  return { prompt, createCompletionRequestParams }
+  if (promptFromFlags && createCompletionRequestParams.prompt) {
+    throw new Error(
+      'If your API params includes a prompt, you must not pass a separate prompt via the other command line flags.'
+    );
+  }
+
+  return {
+    prompt: promptFromFlags,
+    ...createCompletionRequestParams
+  };
 }
 
 async function main() {
@@ -180,7 +196,7 @@ async function main() {
     const opts = {
       ..._.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'resetDirtyInputFiles', 'porcelain', 'jsonOutput',
         'piscinaLowerBoundInclusive', 'inputFileList', 'inputFilesPatterns'),
-      ...getAIOpts(),
+      ...validateAndGetAIOpts(),
       log
     };
 
@@ -199,8 +215,6 @@ async function main() {
 
     const codemodMetaResults = await jscodemod(
       argv.codemod,
-      // Yarg's types are messed up.
-      // @ts-expect-error
       opts
     );
 

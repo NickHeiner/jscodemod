@@ -265,7 +265,7 @@ async function runBabelCodemod(
 
 export default async function runCodemodOnFile(
   codemod: CodemodThatUsesTheRunner, sourceCodeFile: string, baseLog: NTHLogger,
-  {codemodArgs, codemodPath}: {codemodArgs?: string, codemodPath: string},
+  {codemodArgs, codemodPath}: {codemodArgs?: string, codemodPath: string | null},
   runStartTimeMs: number
 ): Promise<CodemodMetaResult<unknown>> {
   const log = baseLog.child({sourceCodeFile});

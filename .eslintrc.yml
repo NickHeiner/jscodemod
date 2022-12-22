@@ -17,6 +17,9 @@ rules:
   # I don't use @ts comments frivolously.
   '@typescript-eslint/ban-ts-comment': off
 
+  # TODO: Can we turn this off only for functions?
+  'no-use-before-define': off
+
   no-mixed-operators: error
   no-trailing-spaces: warn
 
