@@ -285,7 +285,8 @@ In case (1), your prompt must be a string. However, your prompt was a "${typeof 
         name: 'codemod-generated-from-CLI-flags',
         getCompletionRequestParams: ({source}) => ({
           ...createCompletionRequestParams,
-          prompt: `${source}\n//${createCompletionRequestParams.prompt}`
+          // Add a trailing newline, since sometimes the model returns empty results otherwise.
+          prompt: `${source}\n\n//${createCompletionRequestParams.prompt}\n`
         })
       };
 

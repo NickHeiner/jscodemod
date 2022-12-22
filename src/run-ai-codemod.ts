@@ -68,11 +68,10 @@ export default async function runAICodemod(codemod: AICodemod, codemodOpts: Code
   });
   const openai = new OpenAIApi(configuration);
   const axiosResponse = await log.logPhase(
-    {phase: 'OpenAI request', level: 'debug'},
+    {phase: 'OpenAI request', level: 'debug', completionRequestParams},
     async (_, setAdditionalLogData) => {
       const response = await openai.createCompletion(completionRequestParams);
-      // @ts-expect-error This is fine, but the types are too restrictive.
-      setAdditionalLogData(response.data);
+      setAdditionalLogData({completionResponse: response.data});
       return response;
     }
   );

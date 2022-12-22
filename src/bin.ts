@@ -189,8 +189,13 @@ function validateAndGetAIOpts(args: typeof argv) {
   return {
     prompt: promptFromFlags,
     model: 'code-davinci-002',
+
+    // If you set this value too high, you'll get status code 429.
     // eslint-disable-next-line camelcase
-    max_tokens: 4096,
+    max_tokens: 2048,
+
+    temperature: 0,
+
     ...createCompletionRequestParams
   } satisfies CreateCompletionRequest;
 }
