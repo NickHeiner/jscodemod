@@ -9,6 +9,7 @@ For example, given this input:
 function a() { return 1 }
 function b() { return 0 }
 const c = 'asdf';
+const d = 1234;
 
 const toExport = { a, b, c };
 
@@ -21,6 +22,7 @@ An NEX refactor would result in:
 export function a() { return 1 }
 export function b() { return 0 }
 export const c = 'asdf';
+const d = 1234;
 
 // @deprecated Use the named exports instead.
 const toExport = { a, b, c };
@@ -28,4 +30,9 @@ const toExport = { a, b, c };
 export default toExport;
 ```
 
-Please perform an NEX refactor on the following code. Output only the code itself; do not include any prose.
+Perform a NEX refactor on the following code.  
+```js
+{{INPUT_SOURCE_CODE}}
+```
+
+Result of NEX refactor (without any comments or extra prose):

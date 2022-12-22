@@ -24,6 +24,7 @@ import {promises as fs} from 'fs';
 import {EOL} from 'os';
 import prettyMs from 'pretty-ms';
 import type {CreateCompletionRequest} from 'openai';
+import buildFullPrompt from './build-full-prompt';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
 export {default as execBigCommand} from './exec-big-command';
@@ -278,21 +279,17 @@ async function jscodemod(
 1. Pass \`createCompletionRequestParams\`
 2. Pass a path to a codemod that implements the AICodemod type.
 
-In case (1), your prompt must be a string. However, your prompt was a "${typeof createCompletionRequestParams.prompt}". If you want a non-string prompt, use option (2) listed above.`)
+In case (1), your prompt must be a string. However, your prompt was a "${typeof createCompletionRequestParams.prompt}". If you want a non-string prompt, use option (2) listed above.`);
       }
       const {prompt} = createCompletionRequestParams;
 
       const codemod: AICodemod = {
         name: 'codemod-generated-from-CLI-flags',
-        getCompletionRequestParams: ({source}) => {
-          const wrappedPrompt = prompt.includes('\n') ? `/*\n${prompt}\n*/\n\n${source}` : `${source}\n\n//${prompt}`; 
-
-          return {
-            ...createCompletionRequestParams,
-            // Add a trailing newline, since sometimes the model returns empty results otherwise.
-            prompt: `${wrappedPrompt}\n`
-          }
-        }
+        getCompletionRequestParams: ({source}) => ({
+          ...createCompletionRequestParams,
+          // Add a trailing newline, since sometimes the model returns empty results otherwise.
+          prompt: buildFullPrompt(prompt, source)
+        })
       };
 
       return {codemod, codemodName: codemod.name, codemodPath: null};

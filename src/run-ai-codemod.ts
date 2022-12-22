@@ -21,7 +21,7 @@ function defaultExtractResultFromCompletion(
       'extracting the transformed code from the completion',
       // eslint-disable-next-line max-len
       "Implement your own extractTransformationFromCompletion method, or repeat this call and see if you randomly get an output that doesn't trigger this issue."
-    )
+    );
   }
   return completion;
 }
@@ -67,7 +67,7 @@ export default async function runAICodemod(codemod: AICodemod, codemodOpts: Code
     apiKey
   });
   const openai = new OpenAIApi(configuration);
-  console.log(completionRequestParams.prompt)
+  console.log(completionRequestParams.prompt);
   const axiosResponse = await log.logPhase(
     {phase: 'OpenAI request', level: 'debug', completionRequestParams},
     async (_, setAdditionalLogData) => {
