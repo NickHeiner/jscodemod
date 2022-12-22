@@ -142,15 +142,6 @@ function transformCode(
     return piscina;
   });
 
-  const runCodemodOnSingleFile = (inputFile: string): Promise<CodemodMetaResult<unknown>> => {
-    const runStartTimeMs = Date.now();
-    if (inputFiles.length >= (piscinaLowerBoundInclusive ?? defaultPiscinaLowerBoundInclusive)) {
-      return getPiscina().runTask({inputFile, runStartTimeMs});
-    }
-
-    return runCodemodOnFile(codemod, inputFile, log, baseRunnerOpts, runStartTimeMs);
-  };
-
   const codemodName = getCodemodName(codemod, codemodPath);
   const progressBar = getProgressUI(logOpts, inputFiles.length, codemodName);
   // We might be doing something to hurt perf here.
@@ -166,13 +157,21 @@ function transformCode(
   });
 
   async function codemodAllFiles() {
-    if ('transformAll' in codemod && typeof codemod.transformAll === 'function') {
+    if ('transformAll' in codemod) {
       return codemod.transformAll({
         fileNames: inputFiles,
         commandLineArgs: parsedArgs
       });
     }
     const allFilesCodemoddedPromise = Promise.all(inputFiles.map(async inputFile => {
+      const runCodemodOnSingleFile = (inputFile: string): Promise<CodemodMetaResult<unknown>> => {
+        const runStartTimeMs = Date.now();
+        if (inputFiles.length >= (piscinaLowerBoundInclusive ?? defaultPiscinaLowerBoundInclusive)) {
+          return getPiscina().runTask({inputFile, runStartTimeMs});
+        }
+
+        return runCodemodOnFile(codemod, inputFile, log, baseRunnerOpts, runStartTimeMs);
+      };
       const codemodMetaResult = await runCodemodOnSingleFile(inputFile);
       logTimeToChangeFirstFile();
       log.debug({

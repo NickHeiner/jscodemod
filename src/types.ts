@@ -9,7 +9,7 @@ import jscodemod, {Options} from './';
 export type TransformedCode = string | undefined | null;
 export type CodemodResult<TransformResultMeta> = TransformedCode | {code: TransformedCode, meta: TransformResultMeta};
 
-export type BaseCodemodArgs<ParsedArgs> = {
+export type BaseCodemodArgs<ParsedArgs = unknown> = {
   /**
    * The path to the file to transform.
    */
@@ -21,7 +21,7 @@ export type BaseCodemodArgs<ParsedArgs> = {
   commandLineArgs?: ParsedArgs;
 }
 
-export interface CodemodArgsWithSource<ParsedArgs> extends BaseCodemodArgs<ParsedArgs> {
+export interface CodemodArgsWithSource<ParsedArgs = unknown> extends BaseCodemodArgs<ParsedArgs> {
   /**
    * the contents of the file to transform.
    */
@@ -128,7 +128,7 @@ interface BaseCodemod<ParsedArgs = unknown, TransformResultMeta = unknown> {
  * file, and jscodemod actually writes the files. transformAll() just takes a set of files, and does whatever it wants
  * to do. So, if you want files to be written, with this codemod, you do it yourself.
  */
-interface LowLevelBulkCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
+export interface LowLevelBulkCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
   extends BaseCodemod<ParsedArgs, TransformResultMeta> {
   /**
    * Transform every file at once.
@@ -148,7 +148,7 @@ interface LowLevelBulkCodemod<ParsedArgs = unknown, TransformResultMeta = unknow
  * A simple codemod that simply takes a file and returns a result indicating how it should be transformed. Use this when
  * the other higher-level codemod types don't fit your usecase.
  */
-interface LowLevelCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
+export interface LowLevelCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
   extends BaseCodemod<ParsedArgs, TransformResultMeta> {
   /**
    * Transform a single file. Return null or undefined to indicate that the file should not be modified.
@@ -159,7 +159,7 @@ interface LowLevelCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
 /**
  * A codemod that uses a Babel plugin to indicate how the code will be transformed.
  */
-interface BabelCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
+export interface BabelCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
   extends BaseCodemod<ParsedArgs, TransformResultMeta> {
 
   /**
@@ -297,15 +297,23 @@ export interface AICodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
      * subtracting the input prompt prefix from the completion output. But you can specify this method if you'd like
      * more control, or would like to otherwise inspect the API response.
      *
-     * Sometimes, the AI will return extra content at the end of your transformed code. IF that happens, this function
+     * In particular, if you pass an input param that causes the model to return multiple results, you can use this
+     * method to pick which result you want.
+     *
+     * That fallback only works if your prompt is a string. If your prompt is something else, you need to specify this
+     * method manually.
+     *
+     * Sometimes, the AI will return extra content at the end of your transformed code. If that happens, this function
      * gives you a chance to cut it out. But before you try that, it's probably better to tweak your prompt to be more
      * specific about what you want.
      */
     extractTransformationFromCompletion?: (response: CreateCompletionResponse) => CodemodResult<TransformResultMeta>
 
+    // TODO: Specify the types such that extractTransformationFromCompletion is required when the prompt is a string.
 }
 
-export type Codemod = BabelCodemod | LowLevelBulkCodemod | LowLevelCodemod | AICodemod;
+export type CodemodThatUsesTheRunner = BabelCodemod | LowLevelCodemod | AICodemod;
+export type Codemod = CodemodThatUsesTheRunner | LowLevelBulkCodemod;
 
 // The `any` here is intentional.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
