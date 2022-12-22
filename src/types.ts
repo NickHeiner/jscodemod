@@ -28,7 +28,7 @@ export type GetPluginResult = PluginItem | {
   plugin: PluginItem;
 };
 
-export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
+interface BaseCodemod<ParsedArgs = unknown, TransformResultMeta = unknown> {
   /**
    * A name for the codemod, like "transform-cjs-to-esm". Defaults to the file name. Used for logging.
    */
@@ -104,7 +104,10 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
       options: Partial<Options>
     ): ReturnType<typeof jscodemod>
   }) => void | Promise<unknown>;
-} & ({
+}
+
+interface BulkCodemod<ParsedArgs = unknown, TransformResultMeta = unknown> 
+  extends BaseCodemod<ParsedArgs, TransformResultMeta> {
   /**
    * Transform every file at once. Use this when integrating with another tool, like ts-migrate. Or when you need
    * finer-grained control over the file modification process.
@@ -127,7 +130,10 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
   presets?: never;
   getPlugin?: never;
   transform?: never;
-} | {
+}
+
+interface LowLevelCodemod<ParsedArgs = unknown, TransformResultMeta = unknown> 
+  extends BaseCodemod<ParsedArgs, TransformResultMeta> {
   /**
    * Transform a single file. Return null or undefined to indicate that the file should not be modified.
    *
@@ -143,7 +149,9 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
   presets?: never;
   getPlugin?: never;
   transformAll?: never;
-} | {
+}
+
+interface BabelCodemod<ParsedArgs = unknown, TransformResultMeta = unknown> extends BaseCodemod<ParsedArgs, TransformResultMeta> {
   transform?: never;
   transformAll?: never;
 
@@ -228,7 +236,9 @@ export type Codemod<ParsedArgs = unknown, TransformResultMeta = unknown> = {
     /** Set a meta result to be associated with this file. This value will be passed to the postProcess hook. */
     setMetaResult: (meta: TransformResultMeta) => void;
   }) => Promisable<GetPluginResult>;
-})
+}
+
+export type Codemod = BabelCodemod | BulkCodemod | LowLevelCodemod;
 
 // The `any` here is intentional.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
