@@ -26,4 +26,4 @@ const b = 'asdf';
 
 const toExport = { a, b, c };
 
-module.exports = toExport;
+export default toExport;

@@ -280,14 +280,19 @@ async function jscodemod(
 
 In case (1), your prompt must be a string. However, your prompt was a "${typeof createCompletionRequestParams.prompt}". If you want a non-string prompt, use option (2) listed above.`)
       }
+      const {prompt} = createCompletionRequestParams;
 
       const codemod: AICodemod = {
         name: 'codemod-generated-from-CLI-flags',
-        getCompletionRequestParams: ({source}) => ({
-          ...createCompletionRequestParams,
-          // Add a trailing newline, since sometimes the model returns empty results otherwise.
-          prompt: `${source}\n\n//${createCompletionRequestParams.prompt}\n`
-        })
+        getCompletionRequestParams: ({source}) => {
+          const wrappedPrompt = prompt.includes('\n') ? `/*\n${prompt}\n*/\n\n${source}` : `${source}\n\n//${prompt}`; 
+
+          return {
+            ...createCompletionRequestParams,
+            // Add a trailing newline, since sometimes the model returns empty results otherwise.
+            prompt: `${wrappedPrompt}\n`
+          }
+        }
       };
 
       return {codemod, codemodName: codemod.name, codemodPath: null};

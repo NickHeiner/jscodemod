@@ -67,6 +67,7 @@ export default async function runAICodemod(codemod: AICodemod, codemodOpts: Code
     apiKey
   });
   const openai = new OpenAIApi(configuration);
+  console.log(completionRequestParams.prompt)
   const axiosResponse = await log.logPhase(
     {phase: 'OpenAI request', level: 'debug', completionRequestParams},
     async (_, setAdditionalLogData) => {
