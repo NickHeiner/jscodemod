@@ -15,6 +15,8 @@ This tool supports running AI-powered codemods using OpenAI's models. This allow
 * [API documentation](../src/types.ts)
 * [Command line interface](../src/bin.ts)
 
+To run this locally, you'll need an [OpenAI API key](https://beta.openai.com/overview).
+
 ## Demo
 ### Simple Prompt: Converting old JS to modern JS
 If the transformation you want is common, you can simply ask for it in plain language.
@@ -295,6 +297,8 @@ Your normal workflow loop looks something like:
 With an AI codemod, you skip the "implement" and "write tests" step. However, you'll likely need to apply a little more editing to the result of what the codemod gives you. It probably won't be safe to run the codemod on 5000 files and merge without further verification. But moving from "I need to migrate all this myself" to "someone else gets it 95% of the way and I just have to edit their output" is a big help.
 
 Additionally, **AI model responses are not deterministic.** Every time you run, you could get something different. If you like a result, save it. So rather than say, "I like this prompt's results for 5 files, but I'm going to keep tweaking my prompt until I like it for all 10", just save your 5 good files and move on.
+
+Some types of codemods will be easier to write the traditional way, and some types will be easier this way.
 
 ### Prompt Engineering
 As with all generative AI, finding a good prompt (and other parameters) is the key to getting the result you're looking for. It seems like something you just need to [experiment with](https://beta.openai.com/playground/p/gXdPByzqByPdjMoJXmNvBnmj?model=code-davinci-002). For your workflow, I recommend experimenting in the playground. Then, use this tool when you're ready to apply the results to your codebase. 

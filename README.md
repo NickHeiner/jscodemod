@@ -1,5 +1,5 @@
 # jscodemod
-JSCodemod is a codemod runner. Its codemods are written in JS/TS, but you can operate on any type of file.
+JSCodemod is a codemod runner. Its codemods are written in JS/TS, or [generated via AI](./docs/ai.md). You can operate on any type of file.
 
 ## Example
 

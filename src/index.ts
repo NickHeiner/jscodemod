@@ -131,7 +131,7 @@ function transformCode(
     const piscina = new Piscina({
       filename: require.resolve('./worker'),
       argv: [
-        //
+        // We've proven by this point in the code that this is safe.
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         codemodPath!
       ],
@@ -281,15 +281,14 @@ async function jscodemod(
 2. Pass a path to a codemod that implements the AICodemod type.
 
 In case (1), your prompt must be a string. However, your prompt was a "${typeof createCompletionRequestParams.prompt}". If you want a non-string prompt, use option (2) listed above.`);
+        /* eslint-enable max-len */
       }
-      /* eslint-enable max-len */
       const {prompt} = createCompletionRequestParams;
 
       const codemod: AICodemod = {
         name: 'codemod-generated-from-CLI-flags',
         getCompletionRequestParams: ({source}) => ({
           ...createCompletionRequestParams,
-          // Add a trailing newline, since sometimes the model returns empty results otherwise.
           prompt: buildFullPrompt(prompt, source)
         })
       };
@@ -417,8 +416,8 @@ In case (1), your prompt must be a string. However, your prompt was a "${typeof 
     await resetDirtyInputFiles(gitRoot, filesToModify, log);
   }
 
-  // eslint-disable-next-line max-len
-  const piscinaLowerBoundInclusive = passedOptions.createCompletionRequestParams ? Infinity : passedOptions.piscinaLowerBoundInclusive;
+  const piscinaLowerBoundInclusive = passedOptions.createCompletionRequestParams
+    ? Infinity : passedOptions.piscinaLowerBoundInclusive;
   const transformResults = await transformCode(codemod, log, codemodPath, filesToModify,
     piscinaLowerBoundInclusive,
     _.pick(passedOptions, 'jsonOutput', 'porcelain'), parsedArgs, options.codemodArgs
