@@ -187,6 +187,8 @@ export default codemod;
 
 This allows you to have full control over the params passed to OpenAI, as well as apply any transformations you want to the response.
 
+Note that if you do this, you need to specify all `createCompletionRequestParams`. For instance, the default value for `max_tokens` is `16`, which is very low. You'll likely want to set that to the model max (`2048` at this moment), so the model can return a long enough response to transform your entire file.
+
 See [the types](../src/types.ts) for a full definition of the API.
 
 ## Best Practices & Guide
@@ -217,6 +219,15 @@ Good:
 
 #### Set [`temperature`](https://beta.openai.com/docs/api-reference/completions/create#completions/create-temperature) low
 The higher the `temperature`, the more "creative" the AI gets. When transforming code, we generally don't want creativity. 
+
+#### Set [`max_tokens`](https://beta.openai.com/docs/api-reference/completions/create#completions/create-max_tokens) to match the input length
+`max_tokens` determines how long of a response the AI will generate. (Tokens are not the same as characters; see the [tokenizer](https://beta.openai.com/tokenizer).)
+
+In my experimenting, I saw that the AI would sometimes include extraneous content. For instance, I'd ask it to transform a React class component to a functional one, and it would give me three ways to do it, plus some comments explaining what's going on.
+
+One way to address this is to explicitly say things like "don't add new comments" in the prompt.
+
+But you can also set the `max_tokens` to be something close to length of your input file, which gives the AI less room to add extraneous content.
 
 #### Give Multiple Examples
 If you're defining your own codemod with examples, make sure to give a few examples that exercise different conditions. For instance:
