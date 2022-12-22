@@ -11,6 +11,7 @@ import getLogger from './get-logger';
 import {CodemodMetaResult} from './run-codemod-on-file';
 import PrettyError from 'pretty-error';
 import ansiColors from 'ansi-colors';
+import path from 'path';
 
 // Passing paths as file globs that start with `.` doesn't work.
 // https://github.com/sindresorhus/globby/issues/168
@@ -102,9 +103,41 @@ const argv = yargs
       describe: 'Output logs as JSON, instead of human-readable formatting. Useful if you want to consume the output ' +
         'of this tool from another tool, or process the logs using your own Bunyan log processor/formatter. The ' +
         'precise set of logs emitted is not considered to be part of the public API.'
+    },
+    prompt: {
+      type: 'string',
+      required: false,
+      describe: '',
+      conflicts: ['codemod']
+    },
+    promptFile: {
+      type: 'string',
+      required: false,
+      describe: '',
+      conflicts: ['prompt', 'codemod']
+    },
+    openAICompletionRequestConfig: {
+      alias: 'aiConfig',
+      required: false,
+      type: 'string',
+      conflicts: ['codemod'],
+      describe:
+        "API params to pass to OpenAI's createCompletionRequest API. See https://beta.openai.com/docs/api-reference/completions/create. The argument you pass to this flag will be interpreted as JSON."
+    },
+    openAICompletionRequestFile: {
+      config: true,
+      required: false,
+      type: 'string',
+      conflicts: ['openAICompletionRequestConfig', 'codemod'],
+      describe:
+        "A path to a JSON file containing request params for OpenAI's createCompletionRequest API. See https://beta.openai.com/docs/api-reference/completions/create."
     }
   })
   .group(['codemod', 'dry', 'resetDirtyInputFiles', 'inputFileList'], 'Primary')
+  .group(
+    ['prompt', 'promptFile', 'openAICompletionRequestConfig', 'openAICompletionRequestFile'],
+    `AI. Only applicable if you're using AI for your codemod. See ${path.resolve(__filename, path.join('..', '..', 'docs', 'ai.md'))}.`
+  )
   .group(['tsconfig', 'tsOutDir', 'tsc'], 'TypeScript (only applicable if your codemod is written in TypeScript)')
   .group(['jsonOutput', 'porcelain'], 'Rarely Useful')
   .check(argv => {
