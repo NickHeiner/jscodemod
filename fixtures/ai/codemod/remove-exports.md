@@ -1,4 +1,4 @@
-/* In JS, a REX refactor is one where we remove the `export` keyword from variable declarations. Specifically, if a variable is not referenced in the `toExport` object construction, it shouldn't be exported.
+In JS, a REX refactor is one where we remove the `export` keyword from variable declarations. Specifically, if a variable is not referenced in the `toExport` object construction, it shouldn't be exported.
 
 For the following code:
 
