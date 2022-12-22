@@ -88,5 +88,17 @@ const codemod: Codemod = {
 * [API documentation](src/types.ts)
 
 ## Changelog
+### 3.0.0
+* **TypeScript**: Codemods implemented in TS now will use a different exported type.
+
+```ts
+// Previous
+import type { Codemod } from '@nick.heiner/jscodemod';
+
+// New: Use the specific type that applies to your codemod.
+// See ./src/types.ts for definitions.
+import type { BabelCodemod, LowLevelCodemod, AICodemod } from '@nick.heiner/jscodemod';
+```
+
 ### 2.0.0
 Drop support for NodeJs 12.

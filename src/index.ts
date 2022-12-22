@@ -275,12 +275,14 @@ async function jscodemod(
     const {createCompletionRequestParams} = options;
     if (createCompletionRequestParams) {
       if (typeof createCompletionRequestParams.prompt !== 'string') {
+        /* eslint-disable max-len */
         throw new Error(`To run an AI codemod, you can do one of two things:
 1. Pass \`createCompletionRequestParams\`
 2. Pass a path to a codemod that implements the AICodemod type.
 
 In case (1), your prompt must be a string. However, your prompt was a "${typeof createCompletionRequestParams.prompt}". If you want a non-string prompt, use option (2) listed above.`);
       }
+      /* eslint-enable max-len */
       const {prompt} = createCompletionRequestParams;
 
       const codemod: AICodemod = {
@@ -415,6 +417,7 @@ In case (1), your prompt must be a string. However, your prompt was a "${typeof 
     await resetDirtyInputFiles(gitRoot, filesToModify, log);
   }
 
+  // eslint-disable-next-line max-len
   const piscinaLowerBoundInclusive = passedOptions.createCompletionRequestParams ? Infinity : passedOptions.piscinaLowerBoundInclusive;
   const transformResults = await transformCode(codemod, log, codemodPath, filesToModify,
     piscinaLowerBoundInclusive,

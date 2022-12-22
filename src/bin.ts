@@ -112,12 +112,14 @@ const argv = yargs
     prompt: {
       type: 'string',
       required: false,
+      // eslint-disable-next-line max-len
       describe: "A prompt for an AI-powered codemod. The AI will be asked to complete an input. The input will be form: `${input file source code}\n//${the value you pass for this flag}`. If that format doesn't work for you, implement an AICodemod instead and pass the --codemod flag.",
       conflicts: ['codemod']
     },
     promptFile: {
       type: 'string',
       required: false,
+      // eslint-disable-next-line max-len
       describe: "A prompt for an AI-powered codemod. The AI will be asked to complete an input. The input will be form: `${input file source code}\n//${the contents of the file pointed to by this flag}`. If that format doesn't work for you, implement an AICodemod instead and pass the --codemod flag.",
       conflicts: ['prompt', 'codemod']
     },
@@ -127,6 +129,7 @@ const argv = yargs
       type: 'string',
       conflicts: ['codemod'],
       describe:
+        // eslint-disable-next-line max-len
         "API params to pass to OpenAI's createCompletionRequest API. See https://beta.openai.com/docs/api-reference/completions/create. The argument you pass to this flag will be interpreted as JSON."
     },
     openAICompletionRequestFile: {
@@ -135,12 +138,14 @@ const argv = yargs
       type: 'string',
       conflicts: ['openAICompletionRequestConfig', 'codemod'],
       describe:
+        // eslint-disable-next-line max-len
         "A path to a JSON file containing request params for OpenAI's createCompletionRequest API. See https://beta.openai.com/docs/api-reference/completions/create."
     }
   })
   .group(['codemod', 'dry', 'resetDirtyInputFiles', 'inputFileList'], 'Primary')
   .group(
     ['prompt', 'promptFile', 'openAICompletionRequestConfig', 'openAICompletionRequestFile'],
+    // eslint-disable-next-line max-len
     `AI. Only applicable if you're using AI for your codemod. See ${path.resolve(__filename, path.join('..', '..', 'docs', 'ai.md'))}.`
   )
   .group(['tsconfig', 'tsOutDir', 'tsc'], 'TypeScript (only applicable if your codemod is written in TypeScript)')
