@@ -28,6 +28,9 @@ export {default as getTransformedContentsOfSingleFile} from './get-transformed-c
 export {default as execBigCommand} from './exec-big-command';
 export * from './types';
 
+/**
+ * Options regarding how a TS codemod will be run.
+ */
 export type TSOptions = {
   tsconfig?: string;
   tsOutDir?: string
@@ -35,7 +38,7 @@ export type TSOptions = {
   log: ReturnType<typeof createLog>;
 }
 
-export type NonTSOptions = {
+export type BaseOptions = {
   dry?: boolean;
   writeFiles?: boolean;
   porcelain?: boolean;
@@ -57,13 +60,13 @@ export type NonTSOptions = {
   inputFilesPatterns: string[];
 })
 
-export type Options = Omit<TSOptions, 'log'> & Partial<Pick<TSOptions, 'log'>> & NonTSOptions;
+export type Options = Omit<TSOptions, 'log'> & Partial<Pick<TSOptions, 'log'>> & BaseOptions;
 
 type FalseyDefaultOptions = 'dry' | 'porcelain' | 'codemodArgs' | 'resetDirtyInputFiles' | 'jsonOutput'
   | 'piscinaLowerBoundInclusive' | 'inputFileList' | 'inputFilesPatterns';
 export type InternalOptions = TSOptions
-  & Pick<NonTSOptions, FalseyDefaultOptions>
-  & Required<Omit<NonTSOptions, FalseyDefaultOptions>>;
+  & Pick<BaseOptions, FalseyDefaultOptions>
+  & Required<Omit<BaseOptions, FalseyDefaultOptions>>;
 
 // The rule is too broad.
 // eslint-disable-next-line require-await
@@ -103,7 +106,7 @@ function transformCode(
   log: TSOptions['log'],
   codemodPath: string,
   inputFiles: string[],
-  piscinaLowerBoundInclusive: NonTSOptions['piscinaLowerBoundInclusive'],
+  piscinaLowerBoundInclusive: BaseOptions['piscinaLowerBoundInclusive'],
   logOpts: Pick<Options, 'porcelain' | 'jsonOutput'>,
   parsedArgs: unknown,
   codemodArgs?: string[]

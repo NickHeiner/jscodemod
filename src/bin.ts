@@ -12,6 +12,7 @@ import {CodemodMetaResult} from './run-codemod-on-file';
 import PrettyError from 'pretty-error';
 import ansiColors from 'ansi-colors';
 import path from 'path';
+import fs from 'fs';
 
 // Passing paths as file globs that start with `.` doesn't work.
 // https://github.com/sindresorhus/globby/issues/168
@@ -163,6 +164,13 @@ const argv = yargs
   .help()
   .parseSync();
 
+function getAIOpts() {
+  const prompt = argv.promptFile ? fs.readFileSync(argv.promptFile, 'utf8') : argv.prompt;
+  const createCompletionRequestParams = argv.openAICompletionRequestConfig ? JSON.parse(argv.openAICompletionRequestConfig) : argv.openAICompletionRequestFile;
+
+  return { prompt, createCompletionRequestParams }
+}
+
 async function main() {
   const log = getLogger(_.pick(argv, 'jsonOutput', 'porcelain'));
 
@@ -172,6 +180,7 @@ async function main() {
     const opts = {
       ..._.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'resetDirtyInputFiles', 'porcelain', 'jsonOutput',
         'piscinaLowerBoundInclusive', 'inputFileList', 'inputFilesPatterns'),
+      ...getAIOpts(),
       log
     };
 
