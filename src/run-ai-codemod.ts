@@ -13,28 +13,17 @@ function getAPIKey() {
 }
 
 function defaultExtractResultFromCompletion(
-  prompt: string,
   completion: CreateCompletionResponse['choices'][0]['text']
 ) {
-  const makeError = (message: string) =>
-    makePhaseError(
-      new Error(message),
+  if (!completion) {
+    throw makePhaseError(
+      new Error('The AI returned a blank response.'),
       'extracting the transformed code from the completion',
       // eslint-disable-next-line max-len
       "Implement your own extractTransformationFromCompletion method, or repeat this call and see if you randomly get an output that doesn't trigger this issue."
-    );
-
-  if (!completion) {
-    throw makeError('The AI returned a blank response.');
+    )
   }
-  if (!completion.startsWith(prompt)) {
-    throw makeError(
-      // eslint-disable-next-line max-len
-      "The response didn't return a completion that starts with the prompt, which is the only thing this fallback function knows how to handle."
-    );
-  }
-
-  return completion.slice(prompt.length);
+  return completion;
 }
 
 function getCodemodTransformResult(
@@ -46,7 +35,7 @@ function getCodemodTransformResult(
     return codemod.extractTransformationFromCompletion(response);
   }
   if (typeof prompt === 'string') {
-    return defaultExtractResultFromCompletion(prompt, response.choices[0].text);
+    return defaultExtractResultFromCompletion(response.choices[0].text);
   }
   throw makePhaseError(
     new Error(

@@ -13,6 +13,7 @@ import PrettyError from 'pretty-error';
 import ansiColors from 'ansi-colors';
 import path from 'path';
 import fs from 'fs';
+import {CreateCompletionRequest} from 'openai';
 
 // Passing paths as file globs that start with `.` doesn't work.
 // https://github.com/sindresorhus/globby/issues/168
@@ -162,7 +163,7 @@ const argv = yargs
       throw new Error('Porcelain is only supported for dry mode.');
     }
 
-    const {prompt} = validateAndGetAIOpts();
+    const {prompt} = validateAndGetAIOpts(argv);
     if (!(prompt || argv.codemod)) {
       throw new Error('You must pass either the --codemod or --prompt flags.');
     }
@@ -173,13 +174,13 @@ const argv = yargs
   .help()
   .parseSync();
 
-function validateAndGetAIOpts() {
-  const createCompletionRequestParams = argv.openAICompletionRequestConfig
-    ? JSON.parse(argv.openAICompletionRequestConfig) : argv.openAICompletionRequestFile;
-  const promptFromFile = argv.promptFile && fs.readFileSync(argv.promptFile, 'utf8');
-  const promptFromFlags = promptFromFile || argv.prompt;
+function validateAndGetAIOpts(args: typeof argv) {
+  const createCompletionRequestParams: CreateCompletionRequest | undefined = args.openAICompletionRequestConfig
+    ? JSON.parse(args.openAICompletionRequestConfig) : args.openAICompletionRequestFile;
+  const promptFromFile = args.promptFile && fs.readFileSync(args.promptFile, 'utf8');
+  const promptFromFlags = promptFromFile || args.prompt;
 
-  if (promptFromFlags && createCompletionRequestParams.prompt) {
+  if (promptFromFlags && createCompletionRequestParams?.prompt) {
     throw new Error(
       'If your API params includes a prompt, you must not pass a separate prompt via the other command line flags.'
     );
@@ -187,8 +188,11 @@ function validateAndGetAIOpts() {
 
   return {
     prompt: promptFromFlags,
+    model: 'code-davinci-002',
+    // eslint-disable-next-line camelcase
+    max_tokens: 4096,
     ...createCompletionRequestParams
-  };
+  } satisfies CreateCompletionRequest;
 }
 
 async function main() {
@@ -200,7 +204,7 @@ async function main() {
     const opts = {
       ..._.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'resetDirtyInputFiles', 'porcelain', 'jsonOutput',
         'piscinaLowerBoundInclusive', 'inputFileList', 'inputFilesPatterns'),
-      ...validateAndGetAIOpts(),
+      createCompletionRequestParams: validateAndGetAIOpts(argv),
       log
     };
 
@@ -214,11 +218,12 @@ async function main() {
       console.log(...args);
     }
 
-    // Yarg's types are messed up.
     Object.assign(opts, _.pick(argv, 'codemodArgs'));
 
     const codemodMetaResults = await jscodemod(
       argv.codemod,
+      // I'm not sure why this is an error, but I think the code is correct.
+      // @ts-expect-error
       opts
     );
 
