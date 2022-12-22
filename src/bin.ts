@@ -133,6 +133,7 @@ const argv = yargs
         "API params to pass to OpenAI's createCompletionRequest API. See https://beta.openai.com/docs/api-reference/completions/create. The argument you pass to this flag will be interpreted as JSON."
     },
     openAICompletionRequestFile: {
+      alias: 'aiConfigFile',
       config: true,
       required: false,
       type: 'string',

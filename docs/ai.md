@@ -148,3 +148,103 @@ index acb6b44..3ebdbc4 100644
  export default toExport;
 \ No newline at end of file
 ```
+
+### More Complicated Codemods: Configuring AI Params
+The above examples use default params for the AI generation. However, you can pass your own:
+
+```
+$ jscodemod --aiConfig '{"best_of": 5}'
+
+$ jscodemod --aiConfigFile path/to/config.json
+```
+
+In this example, we set the [`best_of`](https://beta.openai.com/docs/api-reference/completions/create#completions/create-best_of) property to tell the server to generate multiple completions and pick the best one.
+
+### Advanced: Full Programmatic Control
+The above examples keep everything on the command line, and as such make some simplifying assumptions. If you want full control, you can define your own codemod:
+
+```ts
+import {AICodemod} from '@nick.heiner/jscodemod';
+
+const codemod = {
+  getCompletionRequestParams({source}) {
+    return {
+      model: 'code-davinci-002',
+      prompt: `
+        ${source}
+
+        // The Javascript code above is written in ES5. Here's what it looks like translated to modern JS:
+      `
+    }
+  },
+  extractTransformationFromCompletion(response) {
+    return response.choices[0].text;
+  }
+} satisfies AICodemod;
+
+export default codemod;
+```
+
+This allows you to have full control over the params passed to OpenAI, as well as apply any transformations you want to the response.
+
+See [the types](../src/types.ts) for a full definition of the API.
+
+## Best Practices & Guide
+### Mindset
+Codemodding with AI is a different workflow than writing a normal codemod. 
+
+Your normal workflow loop looks something like:
+1. Pick a code case to handle in your codemod.
+1. Implement the codemod to handle it.
+1. Write unit tests for your codemod.
+1. Apply your codemod to those cases.
+1. Open a PR. Lightly spot-check the results.
+1. Repeat.
+
+With an AI codemod, you skip the "implement" and "write tests" step. However, you'll likely need to apply a little more editing to the result of what the codemod gives you. It probably won't be safe to run the codemod on 5000 files and merge without further verification. But moving from "I need to migrate all this myself" to "someone else gets it 95% of the way and I just have to edit their output" is a big help.
+
+### Prompt Engineering
+As with all generative AI, finding a good prompt (and other parameters) is the key to getting the result you're looking for. It seems like something you just need to [experiment with](https://beta.openai.com/playground/p/gXdPByzqByPdjMoJXmNvBnmj?model=code-davinci-002). Here are some heuristics I've found:
+
+#### Be Specific
+It's better to call out the specific changes you want.
+
+Bad:
+> The Javascript code above is written in ES5. Transform it to ES6.
+
+Good:
+> The Javascript code above is written in ES5. Transform it to ES6. Include only the transformed code; do not include any other comments, context, or metadata. Do not create new comments. Make sure to apply the following transformations: 1. Use optional chaining. 2. Use the object property shorthand.
+
+#### Set [`temperature`](https://beta.openai.com/docs/api-reference/completions/create#completions/create-temperature) low
+The higher the `temperature`, the more "creative" the AI gets. When transforming code, we generally don't want creativity. 
+
+#### Give Multiple Examples
+If you're defining your own codemod with examples, make sure to give a few examples that exercise different conditions. For instance:
+
+> A FOO refactor is one where we reverse the names of all functions that return numbers. For instance, given this code:
+>   function forward() { return 2; }    
+>   function original() { return 'asf'; }    
+>
+> A FOO refactor would result in:
+>   function drawrof() { return 2; }    
+>   function original() { return 'asf'; }    
+
+If this is the only example you give, the AI might learn the lesson "rename the first function". If you're getting bad results, you may wish to provide additional sample transformations.
+
+(Note: I actually couldn't get even a longer form of this prompt to work as a codemod, but was able to get the AI to [generate a codemod](https://beta.openai.com/playground/p/fHLPwP4nrF5emnrtJv921rOZ?model=code-davinci-002) that would handle some cases.)
+
+### Combining Both Approaches
+You can also ask the AI to generate a codemod itself. You may find that it's easier to tweak this, then run it as you would a normal codemod.
+
+For instance, you can prompt the model with:
+
+```js
+/* A TypeScript Babel plugin. If it finds a function named `componentWillMount`, `componentWillReceiveProps`, or `componentWillUpdate`, it renames the function to be prefixed with `unsafe_`. */
+```
+
+And it'll return a plugin that looks like it basically does the right thing ([playground link](https://beta.openai.com/playground/p/aIiWGsn3gdp3OEdab1QTD9Lg?model=code-davinci-002)). You can then use that with [this codemod runner](../README.md#babel-plugin):
+
+```
+$ jscodemod --codemod from-openai.ts my/files/**.js
+```
+
