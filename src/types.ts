@@ -1,6 +1,6 @@
 import type {Promisable} from 'type-fest';
 import type {Options as RecastOptions} from 'recast';
-import type {CreateCompletionRequest} from 'openai';
+import type {CreateCompletionRequest, CreateCompletionResponse} from 'openai';
 
 import {PluginItem, TransformOptions} from '@babel/core';
 
@@ -275,7 +275,33 @@ export interface AICodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
      * @returns Parameters for a call to OpenAI's API.
      */
     getCompletionRequestParams: (opts: CodemodArgsWithSource<ParsedArgs>) => Promisable<CreateCompletionRequest>;
-    extractTransformationFromCompletion: (response: string) => CodemodResult<TransformResultMeta>
+
+    /**
+     * Optional. Only add this if you're getting bad results without it.
+     *
+     * Given a response from the AI, return a result indicating how your file should be transformed.
+     *
+     * Your input prompt will contain the input file, so in this function, we need to extract out only the transformed
+     * output. For example, a prompt will generally follow the form:
+     *
+     *    ${source}
+     *    // ${instructions for how to transform the source}
+     *
+     * Because we're asking the AI do complete the prompt, the output will look like:
+     *
+     *    ${source}
+     *    // ${instructions for how to transform the source}
+     *    ${AI's response}
+     *
+     * If you don't pass this method, then jscodemod will make a best attempt to extract the AI's response, by simply
+     * subtracting the input prompt prefix from the completion output. But you can specify this method if you'd like
+     * more control, or would like to otherwise inspect the API response.
+     *
+     * Sometimes, the AI will return extra content at the end of your transformed code. IF that happens, this function
+     * gives you a chance to cut it out. But before you try that, it's probably better to tweak your prompt to be more
+     * specific about what you want.
+     */
+    extractTransformationFromCompletion?: (response: CreateCompletionResponse) => CodemodResult<TransformResultMeta>
 
 }
 
