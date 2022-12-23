@@ -8,7 +8,7 @@ import pDebounce from 'p-debounce';
 import pThrottle from 'p-throttle';
 import {EventEmitter} from 'events';
 // @ts-expect-error
-import {encode} from 'gpt-3-encoder';
+import {countTokens} from '@nick.heiner/gpt-3-encoder/Encoder';
 
 function getAPIKey() {
   if (process.env.OPENAI_API_KEY) {
@@ -45,6 +45,7 @@ function getCodemodTransformResult(
 
 interface OpenAIErrorResponse extends Error {
   response: {
+    status: number;
     data: {
       error: {
         message: string;
@@ -61,7 +62,8 @@ class OpenAIBatchProcessor {
   private completionParams: CreateCompletionRequest;
   private batches: AIPrompt[][] = [];
   private log: NTHLogger;
-  private promptEventEmitter = new EventEmitter();
+  private successPerPromptEventEmitter = new EventEmitter();
+  private failurePerPromptEventEmitter = new EventEmitter();
 
   private readonly maxTokensPerRequest = 2048;
   private readonly tokenSafetyMargin = 1.1;
@@ -95,7 +97,7 @@ class OpenAIBatchProcessor {
   }
 
   private getTokensForBatch(batch: AIPrompt[]) {
-    const tokensInBatch = _.sumBy(batch, prompt => encode(prompt).length);
+    const tokensInBatch = _.sumBy(batch, prompt => countTokens(prompt));
     return tokensInBatch * this.tokenSafetyMargin;
   }
 
@@ -110,7 +112,7 @@ class OpenAIBatchProcessor {
     const newestBatch = _.last(this.batches)!;
     const tokensInNewestBatch = this.getTokensForBatch(newestBatch);
     const overheadRemainingInLastBatch = this.maxTokensPerRequest - (tokensInNewestBatch * 2);
-    const tokensForLatestPrompt = encode(prompt).length;
+    const tokensForLatestPrompt = countTokens(prompt);
     log.trace({tokensForLatestPrompt, overheadRemainingInLastBatch, tokensInNewestBatch});
     if (tokensForLatestPrompt > overheadRemainingInLastBatch) {
       log.trace('Creating new batch');
@@ -125,8 +127,9 @@ class OpenAIBatchProcessor {
     this.log.trace({prompt}, 'Adding prompt to batch');
     this.addPrompt(prompt);
     this.rateLimitedSendBatch();
-    return new Promise(resolve => {
-      this.promptEventEmitter.once(prompt, resolve);
+    return new Promise((resolve, reject) => {
+      this.successPerPromptEventEmitter.once(prompt, resolve);
+      this.failurePerPromptEventEmitter.once(prompt, reject);
     });
   }
 
@@ -160,18 +163,23 @@ class OpenAIBatchProcessor {
         }
       }
     );
-    if (axiosResponse instanceof Error) {
-      throw axiosResponse;
-    }
 
     batchForRequest.forEach((prompt, index) => {
+      if (axiosResponse instanceof Error) {
+        if (axiosResponse.response?.status === 429) {
+          this.failurePerPromptEventEmitter.emit(prompt);
+          return;
+        }
+        throw axiosResponse;
+      }
+
       const completion = axiosResponse.data.choices[index];
       const completionWithOnlyThisChoice = {
         ...axiosResponse.data,
         choices: [completion]
       };
       this.log.trace({completion, prompt});
-      this.promptEventEmitter.emit(prompt, completionWithOnlyThisChoice);
+      this.successPerPromptEventEmitter.emit(prompt, completionWithOnlyThisChoice);
     });
   }
 }
