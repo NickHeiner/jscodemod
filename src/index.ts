@@ -287,10 +287,8 @@ In case (1), your prompt must be a string. However, your prompt was a "${typeof 
 
       const codemod: AICodemod = {
         name: 'codemod-generated-from-CLI-flags',
-        getCompletionRequestParams: ({source}) => ({
-          ...createCompletionRequestParams,
-          prompt: buildFullPrompt(prompt, source)
-        })
+        getGlobalCompletionRequestParams: () => createCompletionRequestParams,
+        getPrompt: source => buildFullPrompt(prompt, source)
       };
 
       return {codemod, codemodName: codemod.name, codemodPath: null};

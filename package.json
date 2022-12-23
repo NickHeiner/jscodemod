@@ -5,6 +5,7 @@
   "homepage": "https://github.com/NickHeiner/jscodemod",
   "main": "build/index.js",
   "types": "build/index.d.ts",
+  "type": "module",
   "repository": "git@github.com:NickHeiner/jscodemod.git",
   "author": "Nick Heiner <nth23@cornell.edu>",
   "files": [

@@ -6,6 +6,7 @@ import _ from 'lodash';
 import defaultCompletionRequestParams from './default-completion-request-params';
 import pDebounce from 'p-debounce';
 import pThrottle from 'p-throttle';
+import {EventEmitter} from 'events';
 
 function getAPIKey() {
   if (process.env.OPENAI_API_KEY) {
@@ -32,7 +33,6 @@ function defaultExtractResultFromCompletion(
 
 function getCodemodTransformResult(
   codemod: AICodemod,
-  prompt: AIPrompt,
   response: CreateCompletionResponse
 ): CodemodResult<unknown> {
   if (codemod.extractTransformationFromCompletion) {
@@ -46,6 +46,7 @@ class OpenAIBatchProcessor {
   private completionParams: CreateCompletionRequest;
   private prompts: AIPrompt[] = [];
   private log: NTHLogger;
+  private promptEventEmitter = new EventEmitter();
 
   private openAIAPIRateLimitRequestsPerMinute = 20;
   private secondsPerMinute = 60;
@@ -75,19 +76,24 @@ class OpenAIBatchProcessor {
     this.rateLimitedSendBatch = throttle(debouncedSetBatch);
   }
 
-  // To sort out which response go to which prompts, it may be easier to use the `echo` parameter.
-
-  complete(prompt: AIPrompt) {
+  complete(prompt: AIPrompt): Promise<CreateCompletionResponse> {
+    this.log.trace({prompt}, 'Adding prompt to batch');
     this.prompts.push(prompt);
+    this.rateLimitedSendBatch();
+    return new Promise(resolve => {
+      this.promptEventEmitter.once(prompt, resolve);
+    });
   }
 
   private async sendBatch() {
     if (!this.completionParams) {
       throw new Error('Internal error: Completion params not set');
     }
+    const promptsForRequest = [...this.prompts];
+    this.prompts = [];
     const completionRequestParams = {
       ...this.completionParams,
-      prompt: this.prompts
+      prompt: promptsForRequest
     };
     const axiosResponse = await this.log.logPhase(
       {phase: 'OpenAI request', level: 'debug', completionRequestParams},
@@ -97,7 +103,16 @@ class OpenAIBatchProcessor {
         return response;
       }
     );
-    return axiosResponse.data;
+
+    promptsForRequest.forEach((prompt, index) => {
+      const completion = axiosResponse.data.choices[index];
+      const completionWithOnlyThisChoice = {
+        ...axiosResponse.data,
+        choices: [completion]
+      };
+      this.log.trace({completion, prompt});
+      this.promptEventEmitter.emit(prompt, completionWithOnlyThisChoice);
+    });
   }
 }
 
@@ -136,5 +151,5 @@ export default async function runAICodemod(codemod: AICodemod, codemodOpts: Code
 
   const result = await openAIBatchProcessor.complete(prompt);
 
-  return getCodemodTransformResult(codemod, prompt, result);
+  return getCodemodTransformResult(codemod, result);
 }

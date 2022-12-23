@@ -302,7 +302,7 @@ export default async function runCodemodOnFile(
     if ('transform' in codemod) {
       return runLowLevelCodemod(codemod, codemodOpts);
     }
-    if ('getCompletionRequestParams' in codemod) {
+    if ('getPrompt' in codemod) {
       return runAICodemod(codemod, codemodOpts, log);
     }
     return runBabelCodemod(codemod, originalFileContents, log, codemodOpts, sourceCodeFile);
