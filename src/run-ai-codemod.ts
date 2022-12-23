@@ -41,6 +41,19 @@ function getCodemodTransformResult(
   return defaultExtractResultFromCompletion(response.choices[0].text);
 }
 
+interface OpenAIErrorResponse extends Error {
+  response: {
+    data: {
+      error: {
+        message: string;
+        type: string;
+        param: any;
+        code: any;
+      }
+    }
+  }
+}
+
 class OpenAIBatchProcessor {
   private openai: OpenAIApi;
   private completionParams: CreateCompletionRequest;
@@ -98,11 +111,19 @@ class OpenAIBatchProcessor {
     const axiosResponse = await this.log.logPhase(
       {phase: 'OpenAI request', level: 'debug', completionRequestParams},
       async (_, setAdditionalLogData) => {
-        const response = await this.openai.createCompletion(completionRequestParams);
-        setAdditionalLogData({completionResponse: response.data});
-        return response;
+        try {
+          const response = await this.openai.createCompletion(completionRequestParams);
+          setAdditionalLogData({completionResponse: response.data});
+          return response;
+        } catch (e: unknown) {
+          setAdditionalLogData({errorResponseData: (e as OpenAIErrorResponse).response.data, status: 'failed'});
+          return e as OpenAIErrorResponse;
+        }
       }
     );
+    if (axiosResponse instanceof Error) {
+      throw axiosResponse;
+    }
 
     promptsForRequest.forEach((prompt, index) => {
       const completion = axiosResponse.data.choices[index];

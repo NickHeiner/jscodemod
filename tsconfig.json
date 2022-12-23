@@ -1,19 +1,19 @@
 {
-  "include": ["src/**/*.ts", "src/**/*.js", "src/bin.mts"],
+  "include": ["src/**/*.ts", "src/**/*.js"],
   "exclude": ["__tests__", "fixtures"],
 
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "NodeNext",
-    "allowJs": true,
+    "target": "ES2019",
+    "module": "commonjs",
+    "allowJs": true,                       
 
     "strict": true,
 
     "outDir": "build",
-
+    
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noImplicitReturns": true,
+    "noImplicitReturns": true, 
     "resolveJsonModule": true,
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
