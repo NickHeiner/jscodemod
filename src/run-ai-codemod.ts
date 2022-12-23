@@ -7,6 +7,8 @@ import defaultCompletionRequestParams from './default-completion-request-params'
 import pDebounce from 'p-debounce';
 import pThrottle from 'p-throttle';
 import {EventEmitter} from 'events';
+// @ts-expect-error
+import {encode} from 'gpt-3-encoder';
 
 function getAPIKey() {
   if (process.env.OPENAI_API_KEY) {
@@ -57,13 +59,16 @@ interface OpenAIErrorResponse extends Error {
 class OpenAIBatchProcessor {
   private openai: OpenAIApi;
   private completionParams: CreateCompletionRequest;
-  private prompts: AIPrompt[] = [];
+  private batches: AIPrompt[][] = [];
   private log: NTHLogger;
   private promptEventEmitter = new EventEmitter();
 
-  private openAIAPIRateLimitRequestsPerMinute = 20;
-  private secondsPerMinute = 60;
-  private openAIAPIRateLimitReciprocal = this.secondsPerMinute / this.openAIAPIRateLimitRequestsPerMinute;
+  private readonly maxTokensPerRequest = 2048;
+  private readonly tokenSafetyMargin = 1.1;
+
+  private readonly openAIAPIRateLimitRequestsPerMinute = 20;
+  private readonly secondsPerMinute = 60;
+  private readonly openAIAPIRateLimitReciprocal = this.secondsPerMinute / this.openAIAPIRateLimitRequestsPerMinute;
 
   private rateLimitedSendBatch: () => any;
 
@@ -89,9 +94,36 @@ class OpenAIBatchProcessor {
     this.rateLimitedSendBatch = throttle(debouncedSetBatch);
   }
 
+  private getTokensForBatch(batch: AIPrompt[]) {
+    const tokensInBatch = _.sumBy(batch, prompt => encode(prompt).length);
+    return tokensInBatch * this.tokenSafetyMargin;
+  }
+
+  private addPrompt(prompt: AIPrompt) {
+    const log = this.log.child({prompt});
+    log.trace('Adding prompt to batch');
+    if (!this.batches.length) {
+      log.trace('Creating new batch because there are no batches');
+      this.batches.push([prompt]);
+      return;
+    }
+    const newestBatch = _.last(this.batches)!;
+    const tokensInNewestBatch = this.getTokensForBatch(newestBatch);
+    const overheadRemainingInLastBatch = this.maxTokensPerRequest - (tokensInNewestBatch * 2);
+    const tokensForLatestPrompt = encode(prompt).length;
+    log.trace({tokensForLatestPrompt, overheadRemainingInLastBatch, tokensInNewestBatch});
+    if (tokensForLatestPrompt > overheadRemainingInLastBatch) {
+      log.trace('Creating new batch');
+      this.batches.push([prompt]);
+    } else {
+      log.trace('Adding to existing batch');
+      newestBatch.push(prompt);
+    }
+  }
+
   complete(prompt: AIPrompt): Promise<CreateCompletionResponse> {
     this.log.trace({prompt}, 'Adding prompt to batch');
-    this.prompts.push(prompt);
+    this.addPrompt(prompt);
     this.rateLimitedSendBatch();
     return new Promise(resolve => {
       this.promptEventEmitter.once(prompt, resolve);
@@ -102,11 +134,18 @@ class OpenAIBatchProcessor {
     if (!this.completionParams) {
       throw new Error('Internal error: Completion params not set');
     }
-    const promptsForRequest = [...this.prompts];
-    this.prompts = [];
+    if (!this.batches.length) {
+      return;
+    }
+    const batchForRequest = this.batches.shift()!;
+    if (this.batches.length) {
+      this.rateLimitedSendBatch();
+    }
+    const tokensInBatch = this.getTokensForBatch(batchForRequest);
     const completionRequestParams = {
       ...this.completionParams,
-      prompt: promptsForRequest
+      prompt: batchForRequest,
+      max_tokens: this.maxTokensPerRequest - tokensInBatch
     };
     const axiosResponse = await this.log.logPhase(
       {phase: 'OpenAI request', level: 'debug', completionRequestParams},
@@ -125,7 +164,7 @@ class OpenAIBatchProcessor {
       throw axiosResponse;
     }
 
-    promptsForRequest.forEach((prompt, index) => {
+    batchForRequest.forEach((prompt, index) => {
       const completion = axiosResponse.data.choices[index];
       const completionWithOnlyThisChoice = {
         ...axiosResponse.data,
