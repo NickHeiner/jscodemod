@@ -377,3 +377,5 @@ And it'll return a plugin that looks like it basically does the right thing ([pl
 $ jscodemod --codemod from-openai.ts my/files/**.js
 ```
 
+## Future Work & Ideas
+We may be able to substantially reduce the noise by fine-tuning a model for codemods.
