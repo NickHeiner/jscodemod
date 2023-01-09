@@ -209,17 +209,15 @@ function validateAndGetAIOpts(
 /**
  * It's a little spooky to have this live here, rather than the place where the errors are created. However, I only want
  * to remove some fields for the purpose of logging to the console, so I don't want it to impact programmatic callers.
- * 
- * If this becomes painful, I could have the error production site put a method on the error called 
+ *
+ * If this becomes painful, I could have the error production site put a method on the error called
  * "getFieldsForLogging" or something.
  */
-function removeErrorFields(error: Record<string, any>) {
-  if (error.request) {
-    delete error.request;
+function getErrorFieldsForLogging(error: Record<string, any>) {
+  if (error.isAxiosError) {
+    return _.pick(error.response, 'status', 'statusText', 'headers', 'data');
   }
-  if (error.response?.request) {
-    delete error.response.request;
-  }
+  return error;
 }
 
 async function main() {
@@ -270,8 +268,8 @@ async function main() {
         // @ts-expect-error
         erroredFiles.forEach(({error, filePath}) => {
           safeConsoleLog('For file: ', filePath);
+          safeConsoleLog(getErrorFieldsForLogging(_.pick(error, Object.keys(error))));
           safeConsoleLog(prettyError.render(error));
-          safeConsoleLog(removeErrorFields(_.pick(error, Object.keys(error))));
         });
       }
 

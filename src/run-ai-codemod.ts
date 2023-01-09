@@ -77,9 +77,11 @@ class OpenAIBatchProcessor {
   private successPerPromptEventEmitter = new EventEmitter();
   private failurePerPromptEventEmitter = new EventEmitter();
 
+  // TODO: configure this per model
   private readonly maxTokensPerRequest = 2048;
   private readonly tokenSafetyMargin = 1.1;
 
+  // TODO: somehow OpenAI thinks we're sending 30 requests per minute.
   private readonly openAIAPIRateLimitRequestsPerMinute = 20;
   private readonly secondsPerMinute = 60;
   private readonly openAIAPIRateLimitReciprocal = this.secondsPerMinute / this.openAIAPIRateLimitRequestsPerMinute;
@@ -112,7 +114,11 @@ class OpenAIBatchProcessor {
     return Math.ceil(tokensInBatch * this.tokenSafetyMargin);
   }
 
-  private addPrompt(prompt: AIPrompt) {
+  private getOverheadForBatch(tokensInBatch: number) {
+    return this.maxTokensPerRequest - (tokensInBatch * 2);
+  }
+
+  private addPrompt(prompt: AIPrompt, filePath: string) {
     const log = this.log.child({method: 'OpenAIBatchProcessor#addPrompt'});
     log.trace('Adding prompt to batch');
     if (!this.batches.length) {
@@ -120,23 +126,45 @@ class OpenAIBatchProcessor {
       this.batches.push([prompt]);
       return;
     }
-    const newestBatch = _.last(this.batches)!;
-    const tokensInNewestBatch = this.getTokensForBatch(newestBatch);
-    const overheadRemainingInLastBatch = this.maxTokensPerRequest - (tokensInNewestBatch * 2);
+    const mostRecentBatch = _.last(this.batches)!;
+    const tokensInMostRecentBatch = this.getTokensForBatch(mostRecentBatch);
+    const overheadRemainingInMostRecentBatch = this.getOverheadForBatch(tokensInMostRecentBatch);
     const tokensForLatestPrompt = countTokens(prompt);
-    log.trace({tokensForLatestPrompt, overheadRemainingInLastBatch, tokensInNewestBatch});
-    if (tokensForLatestPrompt > overheadRemainingInLastBatch) {
-      log.trace('Creating new batch');
-      this.batches.push([prompt]);
+    log.trace({tokensForLatestPrompt, overheadRemainingInMostRecentBatch, tokensInMostRecentBatch});
+    if (tokensForLatestPrompt > overheadRemainingInMostRecentBatch) {
+      const newBatch = [prompt];
+      const tokensInNewBatch = this.getTokensForBatch(newBatch);
+      const overheadRemainingInNewestBatch = this.getOverheadForBatch(tokensInNewBatch);
+      if (overheadRemainingInNewestBatch < 0) {
+        const err = new Error(
+          /* eslint-disable max-len */
+          `Could not transform file "${filePath}". It is too large. To address this:
+          
+  1. Use the codemod's \`ignore\` API to ignore it.
+  2. Or split the file into smaller pieces.
+  3. Or use a model with a larger token limit.
+
+  You can read more about model limits at https://beta.openai.com/docs/models/overview. To see how many tokens your code is, see the tool at https://beta.openai.com/tokenizer. Your code must take up less than half the token limit of the model, because the token limit applies to both the input and the output, so we need to leave a headroom of 50% for the model to have room to respond.`
+        );
+        /* eslint-enable max-len */
+        Object.assign(err, {
+          maxTokensPerRequest: this.maxTokensPerRequest,
+          tokensRequiredToTransformThisFile: tokensInNewBatch
+        });
+        throw err;
+      } else {
+        log.trace('Creating new batch');
+        this.batches.push([prompt]);
+      }
     } else {
       log.trace('Adding to existing batch');
-      newestBatch.push(prompt);
+      mostRecentBatch.push(prompt);
     }
   }
 
-  complete(prompt: AIPrompt): Promise<CreateCompletionResponse> {
+  complete(prompt: AIPrompt, filePath: string): Promise<CreateCompletionResponse> {
     this.log.trace({prompt}, 'Adding prompt to batch');
-    this.addPrompt(prompt);
+    this.addPrompt(prompt, filePath);
     this.rateLimitedSendBatch();
     return new Promise((resolve, reject) => {
       this.successPerPromptEventEmitter.once(prompt, resolve);
@@ -185,6 +213,9 @@ class OpenAIBatchProcessor {
       }
     );
 
+    // Doing this will cause a single error to appear multiple times in the output. If you have three files in a batch,
+    // and that batch fails with a single error, each file will be marked as failed on account of that error, so the
+    // error will be printed out three times.
     batchForRequest.forEach((prompt, index) => {
       if (axiosResponse instanceof Error || 'error' in axiosResponse) {
         this.failurePerPromptEventEmitter.emit(prompt, axiosResponse);
@@ -235,7 +266,7 @@ export default async function runAICodemod(codemod: AICodemod, codemodOpts: Code
     );
   }
 
-  const result = await openAIBatchProcessor.complete(prompt);
+  const result = await openAIBatchProcessor.complete(prompt, codemodOpts.filePath);
 
   return getCodemodTransformResult(codemod, result);
 }
