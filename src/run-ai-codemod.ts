@@ -15,7 +15,18 @@ function getAPIKey() {
     return process.env.OPENAI_API_KEY;
   }
   throw new Error(
-    'Env var `OPENAI_API_KEY` was not set. You must set it to your API key if you want to use an AI codemod.'
+      // eslint-disable-next-line max-len
+    'Env var `OPENAI_API_KEY` was not set. You must set it to your API key if you want to use an AI codemod. You can create an API key on https://beta.openai.com/account/api-keys.'
+  );
+}
+
+function getOrganizationId() {
+  if (process.env.OPENAI_ORG_ID) {
+    return process.env.OPENAI_ORG_ID;
+  }
+  throw new Error(
+      // eslint-disable-next-line max-len
+    'Env var `OPENAI_ORG_ID` was not set. You must set it to your org ID if you want to use an AI codemod. You can find it on https://beta.openai.com/account/org-settings.'
   );
 }
 
@@ -80,8 +91,7 @@ class OpenAIBatchProcessor {
     this.completionParams = completionParams;
 
     const configuration = new Configuration({
-      // TODO: make this configurable
-      organization: 'org-Gxi40GyAs8FnliemJe5YJJaK',
+      organization: getOrganizationId(),
       apiKey
     });
 
