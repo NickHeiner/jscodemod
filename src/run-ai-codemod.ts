@@ -98,11 +98,11 @@ class OpenAIBatchProcessor {
 
   private getTokensForBatch(batch: AIPrompt[]) {
     const tokensInBatch = _.sumBy(batch, prompt => countTokens(prompt));
-    return tokensInBatch * this.tokenSafetyMargin;
+    return Math.ceil(tokensInBatch * this.tokenSafetyMargin);
   }
 
   private addPrompt(prompt: AIPrompt) {
-    const log = this.log.child({prompt});
+    const log = this.log.child({prompt, method: 'OpenAIBatchProcessor#addPrompt'});
     log.trace('Adding prompt to batch');
     if (!this.batches.length) {
       log.trace('Creating new batch because there are no batches');
