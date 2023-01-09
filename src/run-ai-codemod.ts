@@ -9,13 +9,14 @@ import pThrottle from 'p-throttle';
 import {EventEmitter} from 'events';
 // @ts-expect-error
 import {countTokens} from '@nick.heiner/gpt-3-encoder/Encoder';
+import assert from 'assert';
 
 function getAPIKey() {
   if (process.env.OPENAI_API_KEY) {
     return process.env.OPENAI_API_KEY;
   }
   throw new Error(
-      // eslint-disable-next-line max-len
+    // eslint-disable-next-line max-len
     'Env var `OPENAI_API_KEY` was not set. You must set it to your API key if you want to use an AI codemod. You can create an API key on https://beta.openai.com/account/api-keys.'
   );
 }
@@ -25,7 +26,7 @@ function getOrganizationId() {
     return process.env.OPENAI_ORG_ID;
   }
   throw new Error(
-      // eslint-disable-next-line max-len
+    // eslint-disable-next-line max-len
     'Env var `OPENAI_ORG_ID` was not set. You must set it to your org ID if you want to use an AI codemod. You can find it on https://beta.openai.com/account/org-settings.'
   );
 }
@@ -112,7 +113,7 @@ class OpenAIBatchProcessor {
   }
 
   private addPrompt(prompt: AIPrompt) {
-    const log = this.log.child({prompt, method: 'OpenAIBatchProcessor#addPrompt'});
+    const log = this.log.child({method: 'OpenAIBatchProcessor#addPrompt'});
     log.trace('Adding prompt to batch');
     if (!this.batches.length) {
       log.trace('Creating new batch because there are no batches');
@@ -139,7 +140,9 @@ class OpenAIBatchProcessor {
     this.rateLimitedSendBatch();
     return new Promise((resolve, reject) => {
       this.successPerPromptEventEmitter.once(prompt, resolve);
-      this.failurePerPromptEventEmitter.once(prompt, reject);
+      this.failurePerPromptEventEmitter.once(prompt, reason => {
+        reject(reason);
+      });
     });
   }
 
@@ -155,10 +158,12 @@ class OpenAIBatchProcessor {
       this.rateLimitedSendBatch();
     }
     const tokensInBatch = this.getTokensForBatch(batchForRequest);
+    const maxTokens = this.maxTokensPerRequest - tokensInBatch;
+    assert(maxTokens >= 0, 'Bug in jscodemod: maxTokens is negative');
     const completionRequestParams = {
       ...this.completionParams,
       prompt: batchForRequest,
-      max_tokens: this.maxTokensPerRequest - tokensInBatch
+      max_tokens: maxTokens
     };
     const axiosResponse = await this.log.logPhase(
       {phase: 'OpenAI request', level: 'debug', completionRequestParams},
@@ -168,19 +173,22 @@ class OpenAIBatchProcessor {
           setAdditionalLogData({completionResponse: response.data});
           return response;
         } catch (e: unknown) {
-          setAdditionalLogData({errorResponseData: (e as OpenAIErrorResponse).response.data, status: 'failed'});
+          const errorResponseData = (e as OpenAIErrorResponse).response.data;
+          this.log.error(
+            {errorResponseData},
+            // eslint-disable-next-line max-len
+            "OpenAI request failed. This could indicate a bug in jscodemod. If the error is that you hit a rate limit, you can try re-running this command on a smaller set of files. This error doesn't necessarily mean the entire codemod run failed; if some files were successfully transformed, you can save them before trying again."
+          );
+          setAdditionalLogData({errorResponseData, status: 'failed'});
           return e as OpenAIErrorResponse;
         }
       }
     );
 
     batchForRequest.forEach((prompt, index) => {
-      if (axiosResponse instanceof Error) {
-        if (axiosResponse.response?.status === 429) {
-          this.failurePerPromptEventEmitter.emit(prompt);
-          return;
-        }
-        throw axiosResponse;
+      if (axiosResponse instanceof Error || 'error' in axiosResponse) {
+        this.failurePerPromptEventEmitter.emit(prompt, axiosResponse);
+        return;
       }
 
       const completion = axiosResponse.data.choices[index];

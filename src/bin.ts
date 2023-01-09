@@ -206,6 +206,22 @@ function validateAndGetAIOpts(
   } satisfies CreateCompletionRequest;
 }
 
+/**
+ * It's a little spooky to have this live here, rather than the place where the errors are created. However, I only want
+ * to remove some fields for the purpose of logging to the console, so I don't want it to impact programmatic callers.
+ * 
+ * If this becomes painful, I could have the error production site put a method on the error called 
+ * "getFieldsForLogging" or something.
+ */
+function removeErrorFields(error: Record<string, any>) {
+  if (error.request) {
+    delete error.request;
+  }
+  if (error.response?.request) {
+    delete error.response.request;
+  }
+}
+
 async function main() {
   const log = getLogger(_.pick(argv, 'jsonOutput', 'porcelain'));
 
@@ -252,8 +268,10 @@ async function main() {
         ));
         // Lodash's types are messed up.
         // @ts-expect-error
-        erroredFiles.forEach(({error}) => {
+        erroredFiles.forEach(({error, filePath}) => {
+          safeConsoleLog('For file: ', filePath);
           safeConsoleLog(prettyError.render(error));
+          safeConsoleLog(removeErrorFields(_.pick(error, Object.keys(error))));
         });
       }
 
