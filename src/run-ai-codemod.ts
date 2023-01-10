@@ -5,7 +5,7 @@ import {Configuration, OpenAIApi, CreateCompletionResponse, CreateCompletionRequ
 import _ from 'lodash';
 import defaultCompletionRequestParams from './default-completion-request-params';
 import pDebounce from 'p-debounce';
-import pThrottle from 'p-throttle';
+// import pThrottle from 'p-throttle';
 import {EventEmitter} from 'events';
 // @ts-expect-error
 import {countTokens} from '@nick.heiner/gpt-3-encoder/Encoder';
@@ -71,7 +71,44 @@ interface OpenAIErrorResponse extends Error {
   }
 }
 
-const  secondsPerMinute = 60;
+const rateLimit = {
+  calls: {
+    perMinute: 20,
+    tokensPerMinute: 40000
+  },
+  tokens: {
+    callsThisMinute: 0,
+    tokensPerMinute: [] as number[]
+  }
+};
+
+function sendThrottledRequest<T>(makeRequest: () => Promise<T>, countTokens: number, log: NTHLogger): Promise<T> {
+  const currentTime = Date.now();
+  const currentMinute = Math.floor(currentTime / 60000);
+
+  if (rateLimit.tokens.tokensPerMinute[currentMinute] === undefined) {
+    rateLimit.tokens.tokensPerMinute[currentMinute] = 0;
+    rateLimit.tokens.callsThisMinute = 0;
+  }
+
+  rateLimit.tokens.callsThisMinute++;
+  rateLimit.tokens.tokensPerMinute[currentMinute] += countTokens;
+
+  if (
+    rateLimit.tokens.callsThisMinute > rateLimit.calls.perMinute ||
+    rateLimit.tokens.tokensPerMinute[currentMinute] > rateLimit.calls.tokensPerMinute
+  ) {
+    log[highlightRequestTimingLogic ? 'warn' : 'trace']({rateLimit: rateLimit.tokens}, 'Reached rate limit. Waiting until next minute.');
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        sendThrottledRequest(makeRequest, countTokens, log).then(resolve, reject);
+      }, 60000 - (currentTime % 60000));
+    });
+  }
+  return makeRequest();
+}
+
+const secondsPerMinute = 60;
 class OpenAIBatchProcessor {
   private openai: OpenAIApi;
   private completionParams: CreateCompletionRequest;
@@ -84,7 +121,7 @@ class OpenAIBatchProcessor {
 
   // TODO: configure all the rate limit params per model
   private readonly maxTokensPerRequest = 2048;
-  private readonly maxTokensPerMinute = 40_000;
+  // private readonly maxTokensPerMinute = 40_000;
 
   // TODO: somehow OpenAI thinks we're sending 30 requests per minute.
   private readonly openAIAPIRateLimitRequestsPerMinute = 20;
@@ -104,13 +141,13 @@ class OpenAIBatchProcessor {
 
     this.openai = new OpenAIApi(configuration);
 
-    const debouncedSetBatch = pDebounce(this.sendBatch.bind(this), this.openAIAPIRateLimitReciprocal);
-    const throttle = pThrottle({
-      limit: this.openAIAPIRateLimitRequestsPerMinute,
-      interval: secondsPerMinute * 1000,
-      strict: true
-    });
-    this.rateLimitedSendBatch = throttle(debouncedSetBatch);
+    const debouncedSendBatch = pDebounce(this.sendBatchRateLimited.bind(this), this.openAIAPIRateLimitReciprocal);
+    // const throttle = pThrottle({
+    //   limit: this.openAIAPIRateLimitRequestsPerMinute,
+    //   interval: secondsPerMinute * 1000,
+    //   strict: true
+    // });
+    this.rateLimitedSendBatch = debouncedSendBatch;
   }
 
   private getTokensForBatch(batch: AIPrompt[]) {
@@ -178,7 +215,7 @@ class OpenAIBatchProcessor {
     });
   }
 
-  private async sendBatch() {
+  private sendBatchRateLimited() {
     if (!this.completionParams) {
       throw new Error('Internal error: Completion params not set');
     }
@@ -187,8 +224,13 @@ class OpenAIBatchProcessor {
     }
     const batchForRequest = this.batches.shift()!;
     if (this.batches.length) {
-      this.rateLimitedSendBatch();
+      this.sendBatchRateLimited();
     }
+    const tokens = this.getTokensForBatch(batchForRequest);
+    return sendThrottledRequest(() => this.sendBatch(batchForRequest), tokens, this.log);
+  }
+
+  private async sendBatch(batchForRequest: AIPrompt[]) {
     const tokensInBatch = this.getTokensForBatch(batchForRequest);
     const maxTokens = this.maxTokensPerRequest - tokensInBatch;
     assert(maxTokens >= 0, 'Bug in jscodemod: maxTokens is negative');
