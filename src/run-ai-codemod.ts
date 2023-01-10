@@ -292,6 +292,19 @@ class OpenAIBatchProcessor {
           }
           return response;
         } catch (e: unknown) {
+          /* eslint-disable max-len */
+          /**
+           * One possible error response from the API:
+           * {
+                "error": {
+                  "message": "That model is currently overloaded with other requests. You can retry your request, or contact us through our help center at help.openai.com if the error persists. (Please include the request ID b99bb8c4404d91ba7a7a60bd0bfe6d9a in your message.)",
+                  "type": "server_error",
+                  "param": null,
+                  "code": null
+                }
+              }
+           */
+          /* eslint-enable max-len */
           const errorResponseData = (e as OpenAIErrorResponse).response.data;
           this.log.error(
             {errorResponseData},
