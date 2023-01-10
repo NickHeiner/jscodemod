@@ -1,4 +1,4 @@
-import {NTHLogger} from 'nth-log';
+import {NTHLogger, LogMetadata} from 'nth-log';
 import {makePhaseError} from './make-phase-error';
 import {AICodemod, CodemodArgsWithSource, CodemodResult, AIPrompt} from './types';
 import {Configuration, OpenAIApi, CreateCompletionResponse, CreateCompletionRequest} from 'openai';
@@ -10,6 +10,8 @@ import {EventEmitter} from 'events';
 // @ts-expect-error
 import {countTokens} from '@nick.heiner/gpt-3-encoder/Encoder';
 import assert from 'assert';
+
+const highlightRequestTimingLogic = true;
 
 function getAPIKey() {
   if (process.env.OPENAI_API_KEY) {
@@ -69,6 +71,7 @@ interface OpenAIErrorResponse extends Error {
   }
 }
 
+const  secondsPerMinute = 60;
 class OpenAIBatchProcessor {
   private openai: OpenAIApi;
   private completionParams: CreateCompletionRequest;
@@ -77,20 +80,21 @@ class OpenAIBatchProcessor {
   private successPerPromptEventEmitter = new EventEmitter();
   private failurePerPromptEventEmitter = new EventEmitter();
 
-  // TODO: configure this per model
-  private readonly maxTokensPerRequest = 2048;
   private readonly tokenSafetyMargin = 1.1;
+
+  // TODO: configure all the rate limit params per model
+  private readonly maxTokensPerRequest = 2048;
+  private readonly maxTokensPerMinute = 40_000;
 
   // TODO: somehow OpenAI thinks we're sending 30 requests per minute.
   private readonly openAIAPIRateLimitRequestsPerMinute = 20;
-  private readonly secondsPerMinute = 60;
-  private readonly openAIAPIRateLimitReciprocal = this.secondsPerMinute / this.openAIAPIRateLimitRequestsPerMinute;
+  private readonly openAIAPIRateLimitReciprocal = secondsPerMinute / this.openAIAPIRateLimitRequestsPerMinute;
 
   private rateLimitedSendBatch: () => any;
 
   constructor(log: NTHLogger, completionParams: CreateCompletionRequest) {
     const apiKey = getAPIKey();
-    this.log = log;
+    this.log = log.child({sourceCodeFile: undefined});
     this.completionParams = completionParams;
 
     const configuration = new Configuration({
@@ -103,7 +107,7 @@ class OpenAIBatchProcessor {
     const debouncedSetBatch = pDebounce(this.sendBatch.bind(this), this.openAIAPIRateLimitReciprocal);
     const throttle = pThrottle({
       limit: this.openAIAPIRateLimitRequestsPerMinute,
-      interval: this.secondsPerMinute * 1000,
+      interval: secondsPerMinute * 1000,
       strict: true
     });
     this.rateLimitedSendBatch = throttle(debouncedSetBatch);
@@ -193,12 +197,21 @@ class OpenAIBatchProcessor {
       prompt: batchForRequest,
       max_tokens: maxTokens
     };
+    const logMetadata = highlightRequestTimingLogic ? {
+      level: 'warn',
+      filesInBatch: batchForRequest.length
+    } satisfies LogMetadata : {
+      level: 'debug',
+      completionRequestParams
+    } satisfies LogMetadata;
     const axiosResponse = await this.log.logPhase(
-      {phase: 'OpenAI request', level: 'debug', completionRequestParams},
+      {phase: 'OpenAI request', ...logMetadata},
       async (_, setAdditionalLogData) => {
         try {
           const response = await this.openai.createCompletion(completionRequestParams);
-          setAdditionalLogData({completionResponse: response.data});
+          if (!highlightRequestTimingLogic) {
+            setAdditionalLogData({completionResponse: response.data});
+          }
           return response;
         } catch (e: unknown) {
           const errorResponseData = (e as OpenAIErrorResponse).response.data;
