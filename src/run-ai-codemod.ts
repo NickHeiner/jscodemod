@@ -74,18 +74,35 @@ interface OpenAIErrorResponse extends Error {
 const secondsPerMinute = 60;
 
 type OpenAIAPIRateLimitedRequest = () => Promise<number>
+/**
+ * This assumes that, at the beginning of program execution, you have full rate limit capacity. If you just finished
+ * some other operation that used rate limit, then you immediately ran this program, this won't prevent you from hitting
+ * the limit.
+ *
+ * The most common way I can think this would happen is if you ran a codemod, hit a rate limit, then immediately re-ran
+ * the codemod.
+ * 
+ * I think OpenAI's API is being a bit misleading in its error messages. It says things like:
+ *    Limit: 40000.000000 / min. Current: 54190.000000 / min.
+ * 
+ * However, at this point in the program, I've only used ~10k tokens in approximately 1 minute. In the near term, I can
+ * get around this by setting a much lower rate limit. In the long term, I would like to either increase the rate limit,
+ * or understand what the real limits are.
+ */
 class OpenAIAPIRateLimiter {
   private readonly callRecords: Array<{timeMs: number, tokensUsed: number}> = [];
 
   attemptCall: () => void;
 
   constructor(
-    private log: NTHLogger, 
-    private readonly requestsPerMinuteLimit: number, 
+    private log: NTHLogger,
+    private readonly requestsPerMinuteLimit: number,
     private readonly tokensPerMinuteLimit: number,
-    private readonly getNextRequest: () => {estimatedTokens: number, makeRequest: OpenAIAPIRateLimitedRequest}
+    private readonly getNextRequest: () => {estimatedTokens: number, makeRequest: OpenAIAPIRateLimitedRequest} | undefined
   ) {
     const rateLimitReciprocal = secondsPerMinute / requestsPerMinuteLimit;
+    // I think this might be too conservative. We seem to be essentially making only one request at a time, and I think
+    // this might be why. We're never actually hitting the rate limit branch in the logic in this class.
     this.attemptCall = pDebounce(this.innerAttemptCall.bind(this), rateLimitReciprocal);
   }
 
@@ -101,10 +118,13 @@ class OpenAIAPIRateLimiter {
     const hasExceededCallCountLimit = countCallsInCurrentWindow > this.requestsPerMinuteLimit;
     const tokensUsedInCurrentWindow = _.sumBy(callsInCurrentWindow, 'tokensUsed');
     const hasExceededTokenUseLimit = tokensUsedInCurrentWindow > this.tokensPerMinuteLimit;
-    if (callsInCurrentWindow || hasExceededTokenUseLimit) {
+
+    const loglevel = highlightRequestTimingLogic ? 'warn' : 'trace';
+
+    if (hasExceededCallCountLimit || hasExceededTokenUseLimit) {
       const oldestCallRecord = callsInCurrentWindow[0];
       const timeUntilOldestCallRecordExpires = oldestCallRecord.timeMs - currentWindowStartTime;
-      this.log[highlightRequestTimingLogic ? 'warn' : 'trace']({
+      this.log[loglevel]({
         hasExceededCallCountLimit,
         hasExceededTokenUseLimit,
         countCallsInCurrentWindow,
@@ -115,6 +135,13 @@ class OpenAIAPIRateLimiter {
       return;
     }
 
+    const countAllCalls = this.callRecords.length;
+    const tokensUsedAllCalls = _.sumBy(this.callRecords, 'tokensUsed');
+
+    this.log[loglevel](
+      {countCallsInCurrentWindow, tokensUsedInCurrentWindow, countAllCalls, tokensUsedAllCalls},
+      'Making request'
+    );
     const callRecord = {timeMs: Date.now(), tokensUsed: nextRequest.estimatedTokens};
     this.callRecords.push(callRecord);
     const tokensUsed = await nextRequest.makeRequest();
@@ -139,11 +166,11 @@ class OpenAIBatchProcessor {
 
   // TODO: somehow OpenAI thinks we're sending 30 requests per minute.
   private readonly openAIAPIRateLimitRequestsPerMinute = 20;
-  private readonly openAIAPIRateLimitReciprocal = secondsPerMinute / this.openAIAPIRateLimitRequestsPerMinute;
+  // private readonly openAIAPIRateLimitReciprocal = secondsPerMinute / this.openAIAPIRateLimitRequestsPerMinute;
 
   // private rateLimitedSendBatch: () => any;
 
-  private readonly rateLimiter = new OpenAIAPIRateLimiter(this.log, this.openAIAPIRateLimitRequestsPerMinute, this.maxTokensPerMinute);
+  private readonly rateLimiter: OpenAIAPIRateLimiter;
 
   constructor(log: NTHLogger, completionParams: CreateCompletionRequest) {
     const apiKey = getAPIKey();
@@ -156,6 +183,13 @@ class OpenAIBatchProcessor {
     });
 
     this.openai = new OpenAIApi(configuration);
+
+    this.rateLimiter = new OpenAIAPIRateLimiter(
+      this.log,
+      this.openAIAPIRateLimitRequestsPerMinute,
+      this.maxTokensPerMinute,
+      this.handleRequestReady.bind(this)
+    );
 
     // const debouncedSetBatch = pDebounce(this.sendBatch.bind(this), this.openAIAPIRateLimitReciprocal);
     // const throttle = pThrottle({
@@ -171,8 +205,12 @@ class OpenAIBatchProcessor {
     return Math.ceil(tokensInBatch * this.tokenSafetyMargin);
   }
 
+  private getEstimatedFullTokenCountNeededForRequestFromTokensInPrompt(tokensInPrompt: number) {
+    return tokensInPrompt * 2;
+  }
+
   private getOverheadForBatch(tokensInBatch: number) {
-    return this.maxTokensPerRequest - (tokensInBatch * 2);
+    return this.maxTokensPerRequest - this.getEstimatedFullTokenCountNeededForRequestFromTokensInPrompt(tokensInBatch);
   }
 
   private addPrompt(prompt: AIPrompt, filePath: string) {
@@ -222,7 +260,7 @@ class OpenAIBatchProcessor {
   complete(prompt: AIPrompt, filePath: string): Promise<CreateCompletionResponse> {
     this.log.trace({prompt}, 'Adding prompt to batch');
     this.addPrompt(prompt, filePath);
-    this.rateLimiter.enqueueRequest(this.sendBatch, 0)
+    this.rateLimiter.attemptCall();
     return new Promise((resolve, reject) => {
       this.successPerPromptEventEmitter.once(prompt, resolve);
       this.failurePerPromptEventEmitter.once(prompt, reason => {
@@ -231,28 +269,15 @@ class OpenAIBatchProcessor {
     });
   }
 
-  private async sendBatch(): Promise<void> {
-    if (!this.completionParams) {
-      throw new Error('Internal error: Completion params not set');
-    }
-    if (!this.batches.length) {
-      return;
-    }
-    const batchForRequest = this.batches.shift()!;
-    if (this.batches.length) {
-      this.rateLimiter.enqueueRequest(this.sendBatch, 0)
-    }
-    const tokensInBatch = this.getTokensForBatch(batchForRequest);
-    const maxTokens = this.maxTokensPerRequest - tokensInBatch;
-    assert(maxTokens >= 0, 'Bug in jscodemod: maxTokens is negative');
+  private async makeRequestForBatch(batch: AIPrompt[], maxTokens: number) {
     const completionRequestParams = {
       ...this.completionParams,
-      prompt: batchForRequest,
+      prompt: batch,
       max_tokens: maxTokens
     };
     const logMetadata = highlightRequestTimingLogic ? {
       level: 'warn',
-      filesInBatch: batchForRequest.length
+      filesInBatch: batch.length
     } satisfies LogMetadata : {
       level: 'debug',
       completionRequestParams
@@ -282,7 +307,7 @@ class OpenAIBatchProcessor {
     // Doing this will cause a single error to appear multiple times in the output. If you have three files in a batch,
     // and that batch fails with a single error, each file will be marked as failed on account of that error, so the
     // error will be printed out three times.
-    batchForRequest.forEach((prompt, index) => {
+    batch.forEach((prompt, index) => {
       if (axiosResponse instanceof Error || 'error' in axiosResponse) {
         this.failurePerPromptEventEmitter.emit(prompt, axiosResponse);
         return;
@@ -296,6 +321,36 @@ class OpenAIBatchProcessor {
       this.log.trace({completion, prompt});
       this.successPerPromptEventEmitter.emit(prompt, completionWithOnlyThisChoice);
     });
+
+    return axiosResponse;
+  }
+
+  private handleRequestReady(): ReturnType<OpenAIAPIRateLimiter['getNextRequest']> {
+    if (!this.completionParams) {
+      throw new Error('Internal error: Completion params not set');
+    }
+    if (!this.batches.length) {
+      return;
+    }
+    const batchForRequest = this.batches.shift()!;
+    const tokensInBatch = this.getTokensForBatch(batchForRequest);
+    const maxTokens = this.maxTokensPerRequest - tokensInBatch;
+    assert(maxTokens >= 0, 'Bug in jscodemod: maxTokens is negative');
+
+    const estimatedTokens = this.getEstimatedFullTokenCountNeededForRequestFromTokensInPrompt(tokensInBatch);
+
+    return {
+      estimatedTokens,
+      makeRequest: async () => {
+        const axiosResponse = await this.makeRequestForBatch(batchForRequest, maxTokens);
+        // @ts-expect-error
+        function responseIsSuccess(response: typeof axiosResponse): response is Awaited<ReturnType<typeof this.openai.createCompletion>> {
+          return !('response' in response);
+        }
+        // @ts-expect-error
+        return responseIsSuccess(axiosResponse) ? axiosResponse.data.usage?.total_tokens || estimatedTokens : estimatedTokens;
+      }
+    };
   }
 }
 
