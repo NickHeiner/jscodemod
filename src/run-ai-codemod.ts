@@ -5,7 +5,7 @@ import {Configuration, OpenAIApi, CreateCompletionResponse, CreateCompletionRequ
 import _ from 'lodash';
 import defaultCompletionRequestParams from './default-completion-request-params';
 import pDebounce from 'p-debounce';
-import pThrottle from 'p-throttle';
+// import pThrottle from 'p-throttle';
 import {EventEmitter} from 'events';
 // @ts-expect-error
 import {countTokens} from '@nick.heiner/gpt-3-encoder/Encoder';
@@ -71,7 +71,58 @@ interface OpenAIErrorResponse extends Error {
   }
 }
 
-const  secondsPerMinute = 60;
+const secondsPerMinute = 60;
+
+type OpenAIAPIRateLimitedRequest = () => Promise<number>
+class OpenAIAPIRateLimiter {
+  private readonly callRecords: Array<{timeMs: number, tokensUsed: number}> = [];
+
+  attemptCall: () => void;
+
+  constructor(
+    private log: NTHLogger, 
+    private readonly requestsPerMinuteLimit: number, 
+    private readonly tokensPerMinuteLimit: number,
+    private readonly getNextRequest: () => {estimatedTokens: number, makeRequest: OpenAIAPIRateLimitedRequest}
+  ) {
+    const rateLimitReciprocal = secondsPerMinute / requestsPerMinuteLimit;
+    this.attemptCall = pDebounce(this.innerAttemptCall.bind(this), rateLimitReciprocal);
+  }
+
+  async innerAttemptCall(): Promise<void> {
+    const nextRequest = this.getNextRequest();
+    if (!nextRequest) {
+      return;
+    }
+
+    const currentWindowStartTime = Date.now() - (secondsPerMinute * 1000);
+    const callsInCurrentWindow = _.takeRightWhile(this.callRecords, ({timeMs}) => timeMs >= currentWindowStartTime);
+    const countCallsInCurrentWindow = callsInCurrentWindow.length;
+    const hasExceededCallCountLimit = countCallsInCurrentWindow > this.requestsPerMinuteLimit;
+    const tokensUsedInCurrentWindow = _.sumBy(callsInCurrentWindow, 'tokensUsed');
+    const hasExceededTokenUseLimit = tokensUsedInCurrentWindow > this.tokensPerMinuteLimit;
+    if (callsInCurrentWindow || hasExceededTokenUseLimit) {
+      const oldestCallRecord = callsInCurrentWindow[0];
+      const timeUntilOldestCallRecordExpires = oldestCallRecord.timeMs - currentWindowStartTime;
+      this.log[highlightRequestTimingLogic ? 'warn' : 'trace']({
+        hasExceededCallCountLimit,
+        hasExceededTokenUseLimit,
+        countCallsInCurrentWindow,
+        tokensUsedInCurrentWindow,
+        timeUntilOldestCallRecordExpires
+      }, 'Reached rate limit. Waiting until the oldest call expires to try again.');
+      setTimeout(this.attemptCall, timeUntilOldestCallRecordExpires);
+      return;
+    }
+
+    const callRecord = {timeMs: Date.now(), tokensUsed: nextRequest.estimatedTokens};
+    this.callRecords.push(callRecord);
+    const tokensUsed = await nextRequest.makeRequest();
+    callRecord.tokensUsed = tokensUsed;
+    this.attemptCall();
+  }
+}
+
 class OpenAIBatchProcessor {
   private openai: OpenAIApi;
   private completionParams: CreateCompletionRequest;
@@ -90,7 +141,9 @@ class OpenAIBatchProcessor {
   private readonly openAIAPIRateLimitRequestsPerMinute = 20;
   private readonly openAIAPIRateLimitReciprocal = secondsPerMinute / this.openAIAPIRateLimitRequestsPerMinute;
 
-  private rateLimitedSendBatch: () => any;
+  // private rateLimitedSendBatch: () => any;
+
+  private readonly rateLimiter = new OpenAIAPIRateLimiter(this.log, this.openAIAPIRateLimitRequestsPerMinute, this.maxTokensPerMinute);
 
   constructor(log: NTHLogger, completionParams: CreateCompletionRequest) {
     const apiKey = getAPIKey();
@@ -104,13 +157,13 @@ class OpenAIBatchProcessor {
 
     this.openai = new OpenAIApi(configuration);
 
-    const debouncedSetBatch = pDebounce(this.sendBatch.bind(this), this.openAIAPIRateLimitReciprocal);
-    const throttle = pThrottle({
-      limit: this.openAIAPIRateLimitRequestsPerMinute,
-      interval: secondsPerMinute * 1000,
-      strict: true
-    });
-    this.rateLimitedSendBatch = throttle(debouncedSetBatch);
+    // const debouncedSetBatch = pDebounce(this.sendBatch.bind(this), this.openAIAPIRateLimitReciprocal);
+    // const throttle = pThrottle({
+    //   limit: this.openAIAPIRateLimitRequestsPerMinute,
+    //   interval: secondsPerMinute * 1000,
+    //   strict: true
+    // });
+    // this.rateLimitedSendBatch = throttle(debouncedSetBatch);
   }
 
   private getTokensForBatch(batch: AIPrompt[]) {
@@ -169,7 +222,7 @@ class OpenAIBatchProcessor {
   complete(prompt: AIPrompt, filePath: string): Promise<CreateCompletionResponse> {
     this.log.trace({prompt}, 'Adding prompt to batch');
     this.addPrompt(prompt, filePath);
-    this.rateLimitedSendBatch();
+    this.rateLimiter.enqueueRequest(this.sendBatch, 0)
     return new Promise((resolve, reject) => {
       this.successPerPromptEventEmitter.once(prompt, resolve);
       this.failurePerPromptEventEmitter.once(prompt, reason => {
@@ -178,7 +231,7 @@ class OpenAIBatchProcessor {
     });
   }
 
-  private async sendBatch() {
+  private async sendBatch(): Promise<void> {
     if (!this.completionParams) {
       throw new Error('Internal error: Completion params not set');
     }
@@ -187,7 +240,7 @@ class OpenAIBatchProcessor {
     }
     const batchForRequest = this.batches.shift()!;
     if (this.batches.length) {
-      this.rateLimitedSendBatch();
+      this.rateLimiter.enqueueRequest(this.sendBatch, 0)
     }
     const tokensInBatch = this.getTokensForBatch(batchForRequest);
     const maxTokens = this.maxTokensPerRequest - tokensInBatch;
