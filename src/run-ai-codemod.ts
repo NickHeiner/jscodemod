@@ -73,7 +73,14 @@ interface OpenAIErrorResponse extends Error {
 
 const secondsPerMinute = 60;
 
-type OpenAIAPIRateLimitedRequest = () => Promise<number>
+function getRetryTimeoutMs(attempt: number) {
+  const baselineStepSize = 10_000;
+  const minTimeoutMs = 2_000;
+  const maxTimeoutMs = 2 * secondsPerMinute * 1000;
+  return Math.max(minTimeoutMs, Math.min(baselineStepSize * Math.random() * Math.pow(2, attempt), maxTimeoutMs));
+}
+
+type OpenAIAPIRateLimitedRequest = () => Promise<{tokensUsed: number, rateLimitReached: boolean}>
 /**
  * This assumes that, at the beginning of program execution, you have full rate limit capacity. If you just finished
  * some other operation that used rate limit, then you immediately ran this program, this won't prevent you from hitting
@@ -81,18 +88,24 @@ type OpenAIAPIRateLimitedRequest = () => Promise<number>
  *
  * The most common way I can think this would happen is if you ran a codemod, hit a rate limit, then immediately re-ran
  * the codemod.
- * 
+ *
  * I think OpenAI's API is being a bit misleading in its error messages. It says things like:
  *    Limit: 40000.000000 / min. Current: 54190.000000 / min.
- * 
+ *
  * However, at this point in the program, I've only used ~10k tokens in approximately 1 minute. In the near term, I can
  * get around this by setting a much lower rate limit. In the long term, I would like to either increase the rate limit,
  * or understand what the real limits are.
  */
 class OpenAIAPIRateLimiter {
+  private readonly timeouts: Array<NodeJS.Timeout> = [];
   private readonly callRecords: Array<{timeMs: number, tokensUsed: number}> = [];
+  private openAIAPIAttemptRetryCount = 0;
 
   attemptCall: () => void;
+
+  private setTimeout(fn: () => void, ms: number) {
+    this.timeouts.push(setTimeout(fn, ms));
+  }
 
   constructor(
     private log: NTHLogger,
@@ -103,6 +116,8 @@ class OpenAIAPIRateLimiter {
     const rateLimitReciprocal = secondsPerMinute / requestsPerMinuteLimit;
     // I think this might be too conservative. We seem to be essentially making only one request at a time, and I think
     // this might be why. We're never actually hitting the rate limit branch in the logic in this class.
+    //
+    // Or the reason is that `innerAttemptCall` calls this debounced version, rather than calling itself.
     this.attemptCall = pDebounce(this.innerAttemptCall.bind(this), rateLimitReciprocal);
   }
 
@@ -123,15 +138,15 @@ class OpenAIAPIRateLimiter {
 
     if (hasExceededCallCountLimit || hasExceededTokenUseLimit) {
       const oldestCallRecord = callsInCurrentWindow[0];
-      const timeUntilOldestCallRecordExpires = oldestCallRecord.timeMs - currentWindowStartTime;
+      const timeUntilOldestCallRecordExpiresMs = oldestCallRecord.timeMs - currentWindowStartTime;
       this.log[loglevel]({
         hasExceededCallCountLimit,
         hasExceededTokenUseLimit,
         countCallsInCurrentWindow,
         tokensUsedInCurrentWindow,
-        timeUntilOldestCallRecordExpires
-      }, 'Reached rate limit. Waiting until the oldest call expires to try again.');
-      setTimeout(this.attemptCall, timeUntilOldestCallRecordExpires);
+        timeUntilOldestCallRecordExpiresMs
+      }, "The local rate limiter shows we've reached rate limit. Waiting until the oldest call expires to try again.");
+      this.setTimeout(this.attemptCall, timeUntilOldestCallRecordExpiresMs);
       return;
     }
 
@@ -144,9 +159,23 @@ class OpenAIAPIRateLimiter {
     );
     const callRecord = {timeMs: Date.now(), tokensUsed: nextRequest.estimatedTokens};
     this.callRecords.push(callRecord);
-    const tokensUsed = await nextRequest.makeRequest();
-    callRecord.tokensUsed = tokensUsed;
-    this.attemptCall();
+    const reqResult = await nextRequest.makeRequest();
+
+    callRecord.tokensUsed = reqResult.tokensUsed;
+
+    if (reqResult.rateLimitReached) {
+      this.timeouts.forEach(clearTimeout);
+      this.timeouts.length = 0;
+      const retryTimeoutMs = getRetryTimeoutMs(this.openAIAPIAttemptRetryCount++);
+      this.log[loglevel](
+        {retryTimeout: retryTimeoutMs},
+        "OpenAI's response says we've reached rate limit. Cancelling other pending requests and exponentially backing off."
+      );
+      this.setTimeout(this.attemptCall, retryTimeoutMs);
+    } else {
+      this.openAIAPIAttemptRetryCount = 0;
+      this.attemptCall();
+    }
   }
 }
 
@@ -160,12 +189,15 @@ class OpenAIBatchProcessor {
 
   private readonly tokenSafetyMargin = 1.1;
 
+  // I've set these params to have substantial headroom, because the OpenAI API gives rate limit responses well below
+  // the actual limits published online, or as indicated in the API responses themselves.
+  //
   // TODO: configure all the rate limit params per model
   private readonly maxTokensPerRequest = 2048;
-  private readonly maxTokensPerMinute = 40_000;
+  private readonly maxTokensPerMinute = 10_000;
 
   // TODO: somehow OpenAI thinks we're sending 30 requests per minute.
-  private readonly openAIAPIRateLimitRequestsPerMinute = 20;
+  private readonly openAIAPIRateLimitRequestsPerMinute = 5;
   // private readonly openAIAPIRateLimitReciprocal = secondsPerMinute / this.openAIAPIRateLimitRequestsPerMinute;
 
   // private rateLimitedSendBatch: () => any;
@@ -306,6 +338,7 @@ class OpenAIBatchProcessor {
            */
           /* eslint-enable max-len */
           const errorResponseData = (e as OpenAIErrorResponse).response.data;
+          // TODO: Do not log this for rate limit failures that will be retried.
           this.log.error(
             {errorResponseData},
             // eslint-disable-next-line max-len
@@ -356,12 +389,18 @@ class OpenAIBatchProcessor {
       estimatedTokens,
       makeRequest: async () => {
         const axiosResponse = await this.makeRequestForBatch(batchForRequest, maxTokens);
-        // @ts-expect-error
-        function responseIsSuccess(response: typeof axiosResponse): response is Awaited<ReturnType<typeof this.openai.createCompletion>> {
-          return !('response' in response);
+        const responseIsError = 'response' in axiosResponse;
+        const rateLimitReached = responseIsError && axiosResponse.response.data.error.message.includes('Rate limit reached');
+        const tokensUsed = (responseIsError ? estimatedTokens : axiosResponse.data.usage?.total_tokens) || estimatedTokens;
+
+        if (rateLimitReached) {
+          this.batches.push(batchForRequest);
         }
-        // @ts-expect-error
-        return responseIsSuccess(axiosResponse) ? axiosResponse.data.usage?.total_tokens || estimatedTokens : estimatedTokens;
+
+        return {
+          tokensUsed,
+          rateLimitReached
+        };
       }
     };
   }

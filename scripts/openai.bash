@@ -11,5 +11,5 @@ do
   -H "OpenAI-Organization: $OPENAI_ORG_ID" \
   -d '{"model": "code-davinci-002", "prompt": "const x = () => {}", "temperature": 0, "max_tokens": 7}' | jq
   echo
-  sleep 1
+  sleep 12
 done
