@@ -1730,6 +1730,11 @@
     "@jridgewell/resolve-uri" "3.1.0"
     "@jridgewell/sourcemap-codec" "1.4.14"
 
+"@nick.heiner/gpt-3-encoder@^1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@nick.heiner/gpt-3-encoder/-/gpt-3-encoder-1.2.0.tgz#0dc0b81fd4e914b0ace1a4ce7b1a2089f94025c5"
+  integrity sha512-feIYGiU2/0y+PfFv/bG24IM0EAx8B2AOVv+t1wxKClR6NDSjMgmFqA6KNMiMaADrgotiDIjS0pB7PGQV6SuZgw==
+
 "@nodelib/fs.scandir@2.1.3":
   version "2.1.3"
   resolved "https://registry.yarnpkg.com/@nodelib/fs.scandir/-/fs.scandir-2.1.3.tgz#3a582bdb53804c6ba6d146579c46e52130cf4a3b"
@@ -5183,6 +5188,11 @@ ora@5.1.0:
     mute-stream "0.0.8"
     strip-ansi "^6.0.0"
     wcwidth "^1.0.1"
+
+p-debounce@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/p-debounce/-/p-debounce-2.1.0.tgz#e79f70c6e325cbb9bddbcbec0b81025084671ad3"
+  integrity sha512-M9bMt62TTnozdZhqFgs+V7XD2MnuKCaz+7fZdlu2/T7xruI3uIE5CicQ0vx1hV7HIUYF0jF+4/R1AgfOkl74Qw==
 
 p-finally@^1.0.0:
   version "1.0.0"

@@ -10,8 +10,7 @@ it('handles multiline inputs', () => {
 
     {{INPUT_SOURCE_CODE}}
   `, 'source_code')).toMatchInlineSnapshot(`
-"/*
-
+"/* 
     My prompt
 
     source_code
@@ -19,8 +18,7 @@ it('handles multiline inputs', () => {
     More text
 
     source_code
-  
-*/
+   */
 
 "
 `);

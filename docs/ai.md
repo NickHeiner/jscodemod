@@ -300,6 +300,17 @@ Additionally, **AI model responses are not deterministic.** Every time you run, 
 
 Some types of codemods will be easier to write the traditional way, and some types will be easier this way.
 
+### Rate Limits
+I've observed OpenAI's rate limits to be stricter than what it says on the API docs.
+
+I did an experiment where I made 16 requests with a 12 second sleep between each one. This took 190 seconds, and produced a rate of 5 requests per minute. However, OpenAI's API gave me errors, saying I'd exceeded 30 requests per minute. 
+
+To get around this, I've implemented very conservative rate limiting logic. It seeks to stay within a rate limit that gives substantial headroom beneath what OpenAI advertises. It also has a very conservative expontential falloff, waiting several minutes before trying again.
+
+In light of this, I recommend:
+* Get in touch with OpenAI and get them to increase the rate limit for your API.
+* Think of an AI codemod as something that you'll let run for a while. It'll still be way faster than you making the changes yourself!
+
 ### Prompt Engineering
 As with all generative AI, finding a good prompt (and other parameters) is the key to getting the result you're looking for. It seems like something you just need to [experiment with](https://beta.openai.com/playground/p/gXdPByzqByPdjMoJXmNvBnmj?model=code-davinci-002). For your workflow, I recommend experimenting in the playground. Then, use this tool when you're ready to apply the results to your codebase. 
 
@@ -377,3 +388,5 @@ And it'll return a plugin that looks like it basically does the right thing ([pl
 $ jscodemod --codemod from-openai.ts my/files/**.js
 ```
 
+## Future Work & Ideas
+We may be able to substantially reduce the noise by fine-tuning a model for codemods.
