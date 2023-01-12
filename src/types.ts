@@ -274,10 +274,14 @@ export interface AICodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
     /**
      * If you omit this method, the values default to those set in `./default-completion-request-params.ts`.
      *
+     * You can't specify max_tokens. That will be set automatically to give the model room to write as much as it wants
+     * in response to your input.
+     *
      * @see https://beta.openai.com/docs/api-reference/completions/create
      * @returns Parameters for a call to OpenAI's API.
      */
-    getGlobalCompletionRequestParams?: (opts: BaseCodemodArgs<ParsedArgs>) => Promisable<CreateCompletionRequest>;
+    getGlobalCompletionRequestParams?: (opts: BaseCodemodArgs<ParsedArgs>)
+      => Promisable<Omit<CreateCompletionRequest, 'max_tokens'>>;
 
     getPrompt: (source: string) => Promisable<AIPrompt>;
 
