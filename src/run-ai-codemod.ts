@@ -5,7 +5,6 @@ import {Configuration, OpenAIApi, CreateCompletionResponse, CreateCompletionRequ
 import _ from 'lodash';
 import defaultCompletionRequestParams from './default-completion-request-params';
 import pDebounce from 'p-debounce';
-// import pThrottle from 'p-throttle';
 import {EventEmitter} from 'events';
 // @ts-expect-error
 import {countTokens} from '@nick.heiner/gpt-3-encoder/Encoder';
@@ -76,7 +75,7 @@ const secondsPerMinute = 60;
 function getRetryTimeoutMs(attempt: number) {
   const baselineStepSize = 10_000;
   const minTimeoutMs = 2_000;
-  const maxTimeoutMs = 2 * secondsPerMinute * 1000;
+  const maxTimeoutMs = 3 * secondsPerMinute * 1000;
   return Math.max(minTimeoutMs, Math.min(baselineStepSize * Math.random() * Math.pow(2, attempt), maxTimeoutMs));
 }
 
@@ -168,7 +167,7 @@ class OpenAIAPIRateLimiter {
       this.timeouts.length = 0;
       const retryTimeoutMs = getRetryTimeoutMs(this.openAIAPIAttemptRetryCount++);
       this.log[loglevel](
-        {retryTimeout: retryTimeoutMs},
+        {retryTimeout: retryTimeoutMs, openAIAPIAttemptRetryCount: this.openAIAPIAttemptRetryCount},
         "OpenAI's response says we've reached rate limit. Cancelling other pending requests and exponentially backing off."
       );
       this.setTimeout(this.attemptCall, retryTimeoutMs);
