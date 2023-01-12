@@ -74,7 +74,7 @@ describe('OpenAIAPIRateLimiter', () => {
     makeRequest.mockClear();
   });
 
-  it.skip('respects the API-provided rate limit feedback', async () => {
+  it.skip('respects the API-provided rate limit feedback', () => {
     const makeRequest = jest.fn(() => Promise.resolve({
       tokensUsed: 5,
       rateLimitReached: false
@@ -92,7 +92,7 @@ describe('OpenAIAPIRateLimiter', () => {
     // enqueues a retry.
     expect(makeRequest).toHaveBeenCalledTimes(1);
     jest.advanceTimersToNextTimer(Infinity);
-    
+
     // Validate that the retry occurred.
     expect(makeRequest).toHaveBeenCalledTimes(2);
     makeRequest.mockClear();
