@@ -74,6 +74,10 @@ describe('OpenAIAPIRateLimiter', () => {
     makeRequest.mockClear();
   });
 
+  /**
+   * This test fails, even though the functionality its testing seems to work in practice. I think this has to do with
+   * the idiosyncrasies of Jest's fake timers.
+   */
   it.skip('respects the API-provided rate limit feedback', () => {
     const makeRequest = jest.fn(() => Promise.resolve({
       tokensUsed: 5,

@@ -10,7 +10,7 @@ import {EventEmitter} from 'events';
 import {countTokens} from '@nick.heiner/gpt-3-encoder/Encoder';
 import assert from 'assert';
 
-const highlightRequestTimingLogic = true;
+const highlightRequestTimingLogic = false;
 
 function getAPIKey() {
   if (process.env.OPENAI_API_KEY) {
@@ -74,12 +74,19 @@ interface OpenAIErrorResponse extends Error {
 const secondsPerMinute = 60;
 const millisecondsPerSecond = 1000;
 
+// TODO: Make all this configurable.
 function getRetryTimeoutMs(attempt: number) {
   const baselineStepSize = 10_000;
   const minTimeoutMs = 2_000;
   // eslint-disable-next-line @typescript-eslint/no-magic-numbers
   const maxTimeoutMs = 10 * secondsPerMinute * millisecondsPerSecond;
-  return Math.max(minTimeoutMs, Math.min(baselineStepSize * Math.random() * Math.pow(2, attempt), maxTimeoutMs));
+
+  // The higher this value is, the more each attempt will back off.
+  const timeoutBase = 2.5;
+  return Math.max(
+    minTimeoutMs,
+    Math.min(baselineStepSize * Math.random() * Math.pow(timeoutBase, attempt), maxTimeoutMs)
+  );
 }
 
 type OpenAIAPIRateLimitedRequest = () => Promise<{tokensUsed: number, rateLimitReached: boolean}>
@@ -197,28 +204,30 @@ class OpenAIBatchProcessor {
   private successPerPromptEventEmitter = new EventEmitter();
   private failurePerPromptEventEmitter = new EventEmitter();
 
+  /**
+   * This gives the model headroom to return a codemodded file that's longer than our input file.
+   * If you're expecting the model to transform your file by substantially increasing its length, you'll need this
+   * value to be higher.
+   */
   private readonly tokenSafetyMargin = 1.1;
 
   // I've set these params to have substantial headroom, because the OpenAI API gives rate limit responses well below
   // the actual limits published online, or as indicated in the API responses themselves.
   //
   // TODO: configure all the rate limit params per model
-  private readonly maxTokensPerRequest = 2048;
+  private readonly maxTokensPerRequest = 4096;
   private readonly maxTokensPerMinute = 10_000;
-
-  // TODO: somehow OpenAI thinks we're sending 30 requests per minute.
   private readonly openAIAPIRateLimitRequestsPerMinute = 5;
 
   private readonly rateLimiter: OpenAIAPIRateLimiter;
 
   constructor(log: NTHLogger, completionParams: CreateCompletionRequest) {
-    const apiKey = getAPIKey();
     this.log = log.child({sourceCodeFile: undefined});
     this.completionParams = completionParams;
 
     const configuration = new Configuration({
       organization: getOrganizationId(),
-      apiKey
+      apiKey: getAPIKey()
     });
 
     this.openai = new OpenAIApi(configuration);
@@ -400,6 +409,9 @@ class OpenAIBatchProcessor {
             /* eslint-enable max-len */
               openAIErrorResponse.response.data.error.message
                 .includes('That model is currently overloaded with other requests.'));
+          this.log[highlightRequestTimingLogic ? 'warn' : 'debug']({
+            openAIResponseMessage: openAIErrorResponse.response.data.error.message
+          })
         }
 
         if (rateLimitReached) {
