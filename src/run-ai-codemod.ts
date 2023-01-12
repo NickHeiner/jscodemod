@@ -78,7 +78,7 @@ function getRetryTimeoutMs(attempt: number) {
   const baselineStepSize = 10_000;
   const minTimeoutMs = 2_000;
   // eslint-disable-next-line @typescript-eslint/no-magic-numbers
-  const maxTimeoutMs = 5 * secondsPerMinute * millisecondsPerSecond;
+  const maxTimeoutMs = 10 * secondsPerMinute * millisecondsPerSecond;
   return Math.max(minTimeoutMs, Math.min(baselineStepSize * Math.random() * Math.pow(2, attempt), maxTimeoutMs));
 }
 
@@ -98,7 +98,7 @@ type OpenAIAPIRateLimitedRequest = () => Promise<{tokensUsed: number, rateLimitR
  * get around this by setting a much lower rate limit. In the long term, I would like to either increase the rate limit,
  * or understand what the real limits are.
  */
-class OpenAIAPIRateLimiter {
+export class OpenAIAPIRateLimiter {
   private readonly timeouts: Array<NodeJS.Timeout> = [];
   private readonly callRecords: Array<{timeMs: number, tokensUsed: number}> = [];
   private openAIAPIAttemptRetryCount = 0;
@@ -118,10 +118,15 @@ class OpenAIAPIRateLimiter {
     } | undefined
   ) {
     const rateLimitReciprocal = secondsPerMinute / requestsPerMinuteLimit;
-    // I think this might be too conservative. We seem to be essentially making only one request at a time, and I think
-    // this might be why. We're never actually hitting the rate limit branch in the logic in this class.
-    //
-    // Or the reason is that `innerAttemptCall` calls this debounced version, rather than calling itself.
+    /**
+     * I think this might be too conservative. We seem to be essentially making only one request at a time, and I think
+     * this might be why. We're never actually hitting the rate limit branch in the logic in this class.
+     *
+     * Or the reason is that `innerAttemptCall` calls this debounced version, rather than calling itself.
+     *
+     * That said, in general, the OpenAI API has a very low rate limit, so even if this isn't the optimal way to
+     * implement a slowdown, any slowdown is probably beneficial, so I'm not going to think about changing this now.
+     */
     this.attemptCall = pDebounce(this.innerAttemptCall.bind(this), rateLimitReciprocal);
   }
 
