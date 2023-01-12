@@ -436,6 +436,9 @@ const getCompletionRequestParams = _.once((codemod: AICodemod, codemodOpts: Code
     ? codemod.getGlobalCompletionRequestParams(_.omit(codemodOpts))
     : defaultCompletionRequestParams);
 
+/**
+ * There's a rare bug with this where the codemod runner exits silently.
+ */
 export default async function runAICodemod(codemod: AICodemod, codemodOpts: CodemodArgsWithSource, log: NTHLogger) {
   let completionParams: CreateCompletionRequest;
   try {
