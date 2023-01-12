@@ -59,23 +59,26 @@ function getCodemodTransformResult(
 interface OpenAIErrorResponse extends Error {
   response: {
     status: number;
+    // eslint-disable-next-line id-blacklist
     data: {
       error: {
         message: string;
         type: string;
-        param: any;
-        code: any;
+        param: unknown;
+        code: unknown;
       }
     }
   }
 }
 
 const secondsPerMinute = 60;
+const millisecondsPerSecond = 1000;
 
 function getRetryTimeoutMs(attempt: number) {
   const baselineStepSize = 10_000;
   const minTimeoutMs = 2_000;
-  const maxTimeoutMs = 3 * secondsPerMinute * 1000;
+  // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+  const maxTimeoutMs = 5 * secondsPerMinute * millisecondsPerSecond;
   return Math.max(minTimeoutMs, Math.min(baselineStepSize * Math.random() * Math.pow(2, attempt), maxTimeoutMs));
 }
 
@@ -110,7 +113,9 @@ class OpenAIAPIRateLimiter {
     private log: NTHLogger,
     private readonly requestsPerMinuteLimit: number,
     private readonly tokensPerMinuteLimit: number,
-    private readonly getNextRequest: () => {estimatedTokens: number, makeRequest: OpenAIAPIRateLimitedRequest} | undefined
+    private readonly getNextRequest: () => {
+      estimatedTokens: number, makeRequest: OpenAIAPIRateLimitedRequest
+    } | undefined
   ) {
     const rateLimitReciprocal = secondsPerMinute / requestsPerMinuteLimit;
     // I think this might be too conservative. We seem to be essentially making only one request at a time, and I think
@@ -126,7 +131,7 @@ class OpenAIAPIRateLimiter {
       return;
     }
 
-    const currentWindowStartTime = Date.now() - (secondsPerMinute * 1000);
+    const currentWindowStartTime = Date.now() - (secondsPerMinute * millisecondsPerSecond);
     const callsInCurrentWindow = _.takeRightWhile(this.callRecords, ({timeMs}) => timeMs >= currentWindowStartTime);
     const countCallsInCurrentWindow = callsInCurrentWindow.length;
     const hasExceededCallCountLimit = countCallsInCurrentWindow > this.requestsPerMinuteLimit;
@@ -167,7 +172,8 @@ class OpenAIAPIRateLimiter {
       this.timeouts.length = 0;
       const retryTimeoutMs = getRetryTimeoutMs(this.openAIAPIAttemptRetryCount++);
       this.log[loglevel](
-        {retryTimeout: retryTimeoutMs, openAIAPIAttemptRetryCount: this.openAIAPIAttemptRetryCount},
+        {retryTimeoutMs, openAIAPIAttemptRetryCount: this.openAIAPIAttemptRetryCount},
+        // eslint-disable-next-line max-len
         "OpenAI's response says we've reached rate limit. Cancelling other pending requests and exponentially backing off."
       );
       this.setTimeout(this.attemptCall, retryTimeoutMs);
@@ -241,6 +247,8 @@ class OpenAIBatchProcessor {
       this.batches.push([prompt]);
       return;
     }
+    // This is safe because of the length check above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const mostRecentBatch = _.last(this.batches)!;
     const tokensInMostRecentBatch = this.getTokensForBatch(mostRecentBatch);
     const overheadRemainingInMostRecentBatch = this.getOverheadForBatch(tokensInMostRecentBatch);
@@ -293,6 +301,7 @@ class OpenAIBatchProcessor {
     const completionRequestParams = {
       ...this.completionParams,
       prompt: batch,
+      // eslint-disable-next-line camelcase
       max_tokens: maxTokens
     };
     const logMetadata = highlightRequestTimingLogic ? {
@@ -341,6 +350,8 @@ class OpenAIBatchProcessor {
     if (!this.batches.length) {
       return;
     }
+    // This is safe because of the length check above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const batchForRequest = this.batches.shift()!;
     const tokensInBatch = this.getTokensForBatch(batchForRequest);
     const maxTokens = this.maxTokensPerRequest - tokensInBatch;
@@ -382,7 +393,8 @@ class OpenAIBatchProcessor {
                 }
              */
             /* eslint-enable max-len */
-              openAIErrorResponse.response.data.error.message.includes('That model is currently overloaded with other requests.'));
+              openAIErrorResponse.response.data.error.message
+                .includes('That model is currently overloaded with other requests.'));
         }
 
         if (rateLimitReached) {
@@ -402,7 +414,7 @@ const createOpenAIBatchProcessor = _.once(
   (log: NTHLogger, completionParams: CreateCompletionRequest) => new OpenAIBatchProcessor(log, completionParams)
 );
 
-const getCompletionRequestParams = _.once(async (codemod: AICodemod, codemodOpts: CodemodArgsWithSource) =>
+const getCompletionRequestParams = _.once((codemod: AICodemod, codemodOpts: CodemodArgsWithSource) =>
   codemod.getGlobalCompletionRequestParams
     ? codemod.getGlobalCompletionRequestParams(_.omit(codemodOpts))
     : defaultCompletionRequestParams);

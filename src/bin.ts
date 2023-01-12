@@ -213,7 +213,7 @@ function validateAndGetAIOpts(
  * If this becomes painful, I could have the error production site put a method on the error called
  * "getFieldsForLogging" or something.
  */
-function getErrorFieldsForLogging(error: Record<string, any>) {
+function getErrorFieldsForLogging(error: Record<string, unknown>) {
   if (error.isAxiosError) {
     return _.pick(error.response, 'status', 'statusText', 'headers', 'data');
   }

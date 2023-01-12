@@ -10,6 +10,7 @@ rules:
   jest/no-conditional-expect: warn
   jest/no-standalone-expect: warn
   '@typescript-eslint/no-var-requires': warn
+  '@typescript-eslint/no-magic-numbers': off
 
 extends:
   - plugin:jest/recommended
