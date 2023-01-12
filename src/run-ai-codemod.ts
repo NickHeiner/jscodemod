@@ -411,7 +411,7 @@ class OpenAIBatchProcessor {
                 .includes('That model is currently overloaded with other requests.'));
           this.log[highlightRequestTimingLogic ? 'warn' : 'debug']({
             openAIResponseMessage: openAIErrorResponse.response.data.error.message
-          })
+          });
         }
 
         if (rateLimitReached) {
