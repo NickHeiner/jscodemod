@@ -197,9 +197,6 @@ class OpenAIBatchProcessor {
 
   // TODO: somehow OpenAI thinks we're sending 30 requests per minute.
   private readonly openAIAPIRateLimitRequestsPerMinute = 5;
-  // private readonly openAIAPIRateLimitReciprocal = secondsPerMinute / this.openAIAPIRateLimitRequestsPerMinute;
-
-  // private rateLimitedSendBatch: () => any;
 
   private readonly rateLimiter: OpenAIAPIRateLimiter;
 
@@ -221,14 +218,6 @@ class OpenAIBatchProcessor {
       this.maxTokensPerMinute,
       this.handleRequestReady.bind(this)
     );
-
-    // const debouncedSetBatch = pDebounce(this.sendBatch.bind(this), this.openAIAPIRateLimitReciprocal);
-    // const throttle = pThrottle({
-    //   limit: this.openAIAPIRateLimitRequestsPerMinute,
-    //   interval: secondsPerMinute * 1000,
-    //   strict: true
-    // });
-    // this.rateLimitedSendBatch = throttle(debouncedSetBatch);
   }
 
   private getTokensForBatch(batch: AIPrompt[]) {
@@ -316,36 +305,11 @@ class OpenAIBatchProcessor {
     const axiosResponse = await this.log.logPhase(
       {phase: 'OpenAI request', ...logMetadata},
       async (_, setAdditionalLogData) => {
-        try {
-          const response = await this.openai.createCompletion(completionRequestParams);
-          if (!highlightRequestTimingLogic) {
-            setAdditionalLogData({completionResponse: response.data});
-          }
-          return response;
-        } catch (e: unknown) {
-          /* eslint-disable max-len */
-          /**
-           * One possible error response from the API:
-           * {
-                "error": {
-                  "message": "That model is currently overloaded with other requests. You can retry your request, or contact us through our help center at help.openai.com if the error persists. (Please include the request ID b99bb8c4404d91ba7a7a60bd0bfe6d9a in your message.)",
-                  "type": "server_error",
-                  "param": null,
-                  "code": null
-                }
-              }
-           */
-          /* eslint-enable max-len */
-          const errorResponseData = (e as OpenAIErrorResponse).response.data;
-          // TODO: Do not log this for rate limit failures that will be retried.
-          this.log.error(
-            {errorResponseData},
-            // eslint-disable-next-line max-len
-            "OpenAI request failed. This could indicate a bug in jscodemod. If the error is that you hit a rate limit, you can try re-running this command on a smaller set of files. This error doesn't necessarily mean the entire codemod run failed; if some files were successfully transformed, you can save them before trying again."
-          );
-          setAdditionalLogData({errorResponseData, status: 'failed'});
-          return e as OpenAIErrorResponse;
+        const response = await this.openai.createCompletion(completionRequestParams);
+        if (!highlightRequestTimingLogic) {
+          setAdditionalLogData({completionResponse: response.data});
         }
+        return response;
       }
     );
 
@@ -387,10 +351,39 @@ class OpenAIBatchProcessor {
     return {
       estimatedTokens,
       makeRequest: async () => {
-        const axiosResponse = await this.makeRequestForBatch(batchForRequest, maxTokens);
-        const responseIsError = 'response' in axiosResponse;
-        const rateLimitReached = responseIsError && axiosResponse.response.data.error.message.includes('Rate limit reached');
-        const tokensUsed = (responseIsError ? estimatedTokens : axiosResponse.data.usage?.total_tokens) || estimatedTokens;
+        let tokensUsed = estimatedTokens;
+        let rateLimitReached = false;
+        try {
+          const axiosResponse = await this.makeRequestForBatch(batchForRequest, maxTokens);
+          tokensUsed = axiosResponse.data.usage?.total_tokens || tokensUsed;
+        } catch (e: unknown) {
+          const responseIsError = e && typeof e === 'object' && 'response' in e;
+          if (!responseIsError) {
+            this.log.error(
+              {err: e},
+              // eslint-disable-next-line max-len
+              "OpenAI request failed. This could indicate a bug in jscodemod. This error doesn't necessarily mean the entire codemod run failed; if some files were successfully transformed, you can save them before trying again."
+            );
+            throw e;
+          }
+          const openAIErrorResponse = e as OpenAIErrorResponse;
+          rateLimitReached =
+            (openAIErrorResponse.response.data.error.message.includes('Rate limit reached') ||
+            /* eslint-disable max-len */
+            /**
+             * One possible error response from the API:
+             * {
+                  "error": {
+                    "message": "That model is currently overloaded with other requests. You can retry your request, or contact us through our help center at help.openai.com if the error persists. (Please include the request ID b99bb8c4404d91ba7a7a60bd0bfe6d9a in your message.)",
+                    "type": "server_error",
+                    "param": null,
+                    "code": null
+                  }
+                }
+             */
+            /* eslint-enable max-len */
+              openAIErrorResponse.response.data.error.message.includes('That model is currently overloaded with other requests.'));
+        }
 
         if (rateLimitReached) {
           this.batches.push(batchForRequest);
