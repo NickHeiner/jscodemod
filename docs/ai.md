@@ -2,6 +2,7 @@
 This tool supports running AI-powered codemods using OpenAI's models. This allows you to transform code without needing to know how AST transformers work.
 
 * [Demos](#demo)
+  * [Converting old JS repo to TS](#simple-prompt-convert-an-old-js-repo-to-typescript)
   * [Converting old JS to modern JS](#simple-prompt-converting-old-js-to-modern-js)
   * [Converting a React class component to a functional one](#simple-prompt-converting-a-react-class-component-to-a-functional-one)
   * [Making up your own transformation](#long-prompt)
@@ -18,6 +19,49 @@ This tool supports running AI-powered codemods using OpenAI's models. This allow
 To run this locally, you'll need an [OpenAI API key](https://beta.openai.com/overview).
 
 ## Demo
+### Simple Prompt: Convert an old JS repo to TypeScript
+Command:
+```
+jscodemod --prompt "// Convert the code above to TypeScript. Be sure to retain any variables imported via require. Use ESM instead of CommonJS for imports and exports. Remove the \"use strict\" directive. You can import the following global types from `my-global-types` and use them as you see fit: `GameState`, `Player`, `MovePart`, `Row`, `Col`, `Space`." ../camelot-engine/lib/**/*.js
+```
+
+Result:
+```ts
+// Input
+function f(a, gameState, b) {
+  console.log(a.c, gameState);
+  a.c(b || 'default-value');
+}
+
+// Output
+import type { GameState } from 'my-global-types';
+function f(a: { c: (arg: string) => void }, gameState: GameState, b?: string): void {
+  console.log(a.c);
+  a.c(b || 'default-value');
+}
+```
+
+See [the PR](https://github.com/NickHeiner/camelot-engine/pull/31) for full detail.
+
+## Comparison to [ts-migrate](https://github.com/airbnb/ts-migrate/)
+Before AI codemods, we could use something like https://github.com/airbnb/ts-migrate/. However, useful as that tool is, it's limited to very coarse-grained types – it basically just inserts `any` everywhere.
+
+```ts
+// Input
+function f(a, gameState, b) {
+  console.log(a.c, gameState);
+  a.c(b || 'default-value');
+}
+
+// ts-migrate result
+function f(a: any, gameState: any, b: any) {
+  console.log(a.c, gameState);
+  a.c(b || 'default-value');
+}
+```
+
+Additionally, to use `ts-migrate` on my large production codebase at Netflix, I had to make [a bunch of changes](https://github.com/airbnb/ts-migrate/issues/168) over 4 days. By contrast, the only setup time for the AI-powered TypeScript conversion was 4 minutes of tweaking the prompt.
+
 ### Simple Prompt: Converting old JS to modern JS
 If the transformation you want is common, you can simply ask for it in plain language.
 
@@ -298,7 +342,7 @@ With an AI codemod, you skip the "implement" and "write tests" step. However, yo
 
 Additionally, **AI model responses are not deterministic.** Every time you run, you could get something different. If you like a result, save it. So rather than say, "I like this prompt's results for 5 files, but I'm going to keep tweaking my prompt until I like it for all 10", just save your 5 good files and move on.
 
-Some types of codemods will be easier to write the traditional way, and some types will be easier this way.
+Some codemods will be easier to implement the traditional way, and other codemods will be easier with AI.
 
 ### Rate Limits
 I've observed OpenAI's rate limits to be stricter than what it says on the API docs.
