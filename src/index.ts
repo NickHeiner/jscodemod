@@ -38,12 +38,12 @@ export type TSOptions = {
   tsOutDir?: string;
   /**
    * If true, when you pass a TS codemod, JSCodemod will compile it.
-   * 
+   *
    * When false, JSCodemod will `require()` the TS codemod directly.
-   * 
+   *
    * You'd want to pass `false` if you were calling JSCodemod from a context where `require()`ing TS directly works. For
    * instance, if you have ts-node enabled.
-   * 
+   *
    * Defaults to true.
    */
   compileTs?: boolean;
