@@ -4,14 +4,14 @@
 import globby from 'globby';
 import _ from 'lodash';
 import execa from 'execa';
-import pathIsTS from './path-is-ts';
+// import pathIsTS from './path-is-ts';
 import path from 'path';
 import Piscina from 'piscina';
 import ProgressBar from 'progress';
 import {cyan} from 'ansi-colors';
 import ora from 'ora';
 import createLog from 'nth-log';
-import compileTS from './compile-ts';
+// import compileTS from './compile-ts';
 import type {AICodemod, Codemod, TODO} from './types';
 import execBigCommand from './exec-big-command';
 import getGitRoot from './get-git-root';
@@ -73,10 +73,14 @@ export type InternalOptions = TSOptions
 
 // The rule is too broad.
 // eslint-disable-next-line require-await
-async function getCodemodPath(pathToCodemod: string, options: TSOptions) {
-  if (pathIsTS(pathToCodemod)) {
-    return compileTS(pathToCodemod, options);
-  }
+async function getCodemodPath(pathToCodemod: string, _options: TSOptions) {
+  // if (pathIsTS(pathToCodemod)) {
+  //   /**
+  //    * This is actually unnecessary if the user is calling this function from a context that is able to require TS
+  //    * directly, like if they have TS_NODE.
+  //    */
+  //   return compileTS(pathToCodemod, options);
+  // }
 
   return path.resolve(pathToCodemod);
 }

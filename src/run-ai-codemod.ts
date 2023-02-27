@@ -255,23 +255,12 @@ class OpenAIBatchProcessor {
 
   private addPrompt(prompt: AIPrompt, filePath: string) {
     const log = this.log.child({method: 'OpenAIBatchProcessor#addPrompt'});
-    log.trace('Adding prompt to batch');
-    if (!this.batches.length) {
-      log.trace('Creating new batch because there are no batches');
-      this.batches.push([prompt]);
-      return;
-    }
-    // This is safe because of the length check above.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const mostRecentBatch = _.last(this.batches)!;
-    const tokensInMostRecentBatch = this.getTokensForBatch(mostRecentBatch);
-    const overheadRemainingInMostRecentBatch = this.getOverheadForBatch(tokensInMostRecentBatch);
-    const tokensForLatestPrompt = countTokens(prompt);
-    log.trace({tokensForLatestPrompt, overheadRemainingInMostRecentBatch, tokensInMostRecentBatch});
-    if (tokensForLatestPrompt > overheadRemainingInMostRecentBatch) {
+
+    const addNewBatch = () => {
       const newBatch = [prompt];
       const tokensInNewBatch = this.getTokensForBatch(newBatch);
-      const overheadRemainingInNewestBatch = this.getOverheadForBatch(tokensInNewBatch);
+      const overheadRemainingInNewestBatch =
+        this.getOverheadForBatch(tokensInNewBatch);
       if (overheadRemainingInNewestBatch < 0) {
         const err = new Error(
           /* eslint-disable max-len */
@@ -280,7 +269,7 @@ class OpenAIBatchProcessor {
   1. Use the codemod's \`ignore\` API to ignore it.
   2. Or split the file into smaller pieces.
   3. Or use a model with a larger token limit.
-
+  
   You can read more about model limits at https://beta.openai.com/docs/models/overview. To see how many tokens your code is, see the tool at https://beta.openai.com/tokenizer. Your code must take up less than half the token limit of the model, because the token limit applies to both the input and the output, so we need to leave a headroom of 50% for the model to have room to respond.`
         );
         /* eslint-enable max-len */
@@ -290,9 +279,30 @@ class OpenAIBatchProcessor {
         });
         throw err;
       } else {
-        log.trace('Creating new batch');
         this.batches.push([prompt]);
       }
+    };
+
+    log.trace('Adding prompt to batch');
+    if (!this.batches.length) {
+      addNewBatch();
+      return;
+    }
+    // This is safe because of the length check above.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const mostRecentBatch = _.last(this.batches)!;
+    const tokensInMostRecentBatch = this.getTokensForBatch(mostRecentBatch);
+    const overheadRemainingInMostRecentBatch = this.getOverheadForBatch(
+      tokensInMostRecentBatch
+    );
+    const tokensForLatestPrompt = countTokens(prompt);
+    log.trace({
+      tokensForLatestPrompt,
+      overheadRemainingInMostRecentBatch,
+      tokensInMostRecentBatch
+    });
+    if (tokensForLatestPrompt > overheadRemainingInMostRecentBatch) {
+      addNewBatch();
     } else {
       log.trace('Adding to existing batch');
       mostRecentBatch.push(prompt);
