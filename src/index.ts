@@ -4,14 +4,14 @@
 import globby from 'globby';
 import _ from 'lodash';
 import execa from 'execa';
-// import pathIsTS from './path-is-ts';
+import pathIsTS from './path-is-ts';
 import path from 'path';
 import Piscina from 'piscina';
 import ProgressBar from 'progress';
 import {cyan} from 'ansi-colors';
 import ora from 'ora';
 import createLog from 'nth-log';
-// import compileTS from './compile-ts';
+import compileTS from './compile-ts';
 import type {AICodemod, Codemod, TODO} from './types';
 import execBigCommand from './exec-big-command';
 import getGitRoot from './get-git-root';
@@ -35,7 +35,18 @@ export * from './types';
  */
 export type TSOptions = {
   tsconfig?: string;
-  tsOutDir?: string
+  tsOutDir?: string;
+  /**
+   * If true, when you pass a TS codemod, JSCodemod will compile it.
+   * 
+   * When false, JSCodemod will `require()` the TS codemod directly.
+   * 
+   * You'd want to pass `false` if you were calling JSCodemod from a context where `require()`ing TS directly works. For
+   * instance, if you have ts-node enabled.
+   * 
+   * Defaults to true.
+   */
+  compileTs?: boolean;
   tsc?: string;
   log: ReturnType<typeof createLog>;
 }
@@ -73,14 +84,10 @@ export type InternalOptions = TSOptions
 
 // The rule is too broad.
 // eslint-disable-next-line require-await
-async function getCodemodPath(pathToCodemod: string, _options: TSOptions) {
-  // if (pathIsTS(pathToCodemod)) {
-  //   /**
-  //    * This is actually unnecessary if the user is calling this function from a context that is able to require TS
-  //    * directly, like if they have TS_NODE.
-  //    */
-  //   return compileTS(pathToCodemod, options);
-  // }
+async function getCodemodPath(pathToCodemod: string, options: TSOptions) {
+  if (pathIsTS(pathToCodemod) && options.compileTs) {
+    return compileTS(pathToCodemod, options);
+  }
 
   return path.resolve(pathToCodemod);
 }
@@ -272,6 +279,7 @@ async function jscodemod(
     doPostProcess: true,
     writeFiles: true,
     respectIgnores: true,
+    compileTs: true,
     ...passedOptions
   };
 
@@ -302,7 +310,7 @@ In case (1), your prompt must be a string. However, your prompt was a "${typeof 
     }
 
     const codemodPath = await getCodemodPath(pathToCodemod, {
-      ..._.pick(options, 'tsconfig', 'tsOutDir', 'tsc'),
+      ..._.pick(options, 'tsconfig', 'tsOutDir', 'tsc', 'compileTs'),
       log
     });
     const codemod = loadCodemod(codemodPath);
