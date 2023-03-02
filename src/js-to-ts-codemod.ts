@@ -1,6 +1,7 @@
 import type {AIChatCodemod} from './types';
 import fs from 'fs/promises';
 import path from 'path';
+import execa from 'execa';
 
 const codemod: AIChatCodemod = {
   getMessages: source => [
@@ -16,6 +17,7 @@ const codemod: AIChatCodemod = {
     for (const file of modifiedFiles) {
       const tsFileName = path.join(path.dirname(file), path.basename(file, '.js') + '.ts');
       await fs.rename(file, tsFileName);
+      await execa('git', ['add', tsFileName, file]);
     }
   }
 };
