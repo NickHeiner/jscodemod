@@ -1,9 +1,9 @@
 import {NTHLogger, LogMetadata} from 'nth-log';
 import {makePhaseError} from './make-phase-error';
-import {AICodemod, CodemodArgsWithSource, CodemodResult, AIPrompt} from './types';
-import {Configuration, OpenAIApi, CreateCompletionResponse, CreateCompletionRequest} from 'openai';
+import {AICodemod, CodemodArgsWithSource, CodemodResult, AIPrompt, AIChatCodemod} from './types';
+import {Configuration, OpenAIApi, CreateChatCompletionResponse, CreateChatCompletionRequest, CreateCompletionRequest} from 'openai';
 import _ from 'lodash';
-import defaultCompletionRequestParams from './default-completion-request-params';
+import {defaultChatParams, defaultCompletionParams} from './default-completion-request-params';
 import pDebounce from 'p-debounce';
 import {EventEmitter} from 'events';
 // @ts-expect-error
@@ -33,7 +33,7 @@ function getOrganizationId() {
 }
 
 function defaultExtractResultFromCompletion(
-  completion: CreateCompletionResponse['choices'][0]['text']
+  completion?: Exclude<CreateChatCompletionResponse['choices'][0]['message'], undefined>['content']
 ) {
   if (!completion) {
     throw makePhaseError(
@@ -47,13 +47,13 @@ function defaultExtractResultFromCompletion(
 }
 
 function getCodemodTransformResult(
-  codemod: AICodemod,
-  response: CreateCompletionResponse
+  codemod: AICodemod | AIChatCodemod,
+  response: CreateChatCompletionResponse
 ): CodemodResult<unknown> {
   if (codemod.extractTransformationFromCompletion) {
     return codemod.extractTransformationFromCompletion(response);
   }
-  return defaultExtractResultFromCompletion(response.choices[0].text);
+  return defaultExtractResultFromCompletion(response.choices[0].message?.content);
 }
 
 interface OpenAIErrorResponse extends Error {
@@ -309,7 +309,7 @@ class OpenAIBatchProcessor {
     }
   }
 
-  complete(prompt: AIPrompt, filePath: string): Promise<CreateCompletionResponse> {
+  complete(prompt: AIPrompt, filePath: string): Promise<CreateChatCompletionResponse> {
     this.log.trace({prompt}, 'Adding prompt to batch');
     this.addPrompt(prompt, filePath);
     this.rateLimiter.attemptCall();
@@ -450,12 +450,14 @@ const createOpenAIBatchProcessor = _.once(
 const getCompletionRequestParams = _.once((codemod: AICodemod, codemodOpts: CodemodArgsWithSource) =>
   codemod.getGlobalCompletionRequestParams
     ? codemod.getGlobalCompletionRequestParams(_.omit(codemodOpts))
-    : defaultCompletionRequestParams);
+    : defaultCompletionParams);
 
-/**
- * There's a rare bug with this where the codemod runner exits silently.
- */
-export default async function runAICodemod(codemod: AICodemod, codemodOpts: CodemodArgsWithSource, log: NTHLogger) {
+const getChatRequestParams = _.once((codemod: AIChatCodemod, codemodOpts: CodemodArgsWithSource) =>
+  codemod.getGlobalCompletionRequestParams
+    ? codemod.getGlobalCompletionRequestParams(_.omit(codemodOpts))
+    : defaultChatParams);
+
+async function runAICompletionCodemod(codemod: AICodemod, codemodOpts: CodemodArgsWithSource, log: NTHLogger) {
   let completionParams: CreateCompletionRequest;
   try {
     completionParams = await getCompletionRequestParams(codemod, codemodOpts);
@@ -468,7 +470,7 @@ export default async function runAICodemod(codemod: AICodemod, codemodOpts: Code
   }
   const openAIBatchProcessor = createOpenAIBatchProcessor(log, completionParams);
 
-  let prompt: string;
+  let prompt: AIPrompt;
   try {
     prompt = await codemod.getPrompt(codemodOpts.source);
   } catch (e: unknown) {
@@ -482,4 +484,46 @@ export default async function runAICodemod(codemod: AICodemod, codemodOpts: Code
   const result = await openAIBatchProcessor.complete(prompt, codemodOpts.filePath);
 
   return getCodemodTransformResult(codemod, result);
+}
+
+async function runAIChatCodemod(codemod: AIChatCodemod, codemodOpts: CodemodArgsWithSource, log: NTHLogger) {
+  let chatCompletionParams: CreateChatCompletionRequest;
+  try {
+    chatCompletionParams = await getChatRequestParams(codemod, codemodOpts);
+  } catch (e: unknown) {
+    throw makePhaseError(
+      e as Error,
+      'codemod.getCompletionRequestParams()',
+      "Check your getCompletionRequestParams() method for a bug, or add this file to your codemod's ignore list."
+    );
+  }
+
+  let messages: ReturnType<typeof codemod.getMessages>;
+  try {
+    messages = await codemod.getMessages(codemodOpts.source);
+  } catch (e: unknown) {
+    throw makePhaseError(
+      e as Error,
+      'codemod.getPrompt()',
+      "Check your getCompletionRequestParams() method for a bug, or add this file to your codemod's ignore list."
+    );
+  }
+
+  chatCompletionParams.messages.push(...messages);
+  const configuration = new Configuration({
+    organization: getOrganizationId(),
+    apiKey: getAPIKey()
+  });
+  const openai = new OpenAIApi(configuration);
+  const completion = await openai.createChatCompletion(chatCompletionParams);
+  log.warn('choices', completion.data.choices);
+
+  return getCodemodTransformResult(codemod, completion.data);
+}
+
+export default function runAICodemod(codemod: AICodemod | AIChatCodemod, codemodOpts: CodemodArgsWithSource, log: NTHLogger) {
+  if ('getMessages' in codemod) {
+    return runAIChatCodemod(codemod, codemodOpts, log);
+  }
+  return runAICompletionCodemod(codemod, codemodOpts, log);
 }

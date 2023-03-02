@@ -14,7 +14,7 @@ import ansiColors from 'ansi-colors';
 import path from 'path';
 import fs from 'fs';
 import {CreateCompletionRequest} from 'openai';
-import defaultCompletionRequestParams from './default-completion-request-params';
+import {defaultCompletionParams} from './default-completion-request-params';
 
 // Passing paths as file globs that start with `.` doesn't work.
 // https://github.com/sindresorhus/globby/issues/168
@@ -52,6 +52,12 @@ const argv = yargs
       alias: 'c',
       type: 'string',
       describe: 'Path to the codemod to run'
+    },
+    builtInCodemod: {
+      alias: 'b',
+      type: 'string',
+      describe: 'The built-in codemod to run.',
+      choices: ['js-to-ts']
     },
     inputFileList: {
       alias: 'l',
@@ -201,7 +207,7 @@ function validateAndGetAIOpts(
 
   return {
     prompt: promptFromFlags,
-    ...defaultCompletionRequestParams,
+    ...defaultCompletionParams,
     ...createCompletionRequestParams
   } satisfies CreateCompletionRequest;
 }
@@ -245,8 +251,15 @@ async function main() {
 
     Object.assign(opts, _.pick(argv, 'codemodArgs'));
 
+    const builtInCodemods = {
+      'js-to-ts': require.resolve('./js-to-ts-codemod')
+    };
+    // TODO: validate that `builtInCodemod` is a real codemod.
+    // @ts-expect-error
+    const codemodPath = argv.builtInCodemod ? builtInCodemods[argv.builtInCodemod] : argv.codemod;
+
     const codemodMetaResults = await jscodemod(
-      argv.codemod,
+      codemodPath,
       // I'm not sure why this is an error, but I think the code is correct.
       // @ts-expect-error
       opts
