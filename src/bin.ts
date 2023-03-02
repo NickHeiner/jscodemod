@@ -177,8 +177,8 @@ const argv = yargs
     }
 
     const prompt = validateAndGetAIOpts(argv)?.prompt;
-    if (!(prompt || argv.codemod)) {
-      throw new Error('You must pass either the --codemod or --prompt flags.');
+    if (!(prompt || argv.codemod || argv.builtInCodemod)) {
+      throw new Error('You must pass either the --codemod, --builtInCodemod, or --prompt flags.');
     }
 
     return true;
