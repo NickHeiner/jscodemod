@@ -299,7 +299,7 @@ import {AICodemod} from '@nick.heiner/jscodemod';
 const codemod = {
   getCompletionRequestParams({source}) {
     return {
-      model: 'code-davinci-002',
+      model: 'gpt-3.5-turbo',
       prompt: `
         ${source}
 

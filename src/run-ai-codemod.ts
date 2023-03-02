@@ -419,9 +419,15 @@ class OpenAIBatchProcessor {
             /* eslint-enable max-len */
               openAIErrorResponse.response.data.error.message
                 .includes('That model is currently overloaded with other requests.'));
-          this.log[highlightRequestTimingLogic ? 'warn' : 'debug']({
-            openAIResponseMessage: openAIErrorResponse.response.data.error.message
-          });
+          if (rateLimitReached) {
+            this.log[highlightRequestTimingLogic ? 'warn' : 'debug']({
+              openAIResponseMessage: openAIErrorResponse.response.data.error.message
+            });
+          } else {
+            const error = new Error(openAIErrorResponse.response.data.error.message);
+            error.cause = e;
+            throw e;
+          }
         }
 
         if (rateLimitReached) {

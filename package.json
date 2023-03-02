@@ -70,7 +70,7 @@
     "lodash": "4.17.20",
     "loud-rejection": "2.2.0",
     "nth-log": "2.0.3",
-    "openai": "^3.1.0",
+    "openai": "^3.2.1",
     "ora": "5.1.0",
     "p-debounce": "^2.1.0",
     "piscina": "1.6.3",
