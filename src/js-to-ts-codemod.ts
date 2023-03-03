@@ -15,7 +15,7 @@ const codemod: AIChatCodemod = {
   ],
   async postProcess(modifiedFiles) {
     for (const file of modifiedFiles) {
-      const tsFileName = path.join(path.dirname(file), path.basename(file, '.js') + '.ts');
+      const tsFileName = path.join(path.dirname(file), `${path.basename(file, '.js')}.ts`);
       await fs.rename(file, tsFileName);
       await execa('git', ['add', tsFileName, file]);
     }

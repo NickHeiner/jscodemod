@@ -291,8 +291,8 @@ export type AIPrompt = string;
  * * You need an [OpenAI API key](https://beta.openai.com/overview).
  */
 export interface BaseAICodemod<
-  RequestParams = unknown,
-  Response = unknown,
+  RequestParams,
+  Response,
   ParsedArgs = unknown,
   TransformResultMeta = unknown
 > extends BaseCodemod<ParsedArgs, TransformResultMeta> {
@@ -307,7 +307,7 @@ export interface BaseAICodemod<
    */
   getGlobalCompletionRequestParams?: (
     opts: BaseCodemodArgs<ParsedArgs>
-  ) => Promisable<Omit<RequestParams, "max_tokens">>;
+  ) => Promisable<Omit<RequestParams, 'max_tokens'>>;
 
   /**
    * Optional. Only add this if you're getting bad results without it.
@@ -332,7 +332,7 @@ export interface BaseAICodemod<
  * Transform a file using ChatGPT.
  *
  * Of the AI codemod methods, this one has experimentally given me the best results.
- * 
+ *
  * @see https://platform.openai.com/docs/guides/chat
  * @see BaseAICodemod
  */
@@ -346,22 +346,22 @@ export interface AIChatCodemod<
     TransformResultMeta
   > {
   /**
-   * Get the messages to pass to chatGPT. See 
+   * Get the messages to pass to chatGPT. See
    * [the OpenAI docs](https://platform.openai.com/docs/guides/chat/chat-vs-completions) for details about what you
    * want to pass here.
-   * 
+   *
    * @param source the source code to transform
    */
   getMessages: (
     source: string
-  ) => Promisable<CreateChatCompletionRequest["messages"]>;
+  ) => Promisable<CreateChatCompletionRequest['messages']>;
 }
 
 /**
  * Transform a file using AI, and one of OpenAI's completion models (e.g. text-davinci-003).
  *
  * In my experiments, this model has given me worse results than AIChatCodemod.
- * 
+ *
  * @see https://platform.openai.com/docs/guides/code
  * @see https://platform.openai.com/docs/guides/completion
  * @see BaseAICodemod
@@ -381,7 +381,8 @@ export interface AICompletionCodemod<
 export type CodemodThatUsesTheRunner =
   | BabelCodemod
   | LowLevelCodemod
-  | BaseAICodemod;
+  | AICompletionCodemod
+  | AIChatCodemod;
 export type Codemod = CodemodThatUsesTheRunner | LowLevelBulkCodemod;
 
 // The `any` here is intentional.

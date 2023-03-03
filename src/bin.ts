@@ -211,7 +211,7 @@ const argv = yargs
     }
 
     const aiRequestParams = validateAndGetRequestParams(argv);
-    if (!(argv.codemod || argv.builtInCodemod || (aiRequestParams && 
+    if (!(argv.codemod || argv.builtInCodemod || (aiRequestParams &&
       ('message' in aiRequestParams || 'prompt' in aiRequestParams)))) {
       throw new Error('You must pass either the --codemod, --builtInCodemod, --prompt, or --chatMessage flags.');
     }
@@ -223,11 +223,11 @@ const argv = yargs
   .parseSync();
 
 function validateAndGetRequestParams(
-  {openAICompletionRequestConfig, openAICompletionRequestFile, completionPromptFile, chatMessageFile, completionPrompt, 
+  {openAICompletionRequestConfig, openAICompletionRequestFile, completionPromptFile, chatMessageFile, completionPrompt,
     chatMessage, openAIChatRequestConfig, openAIChatRequestFile}: typeof argv
 ): CreateCompletionRequest | CreateChatCompletionRequest | null {
 
-  const isChatCodemod = argv.chatMessage || argv.chatMessageFile || argv.openAIChatRequestFile || 
+  const isChatCodemod = argv.chatMessage || argv.chatMessageFile || argv.openAIChatRequestFile ||
     argv.openAIChatRequestConfig;
   const isCompletionCodemod = argv.completionPrompt || argv.completionPromptFile || argv.openAICompletionRequestFile ||
     argv.openAICompletionRequestConfig;
@@ -251,7 +251,7 @@ function validateAndGetRequestParams(
     }
 
     if (isChatCodemod) {
-      (requestParams as CreateChatCompletionRequest).messages = [{role: 'user', content: promptFromFlags!}]
+      (requestParams as CreateChatCompletionRequest).messages = [{role: 'user', content: promptFromFlags!}];
     } else {
       (requestParams as CreateCompletionRequest).prompt = promptFromFlags!;
     }
@@ -318,7 +318,6 @@ async function main() {
     }
 
     Object.assign(opts, _.pick(argv, 'codemodArgs'));
-
 
     // TODO: validate that `builtInCodemod` is a real codemod.
     // @ts-expect-error

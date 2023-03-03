@@ -5,8 +5,8 @@ import {
   CodemodArgsWithSource,
   CodemodResult,
   AIPrompt,
-  AIChatCodemod,
-} from "./types";
+  AIChatCodemod
+} from './types';
 import {Configuration, OpenAIApi, CreateChatCompletionResponse, CreateChatCompletionRequest, CreateCompletionRequest} from 'openai';
 import _ from 'lodash';
 import {defaultChatParams, defaultCompletionParams} from './default-completion-request-params';
@@ -478,7 +478,7 @@ async function runAICompletionCodemod(
   } catch (e: unknown) {
     throw makePhaseError(
       e as Error,
-      "codemod.getCompletionRequestParams()",
+      'codemod.getCompletionRequestParams()',
       "Check your getCompletionRequestParams() method for a bug, or add this file to your codemod's ignore list."
     );
   }
@@ -493,7 +493,7 @@ async function runAICompletionCodemod(
   } catch (e: unknown) {
     throw makePhaseError(
       e as Error,
-      "codemod.getPrompt()",
+      'codemod.getPrompt()',
       "Check your getCompletionRequestParams() method for a bug, or add this file to your codemod's ignore list."
     );
   }
@@ -546,7 +546,7 @@ export default function runAICodemod(
   codemodOpts: CodemodArgsWithSource,
   log: NTHLogger
 ) {
-  if ("getMessages" in codemod) {
+  if ('getMessages' in codemod) {
     return runAIChatCodemod(codemod, codemodOpts, log);
   }
   return runAICompletionCodemod(codemod, codemodOpts, log);
