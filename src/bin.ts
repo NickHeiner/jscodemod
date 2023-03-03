@@ -59,9 +59,8 @@ const argv = yargs
       describe: 'Path to the codemod to run'
     },
     builtInCodemod: {
-      alias: 'b',
       type: 'string',
-      describe: 'The built-in codemod to run.',
+      describe: 'The built-in codemod to run',
       choices: Object.keys(builtInCodemods)
     },
     inputFileList: {
@@ -227,10 +226,10 @@ function validateAndGetRequestParams(
     chatMessage, openAIChatRequestConfig, openAIChatRequestFile}: typeof argv
 ): CreateCompletionRequest | CreateChatCompletionRequest | null {
 
-  const isChatCodemod = argv.chatMessage || argv.chatMessageFile || argv.openAIChatRequestFile ||
-    argv.openAIChatRequestConfig;
-  const isCompletionCodemod = argv.completionPrompt || argv.completionPromptFile || argv.openAICompletionRequestFile ||
-    argv.openAICompletionRequestConfig;
+  const isChatCodemod = chatMessage || chatMessageFile || openAIChatRequestFile ||
+    openAIChatRequestConfig;
+  const isCompletionCodemod = completionPrompt || completionPromptFile || openAICompletionRequestFile ||
+    openAICompletionRequestConfig;
 
   function validateAndGetAIOptsForCodemodKind(
     prompt: typeof argv['completionPrompt'] | typeof argv['chatMessage'],
