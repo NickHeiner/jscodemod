@@ -290,8 +290,12 @@ export type AIPrompt = string;
  * ## Requirements
  * * You need an [OpenAI API key](https://beta.openai.com/overview).
  */
-export interface AICodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
-  extends BaseCodemod<ParsedArgs, TransformResultMeta> {
+export interface BaseAICodemod<
+  RequestParams = unknown,
+  Response = unknown,
+  ParsedArgs = unknown,
+  TransformResultMeta = unknown
+> extends BaseCodemod<ParsedArgs, TransformResultMeta> {
   /**
    * If you omit this method, the values default to those set in `./default-completion-request-params.ts`.
    *
@@ -303,66 +307,81 @@ export interface AICodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
    */
   getGlobalCompletionRequestParams?: (
     opts: BaseCodemodArgs<ParsedArgs>
-  ) => Promisable<Omit<CreateCompletionRequest, 'max_tokens'>>;
+  ) => Promisable<Omit<RequestParams, "max_tokens">>;
 
+  /**
+   * Optional. Only add this if you're getting bad results without it.
+   *
+   * Given a response from the AI, return a result indicating how your file should be transformed.
+   *
+   * In particular, if you pass an input param that causes the model to return multiple results, you can use this
+   * method to pick which result you want.
+   *
+   * Sometimes, the AI will return extra content at the end of your transformed code. If that happens, this function
+   * gives you a chance to cut it out. But before you try that, it's probably better to tweak your prompt to be more
+   * specific about what you want.
+   */
+  extractTransformationFromCompletion?: (
+    response: Response
+  ) => CodemodResult<TransformResultMeta>;
+
+  // TODO: Specify the types such that extractTransformationFromCompletion is required when the prompt is a string.
+}
+
+/**
+ * Transform a file using ChatGPT.
+ *
+ * Of the AI codemod methods, this one has experimentally given me the best results.
+ * 
+ * @see https://platform.openai.com/docs/guides/chat
+ * @see BaseAICodemod
+ */
+export interface AIChatCodemod<
+  ParsedArgs = unknown,
+  TransformResultMeta = unknown
+> extends BaseAICodemod<
+    CreateChatCompletionRequest,
+    CreateChatCompletionResponse,
+    ParsedArgs,
+    TransformResultMeta
+  > {
+  /**
+   * Get the messages to pass to chatGPT. See 
+   * [the OpenAI docs](https://platform.openai.com/docs/guides/chat/chat-vs-completions) for details about what you
+   * want to pass here.
+   * 
+   * @param source the source code to transform
+   */
+  getMessages: (
+    source: string
+  ) => Promisable<CreateChatCompletionRequest["messages"]>;
+}
+
+/**
+ * Transform a file using AI, and one of OpenAI's completion models (e.g. text-davinci-003).
+ *
+ * In my experiments, this model has given me worse results than AIChatCodemod.
+ * 
+ * @see https://platform.openai.com/docs/guides/code
+ * @see https://platform.openai.com/docs/guides/completion
+ * @see BaseAICodemod
+ */
+export interface AICompletionCodemod<
+  ParsedArgs = unknown,
+  TransformResultMeta = unknown
+> extends BaseAICodemod<
+    CreateCompletionRequest,
+    CreateCompletionResponse,
+    ParsedArgs,
+    TransformResultMeta
+  > {
   getPrompt: (source: string) => Promisable<AIPrompt>;
-
-  /**
-   * Optional. Only add this if you're getting bad results without it.
-   *
-   * Given a response from the AI, return a result indicating how your file should be transformed.
-   *
-   * In particular, if you pass an input param that causes the model to return multiple results, you can use this
-   * method to pick which result you want.
-   *
-   * Sometimes, the AI will return extra content at the end of your transformed code. If that happens, this function
-   * gives you a chance to cut it out. But before you try that, it's probably better to tweak your prompt to be more
-   * specific about what you want.
-   */
-  extractTransformationFromCompletion?: (
-    response: CreateCompletionResponse
-  ) => CodemodResult<TransformResultMeta>;
-
-  // TODO: Specify the types such that extractTransformationFromCompletion is required when the prompt is a string.
 }
 
-export interface AIChatCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
-  extends BaseCodemod<ParsedArgs, TransformResultMeta> {
-  /**
-   * If you omit this method, the values default to those set in `./default-completion-request-params.ts`.
-   *
-   * You can't specify max_tokens. That will be set automatically to give the model room to write as much as it wants
-   * in response to your input.
-   *
-   * @see https://beta.openai.com/docs/api-reference/completions/create
-   * @returns Parameters for a call to OpenAI's API.
-   */
-  getGlobalCompletionRequestParams?: (
-    opts: BaseCodemodArgs<ParsedArgs>
-  ) => Promisable<Omit<CreateChatCompletionRequest, 'max_tokens'>>;
-
-  getMessages: (source: string) => Promisable<CreateChatCompletionRequest['messages']>;
-
-  /**
-   * Optional. Only add this if you're getting bad results without it.
-   *
-   * Given a response from the AI, return a result indicating how your file should be transformed.
-   *
-   * In particular, if you pass an input param that causes the model to return multiple results, you can use this
-   * method to pick which result you want.
-   *
-   * Sometimes, the AI will return extra content at the end of your transformed code. If that happens, this function
-   * gives you a chance to cut it out. But before you try that, it's probably better to tweak your prompt to be more
-   * specific about what you want.
-   */
-  extractTransformationFromCompletion?: (
-    response: CreateChatCompletionResponse
-  ) => CodemodResult<TransformResultMeta>;
-
-  // TODO: Specify the types such that extractTransformationFromCompletion is required when the prompt is a string.
-}
-
-export type CodemodThatUsesTheRunner = BabelCodemod | LowLevelCodemod | AICodemod | AIChatCodemod;
+export type CodemodThatUsesTheRunner =
+  | BabelCodemod
+  | LowLevelCodemod
+  | BaseAICodemod;
 export type Codemod = CodemodThatUsesTheRunner | LowLevelBulkCodemod;
 
 // The `any` here is intentional.

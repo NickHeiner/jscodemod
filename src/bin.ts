@@ -12,9 +12,14 @@ import {CodemodMetaResult} from './run-codemod-on-file';
 import PrettyError from 'pretty-error';
 import ansiColors from 'ansi-colors';
 import path from 'path';
+import loadJsonFile from 'load-json-file';
 import fs from 'fs';
 import {CreateCompletionRequest} from 'openai';
-import {defaultCompletionParams} from './default-completion-request-params';
+import {defaultCompletionParams, defaultChatParams} from './default-completion-request-params';
+
+const builtInCodemods = {
+  'js-to-ts': require.resolve('./js-to-ts-codemod')
+};
 
 // Passing paths as file globs that start with `.` doesn't work.
 // https://github.com/sindresorhus/globby/issues/168
@@ -57,7 +62,7 @@ const argv = yargs
       alias: 'b',
       type: 'string',
       describe: 'The built-in codemod to run.',
-      choices: ['js-to-ts']
+      choices: Object.keys(builtInCodemods)
     },
     inputFileList: {
       alias: 'l',
@@ -116,22 +121,21 @@ const argv = yargs
         'of this tool from another tool, or process the logs using your own Bunyan log processor/formatter. The ' +
         'precise set of logs emitted is not considered to be part of the public API.'
     },
-    prompt: {
+    completionPrompt: {
       type: 'string',
       required: false,
       // eslint-disable-next-line max-len
       describe: "A prompt for an AI-powered codemod. The AI will be asked to complete an input. The input will be form: `${input file source code}\n//${the value you pass for this flag}`. If that format doesn't work for you, implement an AICodemod instead and pass the --codemod flag.",
       conflicts: ['codemod']
     },
-    promptFile: {
+    completionPromptFile: {
       type: 'string',
       required: false,
       // eslint-disable-next-line max-len
       describe: "A prompt for an AI-powered codemod. The AI will be asked to complete an input. The input will be form: `${input file source code}\n//${the contents of the file pointed to by this flag}`. If that format doesn't work for you, implement an AICodemod instead and pass the --codemod flag.",
-      conflicts: ['prompt', 'codemod']
+      conflicts: ['completionPrompt', 'codemod']
     },
     openAICompletionRequestConfig: {
-      alias: 'aiConfig',
       required: false,
       type: 'string',
       conflicts: ['codemod'],
@@ -140,7 +144,6 @@ const argv = yargs
         "API params to pass to OpenAI's createCompletionRequest API. See https://beta.openai.com/docs/api-reference/completions/create. The argument you pass to this flag will be interpreted as JSON."
     },
     openAICompletionRequestFile: {
-      alias: 'aiConfigFile',
       config: true,
       required: false,
       type: 'string',
@@ -148,6 +151,37 @@ const argv = yargs
       describe:
         // eslint-disable-next-line max-len
         "A path to a JSON file containing request params for OpenAI's createCompletionRequest API. See https://beta.openai.com/docs/api-reference/completions/create."
+    },
+    chatMessage: {
+      type: 'string',
+      required: false,
+      // eslint-disable-next-line max-len
+      describe: "A prompt for an AI-powered codemod. The AI will be sent the code file to transform as a message, and then whatever you pass for this flag. If that format doesn't work for you, implement an AICodemod instead and pass the --codemod flag.",
+      conflicts: ['codemod', 'completionPrompt', 'completionPromptFile']
+    },
+    chatMessageFile: {
+      type: 'string',
+      required: false,
+      // eslint-disable-next-line max-len
+      describe: "A prompt for an AI-powered codemod.  The AI will be sent the code file to transform as a message, and then the contents of the filepath you pass for this flag. If that format doesn't work for you, implement an AICodemod instead and pass the --codemod flag.",
+      conflicts: ['chatMessage', 'codemod', 'completionPrompt', 'completionPromptFile']
+    },
+    openAIChatRequestConfig: {
+      required: false,
+      type: 'string',
+      conflicts: ['codemod'],
+      describe:
+        // eslint-disable-next-line max-len
+        "API params to pass to OpenAI's chat API. See https://beta.openai.com/docs/api-reference/chat/create. The argument you pass to this flag will be interpreted as JSON."
+    },
+    openAIChatRequestFile: {
+      config: true,
+      required: false,
+      type: 'string',
+      conflicts: ['openAICompletionRequestConfig', 'openAIChatRequestConfig', 'codemod'],
+      describe:
+        // eslint-disable-next-line max-len
+        "A path to a JSON file containing request params for OpenAI's chat API. See https://beta.openai.com/docs/api-reference/chat/create."
     }
   })
   .group(['codemod', 'dry', 'resetDirtyInputFiles', 'inputFileList'], 'Primary')
@@ -188,22 +222,47 @@ const argv = yargs
   .parseSync();
 
 function validateAndGetAIOpts(
-  {openAICompletionRequestConfig, openAICompletionRequestFile, promptFile, prompt}: typeof argv) {
+  {openAICompletionRequestConfig, openAICompletionRequestFile, completionPromptFile, chatMessageFile, completionPrompt, 
+    chatMessage, openAIChatRequestConfig, openAIChatRequestFile}: typeof argv) {
 
-  if (!(openAICompletionRequestConfig || openAICompletionRequestFile || promptFile || prompt)) {
+  function validateAndGetAIOptsForCodemodKind(
+    prompt: typeof argv['completionPrompt'] | typeof argv['chatMessage'],
+    promptFilePath: typeof argv['completionPromptFile'] | typeof argv['chatMessageFile'],
+    requestConfig: typeof argv['openAICompletionRequestConfig'] | typeof argv['openAIChatRequestConfig'],
+    requestConfigFile: typeof argv['openAICompletionRequestFile'] | typeof argv['openAIChatRequestFile'],
+    defaultConfig: typeof defaultCompletionParams | typeof defaultChatParams
+  ) {
+    const promptFromFile = promptFilePath && fs.readFileSync(promptFile!, 'utf8');
+    const promptFromFlags = promptFromFile || prompt;
+
+    const requestParams = defaultConfig ?? requestConfig ?? loadJsonFile(requestConfigFile!);
+
+    if (promptFromFlags && 'prompt' in requestParams) {
+      throw new Error(
+        'If your API params includes a prompt, you must not pass a separate prompt via the other command line flags.'
+      );
+    }
+
+    // TODO: do this same check, but for `message` instead of prompt
+
+    return {
+      prompt: promptFromFlags,
+      ...requestParams
+    }
+  }
+
+  const prompt = chatMessage || completionPrompt;
+  const promptFile = chatMessageFile || completionPromptFile;
+
+  if (!(openAICompletionRequestConfig || openAICompletionRequestFile || prompt || promptFile)) {
     return null;
   }
 
   const createCompletionRequestParams: CreateCompletionRequest | undefined = openAICompletionRequestConfig
     ? JSON.parse(openAICompletionRequestConfig) : openAICompletionRequestFile;
-  const promptFromFile = promptFile && fs.readFileSync(promptFile, 'utf8');
-  const promptFromFlags = promptFromFile || prompt;
 
-  if (promptFromFlags && createCompletionRequestParams?.prompt) {
-    throw new Error(
-      'If your API params includes a prompt, you must not pass a separate prompt via the other command line flags.'
-    );
-  }
+
+
 
   return {
     prompt: promptFromFlags,
@@ -251,9 +310,7 @@ async function main() {
 
     Object.assign(opts, _.pick(argv, 'codemodArgs'));
 
-    const builtInCodemods = {
-      'js-to-ts': require.resolve('./js-to-ts-codemod')
-    };
+
     // TODO: validate that `builtInCodemod` is a real codemod.
     // @ts-expect-error
     const codemodPath = argv.builtInCodemod ? builtInCodemods[argv.builtInCodemod] : argv.codemod;

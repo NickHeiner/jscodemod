@@ -1,6 +1,12 @@
 import {NTHLogger, LogMetadata} from 'nth-log';
 import {makePhaseError} from './make-phase-error';
-import {AICodemod, CodemodArgsWithSource, CodemodResult, AIPrompt, AIChatCodemod} from './types';
+import {
+  AICompletionCodemod,
+  CodemodArgsWithSource,
+  CodemodResult,
+  AIPrompt,
+  AIChatCodemod,
+} from "./types";
 import {Configuration, OpenAIApi, CreateChatCompletionResponse, CreateChatCompletionRequest, CreateCompletionRequest} from 'openai';
 import _ from 'lodash';
 import {defaultChatParams, defaultCompletionParams} from './default-completion-request-params';
@@ -47,13 +53,15 @@ function defaultExtractResultFromCompletion(
 }
 
 function getCodemodTransformResult(
-  codemod: AICodemod | AIChatCodemod,
+  codemod: AICompletionCodemod | AIChatCodemod,
   response: CreateChatCompletionResponse
 ): CodemodResult<unknown> {
   if (codemod.extractTransformationFromCompletion) {
     return codemod.extractTransformationFromCompletion(response);
   }
-  return defaultExtractResultFromCompletion(response.choices[0].message?.content);
+  return defaultExtractResultFromCompletion(
+    response.choices[0].message?.content
+  );
 }
 
 interface OpenAIErrorResponse extends Error {
@@ -447,28 +455,37 @@ const createOpenAIBatchProcessor = _.once(
   (log: NTHLogger, completionParams: CreateCompletionRequest) => new OpenAIBatchProcessor(log, completionParams)
 );
 
-const getCompletionRequestParams = _.once((codemod: AICodemod, codemodOpts: CodemodArgsWithSource) =>
-  codemod.getGlobalCompletionRequestParams
-    ? codemod.getGlobalCompletionRequestParams(_.omit(codemodOpts))
-    : defaultCompletionParams);
+const getCompletionRequestParams = _.once(
+  (codemod: AICompletionCodemod, codemodOpts: CodemodArgsWithSource) =>
+    codemod.getGlobalCompletionRequestParams
+      ? codemod.getGlobalCompletionRequestParams(_.omit(codemodOpts))
+      : defaultCompletionParams
+);
 
 const getChatRequestParams = _.once((codemod: AIChatCodemod, codemodOpts: CodemodArgsWithSource) =>
   codemod.getGlobalCompletionRequestParams
     ? codemod.getGlobalCompletionRequestParams(_.omit(codemodOpts))
     : defaultChatParams);
 
-async function runAICompletionCodemod(codemod: AICodemod, codemodOpts: CodemodArgsWithSource, log: NTHLogger) {
+async function runAICompletionCodemod(
+  codemod: AICompletionCodemod,
+  codemodOpts: CodemodArgsWithSource,
+  log: NTHLogger
+) {
   let completionParams: CreateCompletionRequest;
   try {
     completionParams = await getCompletionRequestParams(codemod, codemodOpts);
   } catch (e: unknown) {
     throw makePhaseError(
       e as Error,
-      'codemod.getCompletionRequestParams()',
+      "codemod.getCompletionRequestParams()",
       "Check your getCompletionRequestParams() method for a bug, or add this file to your codemod's ignore list."
     );
   }
-  const openAIBatchProcessor = createOpenAIBatchProcessor(log, completionParams);
+  const openAIBatchProcessor = createOpenAIBatchProcessor(
+    log,
+    completionParams
+  );
 
   let prompt: AIPrompt;
   try {
@@ -476,12 +493,15 @@ async function runAICompletionCodemod(codemod: AICodemod, codemodOpts: CodemodAr
   } catch (e: unknown) {
     throw makePhaseError(
       e as Error,
-      'codemod.getPrompt()',
+      "codemod.getPrompt()",
       "Check your getCompletionRequestParams() method for a bug, or add this file to your codemod's ignore list."
     );
   }
 
-  const result = await openAIBatchProcessor.complete(prompt, codemodOpts.filePath);
+  const result = await openAIBatchProcessor.complete(
+    prompt,
+    codemodOpts.filePath
+  );
 
   return getCodemodTransformResult(codemod, result);
 }
@@ -521,8 +541,12 @@ async function runAIChatCodemod(codemod: AIChatCodemod, codemodOpts: CodemodArgs
   return getCodemodTransformResult(codemod, completion.data);
 }
 
-export default function runAICodemod(codemod: AICodemod | AIChatCodemod, codemodOpts: CodemodArgsWithSource, log: NTHLogger) {
-  if ('getMessages' in codemod) {
+export default function runAICodemod(
+  codemod: AICompletionCodemod | AIChatCodemod,
+  codemodOpts: CodemodArgsWithSource,
+  log: NTHLogger
+) {
+  if ("getMessages" in codemod) {
     return runAIChatCodemod(codemod, codemodOpts, log);
   }
   return runAICompletionCodemod(codemod, codemodOpts, log);

@@ -12,7 +12,7 @@ import {cyan} from 'ansi-colors';
 import ora from 'ora';
 import createLog from 'nth-log';
 import compileTS from './compile-ts';
-import type {AICodemod, Codemod, TODO} from './types';
+import type { AICompletionCodemod, Codemod, TODO } from "./types";
 import execBigCommand from './exec-big-command';
 import getGitRoot from './get-git-root';
 import loadCodemod from './load-codemod';
@@ -297,10 +297,10 @@ In case (1), your prompt must be a string. However, your prompt was a "${typeof 
       }
       const {prompt} = createCompletionRequestParams;
 
-      const codemod: AICodemod = {
-        name: 'codemod-generated-from-CLI-flags',
+      const codemod: AICompletionCodemod = {
+        name: "codemod-generated-from-CLI-flags",
         getGlobalCompletionRequestParams: () => createCompletionRequestParams,
-        getPrompt: source => buildFullPrompt(prompt, source)
+        getPrompt: (source) => buildFullPrompt(prompt, source),
       };
 
       return {codemod, codemodName: codemod.name, codemodPath: null};
