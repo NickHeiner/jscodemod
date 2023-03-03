@@ -14,7 +14,7 @@ import ansiColors from 'ansi-colors';
 import path from 'path';
 import loadJsonFile from 'load-json-file';
 import fs from 'fs';
-import {CreateCompletionRequest} from 'openai';
+import {CreateChatCompletionRequest, CreateCompletionRequest} from 'openai';
 import {defaultCompletionParams, defaultChatParams} from './default-completion-request-params';
 
 const builtInCodemods = {
@@ -210,9 +210,10 @@ const argv = yargs
       throw new Error('Porcelain is only supported for dry mode.');
     }
 
-    const prompt = validateAndGetAIOpts(argv)?.prompt;
-    if (!(prompt || argv.codemod || argv.builtInCodemod)) {
-      throw new Error('You must pass either the --codemod, --builtInCodemod, or --prompt flags.');
+    const aiRequestParams = validateAndGetRequestParams(argv);
+    if (!(argv.codemod || argv.builtInCodemod || (aiRequestParams && 
+      ('message' in aiRequestParams || 'prompt' in aiRequestParams)))) {
+      throw new Error('You must pass either the --codemod, --builtInCodemod, --prompt, or --chatMessage flags.');
     }
 
     return true;
@@ -221,9 +222,15 @@ const argv = yargs
   .help()
   .parseSync();
 
-function validateAndGetAIOpts(
+function validateAndGetRequestParams(
   {openAICompletionRequestConfig, openAICompletionRequestFile, completionPromptFile, chatMessageFile, completionPrompt, 
-    chatMessage, openAIChatRequestConfig, openAIChatRequestFile}: typeof argv) {
+    chatMessage, openAIChatRequestConfig, openAIChatRequestFile}: typeof argv
+): CreateCompletionRequest | CreateChatCompletionRequest | null {
+
+  const isChatCodemod = argv.chatMessage || argv.chatMessageFile || argv.openAIChatRequestFile || 
+    argv.openAIChatRequestConfig;
+  const isCompletionCodemod = argv.completionPrompt || argv.completionPromptFile || argv.openAICompletionRequestFile ||
+    argv.openAICompletionRequestConfig;
 
   function validateAndGetAIOptsForCodemodKind(
     prompt: typeof argv['completionPrompt'] | typeof argv['chatMessage'],
@@ -232,43 +239,45 @@ function validateAndGetAIOpts(
     requestConfigFile: typeof argv['openAICompletionRequestFile'] | typeof argv['openAIChatRequestFile'],
     defaultConfig: typeof defaultCompletionParams | typeof defaultChatParams
   ) {
-    const promptFromFile = promptFilePath && fs.readFileSync(promptFile!, 'utf8');
+    const promptFromFile = promptFilePath && fs.readFileSync(promptFilePath, 'utf8');
     const promptFromFlags = promptFromFile || prompt;
 
     const requestParams = defaultConfig ?? requestConfig ?? loadJsonFile(requestConfigFile!);
 
-    if (promptFromFlags && 'prompt' in requestParams) {
+    if (promptFromFlags && ('prompt' in requestParams || 'messages' in requestParams)) {
       throw new Error(
-        'If your API params includes a prompt, you must not pass a separate prompt via the other command line flags.'
+        'If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags.'
       );
     }
 
-    // TODO: do this same check, but for `message` instead of prompt
-
-    return {
-      prompt: promptFromFlags,
-      ...requestParams
+    if (isChatCodemod) {
+      (requestParams as CreateChatCompletionRequest).messages = [{role: 'user', content: promptFromFlags!}]
+    } else {
+      (requestParams as CreateCompletionRequest).prompt = promptFromFlags!;
     }
+
+    return requestParams;
   }
 
-  const prompt = chatMessage || completionPrompt;
-  const promptFile = chatMessageFile || completionPromptFile;
-
-  if (!(openAICompletionRequestConfig || openAICompletionRequestFile || prompt || promptFile)) {
-    return null;
+  if (isChatCodemod) {
+    return validateAndGetAIOptsForCodemodKind(
+      chatMessage,
+      chatMessageFile,
+      openAIChatRequestConfig,
+      openAIChatRequestFile,
+      defaultChatParams
+    );
   }
-
-  const createCompletionRequestParams: CreateCompletionRequest | undefined = openAICompletionRequestConfig
-    ? JSON.parse(openAICompletionRequestConfig) : openAICompletionRequestFile;
-
-
-
-
-  return {
-    prompt: promptFromFlags,
-    ...defaultCompletionParams,
-    ...createCompletionRequestParams
-  } satisfies CreateCompletionRequest;
+  if (isCompletionCodemod) {
+    return validateAndGetAIOptsForCodemodKind(
+      completionPrompt,
+      completionPromptFile,
+      openAICompletionRequestConfig,
+      openAICompletionRequestFile,
+      defaultCompletionParams
+    );
+  }
+  return null;
 }
 
 /**
@@ -294,7 +303,7 @@ async function main() {
     const opts = {
       ..._.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'resetDirtyInputFiles', 'porcelain', 'jsonOutput',
         'piscinaLowerBoundInclusive', 'inputFileList', 'inputFilesPatterns'),
-      createCompletionRequestParams: validateAndGetAIOpts(argv),
+      createCompletionRequestParams: validateAndGetRequestParams(argv),
       log
     };
 
