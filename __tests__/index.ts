@@ -184,10 +184,6 @@ const getJsonLogs = (stdout: string) => stdout.split('\n').map((line, index, all
   return logLine;
 });
 
-// I don't think extracting this to a var would help readability.
-// eslint-disable-next-line no-magic-numbers
-jest.setTimeout(15 * 1000);
-
 const gitRootFilePath = gitRoot(__dirname);
 
 const sanitizeOutput = (
@@ -450,12 +446,8 @@ describe('error handling', () => {
     fixtureName: 'prepend-string',
     spawnArgs: ['--completionPrompt', 'my-prompt', '--openAICompletionRequestConfig', '{"prompt": "my other prompt"}', 'source/*.js', '--json-output'],
     expectedExitCode: 1,
-    assert(spawnResult) {
-      const jsonLogs = getJsonLogs(spawnResult.stdout);
-      expect(jsonLogs).toContainEqual(expect.objectContaining({
-        // eslint-disable-next-line max-len
-        msg: 'If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags.'
-      }));
+    assert({stderr}) {
+      expect(stderr).toMatch(/If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags./);
     }
   });
 
@@ -464,17 +456,13 @@ describe('error handling', () => {
     fixtureName: 'prepend-string',
     spawnArgs: ['--chatMessage', 'my-prompt', '--openAIChatRequestConfig', '{"messages": [{"role": "user", "contents": "my other prompt"}]}', 'source/*.js', '--json-output'],
     expectedExitCode: 1,
-    assert(spawnResult) {
-      const jsonLogs = getJsonLogs(spawnResult.stdout);
-      expect(jsonLogs).toContainEqual(expect.objectContaining({
-        // eslint-disable-next-line max-len
-        msg: 'If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags.'
-      }));
+    assert({stderr}) {
+      expect(stderr).toMatch(/If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags./);
     }
   });
 
   createTest({
-    testName: 'pass a prompt, and a chat param that includes a prompt',
+    testName: 'pass a prompt, and a chat param JSON file that includes a prompt',
     fixtureName: 'ai-validation',
     spawnArgs: ['--chatMessage', 'my-prompt', '--openAIChatRequestFile', 'chat-config.json', 'source.js', '--json-output', '--dry'],
     expectedExitCode: 1,
