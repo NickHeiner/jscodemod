@@ -305,9 +305,9 @@ export interface BaseAICodemod<
    * @see https://beta.openai.com/docs/api-reference/completions/create
    * @returns Parameters for a call to OpenAI's API.
    */
-  getGlobalCompletionRequestParams?: (
+  getGlobalAPIRequestParams?: (
     opts: BaseCodemodArgs<ParsedArgs>
-  ) => Promisable<Omit<RequestParams, 'max_tokens'>>;
+  ) => Promisable<RequestParams>;
 
   /**
    * Optional. Only add this if you're getting bad results without it.
@@ -370,7 +370,7 @@ export interface AICompletionCodemod<
   ParsedArgs = unknown,
   TransformResultMeta = unknown
 > extends BaseAICodemod<
-    CreateCompletionRequest,
+    Omit<CreateCompletionRequest, 'max_tokens'>,
     CreateCompletionResponse,
     ParsedArgs,
     TransformResultMeta

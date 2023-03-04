@@ -9,7 +9,7 @@ const codemod: AIChatCodemod = {
       role: 'user',
       content:
         // eslint-disable-next-line max-len
-        "In my next message, I'm going to give you some JavaScript. Convert it to TypeScript. If you're not sure what type to use, use `any`. Respond with only the code; do not include any other commentary."
+        "Convert this JS to TS. If you're not sure what type to use, use `any`. Do not add type annotations to variable declarations if they aren't necessary. Preserve all comments. Do not make any changes to the code that aren't required for TS conversion. Respond with only the code; do not include any other commentary. Do not wrap the code in backticks."
     },
     {role: 'user', content: source}
   ],

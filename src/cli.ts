@@ -343,7 +343,7 @@ export async function main() {
       } else {
         const prettyError = new PrettyError();
         safeConsoleLog(ansiColors.bold(
-          'The codemod threw errors for some files. This would not stop other files from being transformed.'
+          'The codemod threw errors for some files. This does not stop other files from being transformed.'
         ));
         // Lodash's types are messed up.
         // @ts-expect-error

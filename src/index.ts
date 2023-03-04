@@ -291,18 +291,19 @@ async function jscodemod(
         typeof openAIAPIRequestParams.prompt === 'string') {
         const {prompt} = openAIAPIRequestParams;
         codemod = {
-          name: 'codemod-generated-from-CLI-flags',
-          getGlobalCompletionRequestParams: () => openAIAPIRequestParams,
-          getPrompt: source => buildFullPrompt(prompt, source)
+          name: "codemod-generated-from-CLI-flags",
+          getGlobalAPIRequestParams: () => openAIAPIRequestParams,
+          getPrompt: (source) => buildFullPrompt(prompt, source),
         } satisfies AICompletionCodemod;
       } else if ('messages' in openAIAPIRequestParams) {
         codemod = {
-          name: 'codemod-generated-from-CLI-flags',
-          getGlobalCompletionRequestParams: () => (openAIAPIRequestParams as CreateChatCompletionRequest),
-          getMessages: source => [
-            {role: 'user', content: source},
-            ...(openAIAPIRequestParams as CreateChatCompletionRequest).messages
-          ]
+          name: "codemod-generated-from-CLI-flags",
+          getGlobalAPIRequestParams: () =>
+            openAIAPIRequestParams as CreateChatCompletionRequest,
+          getMessages: (source) => [
+            { role: "user", content: source },
+            ...(openAIAPIRequestParams as CreateChatCompletionRequest).messages,
+          ],
         } satisfies AIChatCodemod;
       } else {
         const promptThatWasPassed = openAIAPIRequestParams.prompt ||
