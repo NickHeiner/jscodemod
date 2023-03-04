@@ -1,4 +1,4 @@
-import {Codemod} from './types';
+import { Codemod } from './types';
 import path from 'path';
 
 function getCodemodName(codemod: Codemod, pathToCodemod: string | null): string {

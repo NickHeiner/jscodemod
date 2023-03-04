@@ -1,7 +1,12 @@
-import type {NTHLogger} from 'nth-log';
+import type { NTHLogger } from 'nth-log';
 import fs from 'fs';
 import type {
-  PhaseError, LowLevelCodemod, BabelCodemod, CodemodThatUsesTheRunner, CodemodArgsWithSource, BaseCodemodArgs
+  PhaseError,
+  LowLevelCodemod,
+  BabelCodemod,
+  CodemodThatUsesTheRunner,
+  CodemodArgsWithSource,
+  BaseCodemodArgs,
 } from './types';
 import _ from 'lodash';
 import {
@@ -10,56 +15,65 @@ import {
   transformFromAstSync as babelTransformFromAstSync,
   TransformOptions,
   PluginItem,
-  PluginObj
+  PluginObj,
 } from '@babel/core';
 import * as recast from 'recast';
 import getCodemodName from './get-codemod-name';
 import prettyMs from 'pretty-ms';
 import assert from 'assert';
-import {makePhaseError} from './make-phase-error';
+import { makePhaseError } from './make-phase-error';
 import runAICodemod from './run-ai-codemod';
 
 const pFs = fs.promises;
 
 export type CodemodMetaResult<TransformResultMeta> = {
-  meta: TransformResultMeta
+  meta: TransformResultMeta;
   filePath: string;
-} & ({
-  action: 'modified' | 'skipped';
-  codeModified: boolean;
-  fileContents: string;
-} | {
-  action: 'error';
-  error: Error;
-})
+} & (
+  | {
+      action: 'modified' | 'skipped';
+      codeModified: boolean;
+      fileContents: string;
+    }
+  | {
+      action: 'error';
+      error: Error;
+    }
+);
 
-function runLowLevelCodemod(codemod: LowLevelCodemod, codemodOpts: Parameters<LowLevelCodemod['transform']>[0]) {
+function runLowLevelCodemod(
+  codemod: LowLevelCodemod,
+  codemodOpts: Parameters<LowLevelCodemod['transform']>[0]
+) {
   try {
     return codemod.transform(codemodOpts);
   } catch (e: unknown) {
     throw makePhaseError(
-        e as Error,
-        'codemod.transform()',
-        "Check your transform() method for a bug, or add this file to your codemod's ignore list."
+      e as Error,
+      'codemod.transform()',
+      "Check your transform() method for a bug, or add this file to your codemod's ignore list."
     );
   }
 }
 
 async function runBabelCodemod(
-  codemod: BabelCodemod, originalFileContents: string, log: NTHLogger, codemodOpts: BaseCodemodArgs,
+  codemod: BabelCodemod,
+  originalFileContents: string,
+  log: NTHLogger,
+  codemodOpts: BaseCodemodArgs,
   sourceCodeFile: string
 ) {
   /**
-     * Unfortunately, the workflow of using Recast and Babel together has some interactions that don't occur when using
-     * Recast alone. I think this has to do with the setAST maneuver. In particular:
-     *
-     * 1. Leading whitespace will be dropped. (`\n\nf()` ==> `f()`)
-     * 2. If the file has a shebang, it'll be combined with the first line.
-     *    (`#!/usr/bin/env node\nf()` ==> `#!/usr/bin/env nodef()`)
-     *
-     * To fix this, we manually trim out the problematic leading parts, do the recast transform, then add them back at
-     * the end.
-     */
+   * Unfortunately, the workflow of using Recast and Babel together has some interactions that don't occur when using
+   * Recast alone. I think this has to do with the setAST maneuver. In particular:
+   *
+   * 1. Leading whitespace will be dropped. (`\n\nf()` ==> `f()`)
+   * 2. If the file has a shebang, it'll be combined with the first line.
+   *    (`#!/usr/bin/env node\nf()` ==> `#!/usr/bin/env nodef()`)
+   *
+   * To fix this, we manually trim out the problematic leading parts, do the recast transform, then add them back at
+   * the end.
+   */
   let fileContentsForRecast = originalFileContents;
   let fileContentsPrefixToReattachPostTransform = '';
   if (originalFileContents.startsWith('#!')) {
@@ -107,10 +121,14 @@ async function runBabelCodemod(
       },
       setMetaResult: meta => {
         metaResult = meta;
-      }
+      },
     });
 
-    if (resultOfGetPlugin && typeof resultOfGetPlugin === 'object' && 'plugin' in resultOfGetPlugin) {
+    if (
+      resultOfGetPlugin &&
+      typeof resultOfGetPlugin === 'object' &&
+      'plugin' in resultOfGetPlugin
+    ) {
       codemodPlugin = resultOfGetPlugin.plugin;
       if (resultOfGetPlugin.useRecast === false) {
         useRecast = resultOfGetPlugin.useRecast;
@@ -119,13 +137,19 @@ async function runBabelCodemod(
       codemodPlugin = resultOfGetPlugin;
     }
   } catch (e: unknown) {
-    throw makePhaseError(e as Error, 'codemod.getPlugin()', 'Check your getPlugin() method for a bug.');
+    throw makePhaseError(
+      e as Error,
+      'codemod.getPlugin()',
+      'Check your getPlugin() method for a bug.'
+    );
   }
 
-  const getBabelOpts = (plugins: Exclude<TransformOptions['plugins'], null> = []): TransformOptions => ({
+  const getBabelOpts = (
+    plugins: Exclude<TransformOptions['plugins'], null> = []
+  ): TransformOptions => ({
     filename: sourceCodeFile,
     plugins,
-    ast: true
+    ast: true,
   });
 
   const getAst = (): ReturnType<typeof recast.parse> | ReturnType<typeof babelParse> => {
@@ -139,37 +163,44 @@ async function runBabelCodemod(
             // avoid this, we'll omit them.
             ..._.omit(
               opts,
-              'jsx', 'loc', 'locations', 'range', 'comment', 'onComment', 'tolerant', 'ecmaVersion'
+              'jsx',
+              'loc',
+              'locations',
+              'range',
+              'comment',
+              'onComment',
+              'tolerant',
+              'ecmaVersion'
             ),
             /**
-               * We must have babel emit tokens. Otherwise, recast will use esprima to tokenize, which won't have the
-               * user-provided babel config.
-               *
-               * https://github.com/benjamn/recast/issues/834
-               */
+             * We must have babel emit tokens. Otherwise, recast will use esprima to tokenize, which won't have the
+             * user-provided babel config.
+             *
+             * https://github.com/benjamn/recast/issues/834
+             */
             parserOpts: {
-              tokens: true
-            }
+              tokens: true,
+            },
           };
-          log.trace({babelOpts});
+          log.trace({ babelOpts });
           return babelParse(source, babelOpts);
-        }
+        },
       };
 
       try {
-        return recast.parse(fileContentsForRecast, {parser});
+        return recast.parse(fileContentsForRecast, { parser });
       } catch (e: unknown) {
         throw makePhaseError(
-            e as Error,
-            'recast.parse using the settings you passed',
-            "Check that you passed the right babel preset in the codemod's `presets` field."
+          e as Error,
+          'recast.parse using the settings you passed',
+          "Check that you passed the right babel preset in the codemod's `presets` field."
         );
       }
     }
 
     const babelParseResult = babelParse(originalFileContents, {
       ...getBabelOpts(),
-      ..._.pick(codemod, 'presets')
+      ..._.pick(codemod, 'presets'),
     });
 
     assert(babelParseResult, 'Bug in jscodemod: expected the result of babel.parse to be truthy.');
@@ -185,8 +216,8 @@ async function runBabelCodemod(
       visitor: {
         Program(path) {
           path.replaceWith(ast.program);
-        }
-      }
+        },
+      },
     });
     pluginsToUse.unshift(setAst);
   }
@@ -196,10 +227,10 @@ async function runBabelCodemod(
   let babelTransformResult: ReturnType<typeof babelTransformSync>;
   const babelOptions = {
     ...getBabelOpts(pluginsToUse),
-    generatorOpts: codemod.generatorOpts as TransformOptions['generatorOpts']
+    generatorOpts: codemod.generatorOpts as TransformOptions['generatorOpts'],
   };
 
-  log.debug({babelOptions}, 'Babel transforming');
+  log.debug({ babelOptions }, 'Babel transforming');
 
   try {
     babelTransformResult = useRecast
@@ -207,28 +238,31 @@ async function runBabelCodemod(
       : babelTransformFromAstSync(ast, originalFileContents, babelOptions);
   } catch (e: unknown) {
     throw makePhaseError(
-        e as Error,
-        "babelTransformSync using the plugin returned by your codemod's getPlugin()",
-        'Check your babel plugin for runtime errors.'
+      e as Error,
+      "babelTransformSync using the plugin returned by your codemod's getPlugin()",
+      'Check your babel plugin for runtime errors.'
     );
   }
 
-  log.debug({pluginWillSignalWhenAstHasChanged, pluginChangedAst, useRecast});
+  log.debug({ pluginWillSignalWhenAstHasChanged, pluginChangedAst, useRecast });
 
   if (!pluginWillSignalWhenAstHasChanged && pluginChangedAst) {
-    const err = new Error('Your plugin called astDidChange() but not willNotifyOnAstChange(). ' +
-        'This almost definitely means you have a bug.');
+    const err = new Error(
+      'Your plugin called astDidChange() but not willNotifyOnAstChange(). ' +
+        'This almost definitely means you have a bug.'
+    );
     Object.assign(err, {
       phase: 'your codemod babel plugin running',
-      suggestion: 'call willNotifyOnAstChange() if you intend to use the astDidChange() API, ' +
-          "or remove all calls to astDidChange() if you don't."
+      suggestion:
+        'call willNotifyOnAstChange() if you intend to use the astDidChange() API, ' +
+        "or remove all calls to astDidChange() if you don't.",
     });
     throw err;
   }
 
   if (pluginWillSignalWhenAstHasChanged && !pluginChangedAst) {
     if (metaResult !== undefined) {
-      return {meta: metaResult, code: originalFileContents};
+      return { meta: metaResult, code: originalFileContents };
     }
     return originalFileContents;
   }
@@ -237,19 +271,21 @@ async function runBabelCodemod(
     const err = new Error(`Transforming "${sourceCodeFile}" resulted in a null babel result.`);
     Object.assign(err, {
       phase: 'your codemod babel plugin running',
-      suggestion: "Check your plugin for a bug, or ignore this file in your codemod's ignore list."
+      suggestion: "Check your plugin for a bug, or ignore this file in your codemod's ignore list.",
     });
     throw err;
   }
 
   if (useRecast) {
-    log.debug({recastOptions: codemod.generatorOpts}, 'Recast printing');
+    log.debug({ recastOptions: codemod.generatorOpts }, 'Recast printing');
   }
 
   let transformedCode = useRecast
-    ? fileContentsPrefixToReattachPostTransform + recast.print(
-          babelTransformResult.ast as recast.types.ASTNode,
-          codemod.generatorOpts as recast.Options).code
+    ? fileContentsPrefixToReattachPostTransform +
+      recast.print(
+        babelTransformResult.ast as recast.types.ASTNode,
+        codemod.generatorOpts as recast.Options
+      ).code
     : babelTransformResult.code;
 
   if (transformedCode && originalFileContents.endsWith('\n') && !transformedCode.endsWith('\n')) {
@@ -257,43 +293,47 @@ async function runBabelCodemod(
   }
 
   if (metaResult !== undefined) {
-    return {meta: metaResult, code: transformedCode};
+    return { meta: metaResult, code: transformedCode };
   }
 
   return transformedCode;
 }
 
 export default async function runCodemodOnFile(
-  codemod: CodemodThatUsesTheRunner, sourceCodeFile: string, baseLog: NTHLogger,
-  {codemodArgs, codemodPath}: {codemodArgs?: string, codemodPath: string | null},
+  codemod: CodemodThatUsesTheRunner,
+  sourceCodeFile: string,
+  baseLog: NTHLogger,
+  { codemodArgs, codemodPath }: { codemodArgs?: string; codemodPath: string | null },
   runStartTimeMs: number
 ): Promise<CodemodMetaResult<unknown>> {
-  const log = baseLog.child({sourceCodeFile});
+  const log = baseLog.child({ sourceCodeFile });
   const codemodName = getCodemodName(codemod, codemodPath);
   const timeSinceRunStart = Date.now() - runStartTimeMs;
   log.trace({
     action: 'Codemod ready to start',
     codemod: codemodName,
     timeSinceRunStart,
-    timeSinceRunStartPretty: prettyMs(timeSinceRunStart)
+    timeSinceRunStartPretty: prettyMs(timeSinceRunStart),
   });
 
-  const originalFileContents = await log.logPhase(
-    {phase: 'read file', level: 'trace'},
-    () => pFs.readFile(sourceCodeFile, 'utf-8')
+  const originalFileContents = await log.logPhase({ phase: 'read file', level: 'trace' }, () =>
+    pFs.readFile(sourceCodeFile, 'utf-8')
   );
   const rawArgs = codemodArgs ? JSON.parse(codemodArgs) : undefined;
-  const parsedArgs = await log.logPhase({
-    phase: 'parse args',
-    level: 'trace'
-    // TODO The types are messed up. A sync return to this method is fine.
-    // @ts-expect-error
-  }, () => codemod.parseArgs?.(rawArgs));
+  const parsedArgs = await log.logPhase(
+    {
+      phase: 'parse args',
+      level: 'trace',
+      // TODO The types are messed up. A sync return to this method is fine.
+      // @ts-expect-error
+    },
+    () => codemod.parseArgs?.(rawArgs)
+  );
 
   const codemodOpts = {
     source: originalFileContents,
     filePath: sourceCodeFile,
-    commandLineArgs: parsedArgs
+    commandLineArgs: parsedArgs,
   } satisfies CodemodArgsWithSource;
 
   // Adding `async` here makes TS happy.
@@ -312,25 +352,31 @@ export default async function runCodemodOnFile(
   let thrownError = null;
 
   try {
-    codemodResult = await log.logPhase({phase: 'transform file', level: 'trace'}, transformFile);
+    codemodResult = await log.logPhase({ phase: 'transform file', level: 'trace' }, transformFile);
   } catch (e) {
     thrownError = e;
 
     const error = e as Error | PhaseError;
-    const errorMessageSuffix = 'phase' in error ? ` during ${error.phase}. ${error.suggestion}` : '';
+    const errorMessageSuffix =
+      'phase' in error ? ` during ${error.phase}. ${error.suggestion}` : '';
 
-    log.error({
-      /**
-       * There may be more keys on `e` that we wish to display. I'm not sure why I limited it to this known list.
-       * When I added `Object.keys(e)`, I saw other issues, but I'm not sure they're related.
-       */
-      error: _.pick(e, 'message', 'stack', 'phase')
-    }, `File ${sourceCodeFile}: Codemod "${codemodName}" threw an error${errorMessageSuffix}`);
+    log.error(
+      {
+        /**
+         * There may be more keys on `e` that we wish to display. I'm not sure why I limited it to this known list.
+         * When I added `Object.keys(e)`, I saw other issues, but I'm not sure they're related.
+         */
+        error: _.pick(e, 'message', 'stack', 'phase'),
+      },
+      `File ${sourceCodeFile}: Codemod "${codemodName}" threw an error${errorMessageSuffix}`
+    );
   }
 
-  const ostensiblyTransformedCode = typeof codemodResult === 'string' ? codemodResult : codemodResult?.code;
+  const ostensiblyTransformedCode =
+    typeof codemodResult === 'string' ? codemodResult : codemodResult?.code;
 
-  const codeModified = Boolean(ostensiblyTransformedCode) && ostensiblyTransformedCode !== originalFileContents;
+  const codeModified =
+    Boolean(ostensiblyTransformedCode) && ostensiblyTransformedCode !== originalFileContents;
 
   const action = thrownError ? 'error' : codeModified ? 'modified' : 'skipped';
 
@@ -341,7 +387,6 @@ export default async function runCodemodOnFile(
     // if codeModified is true, we know ostensiblyTransformedCode is a string.
     fileContents: codeModified ? (ostensiblyTransformedCode as string) : originalFileContents,
     meta: typeof codemodResult === 'string' ? undefined : codemodResult?.meta,
-    filePath: sourceCodeFile
+    filePath: sourceCodeFile,
   };
 }
-

@@ -1,15 +1,15 @@
-import type {Promisable} from 'type-fest';
-import type {Options as RecastOptions} from 'recast';
+import type { Promisable } from 'type-fest';
+import type { Options as RecastOptions } from 'recast';
 import type {
   CreateChatCompletionRequest,
   CreateCompletionRequest,
   CreateCompletionResponse,
-  CreateChatCompletionResponse
+  CreateChatCompletionResponse,
 } from 'openai';
 
-import {PluginItem, TransformOptions} from '@babel/core';
+import { PluginItem, TransformOptions } from '@babel/core';
 
-import jscodemod, {Options} from './';
+import jscodemod, { Options } from './';
 
 export type TransformedCode = string | undefined | null;
 export type CodemodResult<TransformResultMeta> =
@@ -28,8 +28,7 @@ export type BaseCodemodArgs<ParsedArgs = unknown> = {
   commandLineArgs?: ParsedArgs;
 };
 
-export interface CodemodArgsWithSource<ParsedArgs = unknown>
-  extends BaseCodemodArgs<ParsedArgs> {
+export interface CodemodArgsWithSource<ParsedArgs = unknown> extends BaseCodemodArgs<ParsedArgs> {
   /**
    * the contents of the file to transform.
    */
@@ -125,10 +124,7 @@ interface BaseCodemod<ParsedArgs = unknown, TransformResultMeta = unknown> {
        * will be undefined.
        */
       resultMeta: Map<string, TransformResultMeta>;
-      jscodemod(
-        pathToCodemod: string,
-        options: Partial<Options>
-      ): ReturnType<typeof jscodemod>;
+      jscodemod(pathToCodemod: string, options: Partial<Options>): ReturnType<typeof jscodemod>;
     }
   ) => void | Promise<unknown>;
 }
@@ -141,10 +137,8 @@ interface BaseCodemod<ParsedArgs = unknown, TransformResultMeta = unknown> {
  * file, and jscodemod actually writes the files. transformAll() just takes a set of files, and does whatever it wants
  * to do. So, if you want files to be written, with this codemod, you do it yourself.
  */
-export interface LowLevelBulkCodemod<
-  ParsedArgs = unknown,
-  TransformResultMeta = unknown
-> extends BaseCodemod<ParsedArgs, TransformResultMeta> {
+export interface LowLevelBulkCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
+  extends BaseCodemod<ParsedArgs, TransformResultMeta> {
   /**
    * Transform every file at once.
    *
@@ -153,20 +147,15 @@ export interface LowLevelBulkCodemod<
    * @param opts.commandLineArgs parsed arguments returned by `yourCodemod.parseArgs()`, if any.
    * @return A list of the modified files.
    */
-  transformAll(opts: {
-    fileNames: string[];
-    commandLineArgs?: ParsedArgs;
-  }): Promisable<string[]>;
+  transformAll(opts: { fileNames: string[]; commandLineArgs?: ParsedArgs }): Promisable<string[]>;
 }
 
 /**
  * A simple codemod that simply takes a file and returns a result indicating how it should be transformed. Use this when
  * the other higher-level codemod types don't fit your usecase.
  */
-export interface LowLevelCodemod<
-  ParsedArgs = unknown,
-  TransformResultMeta = unknown
-> extends BaseCodemod<ParsedArgs, TransformResultMeta> {
+export interface LowLevelCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
+  extends BaseCodemod<ParsedArgs, TransformResultMeta> {
   /**
    * Transform a single file. Return null or undefined to indicate that the file should not be modified.
    */
@@ -178,10 +167,8 @@ export interface LowLevelCodemod<
 /**
  * A codemod that uses a Babel plugin to indicate how the code will be transformed.
  */
-export interface BabelCodemod<
-  ParsedArgs = unknown,
-  TransformResultMeta = unknown
-> extends BaseCodemod<ParsedArgs, TransformResultMeta> {
+export interface BabelCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
+  extends BaseCodemod<ParsedArgs, TransformResultMeta> {
   /**
    * The set of babel presets needed to compile your code, like `@babel/preset-env`.
    */
@@ -305,9 +292,7 @@ export interface BaseAICodemod<
    * @see https://beta.openai.com/docs/api-reference/completions/create
    * @returns Parameters for a call to OpenAI's API.
    */
-  getGlobalAPIRequestParams?: (
-    opts: BaseCodemodArgs<ParsedArgs>
-  ) => Promisable<RequestParams>;
+  getGlobalAPIRequestParams?: (opts: BaseCodemodArgs<ParsedArgs>) => Promisable<RequestParams>;
 
   /**
    * Optional. Only add this if you're getting bad results without it.
@@ -321,9 +306,7 @@ export interface BaseAICodemod<
    * gives you a chance to cut it out. But before you try that, it's probably better to tweak your prompt to be more
    * specific about what you want.
    */
-  extractTransformationFromCompletion?: (
-    response: Response
-  ) => CodemodResult<TransformResultMeta>;
+  extractTransformationFromCompletion?: (response: Response) => CodemodResult<TransformResultMeta>;
 
   // TODO: Specify the types such that extractTransformationFromCompletion is required when the prompt is a string.
 }
@@ -336,10 +319,8 @@ export interface BaseAICodemod<
  * @see https://platform.openai.com/docs/guides/chat
  * @see BaseAICodemod
  */
-export interface AIChatCodemod<
-  ParsedArgs = unknown,
-  TransformResultMeta = unknown
-> extends BaseAICodemod<
+export interface AIChatCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
+  extends BaseAICodemod<
     CreateChatCompletionRequest,
     CreateChatCompletionResponse,
     ParsedArgs,
@@ -352,9 +333,7 @@ export interface AIChatCodemod<
    *
    * @param source the source code to transform
    */
-  getMessages: (
-    source: string
-  ) => Promisable<CreateChatCompletionRequest['messages']>;
+  getMessages: (source: string) => Promisable<CreateChatCompletionRequest['messages']>;
 }
 
 /**
@@ -366,10 +345,8 @@ export interface AIChatCodemod<
  * @see https://platform.openai.com/docs/guides/completion
  * @see BaseAICodemod
  */
-export interface AICompletionCodemod<
-  ParsedArgs = unknown,
-  TransformResultMeta = unknown
-> extends BaseAICodemod<
+export interface AICompletionCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
+  extends BaseAICodemod<
     Omit<CreateCompletionRequest, 'max_tokens'>,
     CreateCompletionResponse,
     ParsedArgs,
@@ -402,4 +379,4 @@ export type PhaseError = Error & {
    * A user-facing message giving a clue how to fix the issue.
    */
   suggestion: string;
-}
+};

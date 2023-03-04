@@ -6,7 +6,8 @@ import replaceAll from 'core-js/es/string/replace-all';
 export default function buildFullPrompt(prompt: string, sourceCode: string): string {
   const promptWithInputSubstitued = replaceAll(prompt, '{{INPUT_SOURCE_CODE}}', sourceCode);
   const wrappedPrompt = prompt.includes('\n')
-    ? `/* ${promptWithInputSubstitued} */\n` : `${sourceCode}\n\n/*${prompt}*/`;
+    ? `/* ${promptWithInputSubstitued} */\n`
+    : `${sourceCode}\n\n/*${prompt}*/`;
 
   // Add a trailing newline, since sometimes the model returns empty results otherwise.
   return `${wrappedPrompt}\n`;

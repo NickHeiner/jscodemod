@@ -1,34 +1,38 @@
-import {validateAndGetRequestParams} from '../src/cli';
-import {CreateChatCompletionRequest} from 'openai';
+import { validateAndGetRequestParams } from '../src/cli';
+import { CreateChatCompletionRequest } from 'openai';
 
 afterEach(() => {
   jest.clearAllMocks();
 });
 
 test('no params are passed', () => {
-  expect(validateAndGetRequestParams({
-    openAICompletionRequestConfig: undefined,
-    openAICompletionRequestFile: undefined,
-    completionPromptFile: undefined,
-    chatMessageFile: undefined,
-    completionPrompt: undefined,
-    chatMessage: undefined,
-    openAIChatRequestConfig: undefined,
-    openAIChatRequestFile: undefined
-  })).toBeUndefined();
+  expect(
+    validateAndGetRequestParams({
+      openAICompletionRequestConfig: undefined,
+      openAICompletionRequestFile: undefined,
+      completionPromptFile: undefined,
+      chatMessageFile: undefined,
+      completionPrompt: undefined,
+      chatMessage: undefined,
+      openAIChatRequestConfig: undefined,
+      openAIChatRequestFile: undefined,
+    })
+  ).toBeUndefined();
 });
 
 test('chat message', () => {
-  expect(validateAndGetRequestParams({
-    openAICompletionRequestConfig: undefined,
-    openAICompletionRequestFile: undefined,
-    completionPromptFile: undefined,
-    chatMessageFile: undefined,
-    completionPrompt: undefined,
-    chatMessage: 'my chat message',
-    openAIChatRequestConfig: undefined,
-    openAIChatRequestFile: undefined
-  })).toMatchInlineSnapshot(`
+  expect(
+    validateAndGetRequestParams({
+      openAICompletionRequestConfig: undefined,
+      openAICompletionRequestFile: undefined,
+      completionPromptFile: undefined,
+      chatMessageFile: undefined,
+      completionPrompt: undefined,
+      chatMessage: 'my chat message',
+      openAIChatRequestConfig: undefined,
+      openAIChatRequestFile: undefined,
+    })
+  ).toMatchInlineSnapshot(`
     {
       "messages": [
         {
@@ -45,19 +49,20 @@ test('chat message', () => {
 describe('error handling', () => {
   describe('completion', () => {
     test('prompt is passed in both toplevel flag and config', () => {
-      expect(() => validateAndGetRequestParams({
-        openAICompletionRequestConfig: JSON.stringify({
-          prompt: 'prompt dupe'
-        }),
-        openAICompletionRequestFile: undefined,
-        completionPromptFile: undefined,
-        chatMessageFile: undefined,
-        completionPrompt: 'prompt',
-        chatMessage: undefined,
-        openAIChatRequestConfig: undefined,
-        openAIChatRequestFile: undefined
-      })).toThrow(
-        // eslint-disable-next-line max-len
+      expect(() =>
+        validateAndGetRequestParams({
+          openAICompletionRequestConfig: JSON.stringify({
+            prompt: 'prompt dupe',
+          }),
+          openAICompletionRequestFile: undefined,
+          completionPromptFile: undefined,
+          chatMessageFile: undefined,
+          completionPrompt: 'prompt',
+          chatMessage: undefined,
+          openAIChatRequestConfig: undefined,
+          openAIChatRequestFile: undefined,
+        })
+      ).toThrow(
         'If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags.'
       );
     });
@@ -71,7 +76,7 @@ describe('error handling', () => {
           completionPrompt: 'my prompt',
           chatMessage: undefined,
           openAIChatRequestConfig: undefined,
-          openAIChatRequestFile: undefined
+          openAIChatRequestFile: undefined,
         })
       ).toMatchInlineSnapshot(`
       {
@@ -84,33 +89,36 @@ describe('error handling', () => {
   });
   describe('chat', () => {
     test('prompt is passed in both toplevel flag and config', () => {
-      expect(() => validateAndGetRequestParams({
-        openAICompletionRequestConfig: undefined,
-        openAICompletionRequestFile: undefined,
-        completionPromptFile: undefined,
-        chatMessageFile: undefined,
-        completionPrompt: undefined,
-        chatMessage: 'message',
-        openAIChatRequestConfig: JSON.stringify({
-          messages: [{role: 'user', content: 'message dupe'}],
-          model: 'my-model'
-        } satisfies CreateChatCompletionRequest),
-        openAIChatRequestFile: undefined
-      })).toThrow(
-        // eslint-disable-next-line max-len
+      expect(() =>
+        validateAndGetRequestParams({
+          openAICompletionRequestConfig: undefined,
+          openAICompletionRequestFile: undefined,
+          completionPromptFile: undefined,
+          chatMessageFile: undefined,
+          completionPrompt: undefined,
+          chatMessage: 'message',
+          openAIChatRequestConfig: JSON.stringify({
+            messages: [{ role: 'user', content: 'message dupe' }],
+            model: 'my-model',
+          } satisfies CreateChatCompletionRequest),
+          openAIChatRequestFile: undefined,
+        })
+      ).toThrow(
         'If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags.'
       );
     });
     test('default params are used', () => {
-      expect(validateAndGetRequestParams({
-        openAICompletionRequestConfig: undefined,
-        openAICompletionRequestFile: undefined,
-        completionPromptFile: undefined,
-        chatMessageFile: undefined,
-        completionPrompt: undefined,
-        chatMessage: 'my message',
-        openAIChatRequestConfig: undefined,
-        openAIChatRequestFile: undefined})
+      expect(
+        validateAndGetRequestParams({
+          openAICompletionRequestConfig: undefined,
+          openAICompletionRequestFile: undefined,
+          completionPromptFile: undefined,
+          chatMessageFile: undefined,
+          completionPrompt: undefined,
+          chatMessage: 'my message',
+          openAIChatRequestConfig: undefined,
+          openAIChatRequestFile: undefined,
+        })
       ).toMatchInlineSnapshot(`
       {
         "messages": [
