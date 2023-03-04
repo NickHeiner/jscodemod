@@ -8,7 +8,7 @@ import {
   AIChatCodemod
 } from './types';
 import {
-  Configuration, OpenAIApi, CreateChatCompletionResponse, CreateChatCompletionRequest, CreateCompletionRequest
+  Configuration, OpenAIApi, CreateChatCompletionResponse, CreateChatCompletionRequest, CreateCompletionRequest, CreateCompletionResponse
 } from 'openai';
 import _ from 'lodash';
 import {defaultChatParams, defaultCompletionParams} from './default-completion-request-params';
@@ -41,7 +41,8 @@ function getOrganizationId() {
 }
 
 function defaultExtractResultFromCompletion(
-  completion?: Exclude<CreateChatCompletionResponse['choices'][0]['message'], undefined>['content']
+  completion?: Exclude<CreateChatCompletionResponse['choices'][0]['message'], undefined>['content'] |
+    CreateCompletionResponse['choices'][0]['text']
 ) {
   if (!completion) {
     throw makePhaseError(
@@ -325,7 +326,7 @@ class OpenAIBatchProcessor {
     }
   }
 
-  complete(prompt: AIPrompt, filePath: string): Promise<CreateChatCompletionResponse> {
+  complete(prompt: AIPrompt, filePath: string): Promise<CreateCompletionResponse> {
     this.log.trace({prompt}, 'Adding prompt to batch');
     this.addPrompt(prompt, filePath);
     this.rateLimiter.attemptCall();
@@ -490,10 +491,7 @@ async function runAICompletionCodemod(
       "Check your getCompletionRequestParams() method for a bug, or add this file to your codemod's ignore list."
     );
   }
-  const openAIBatchProcessor = createOpenAIBatchProcessor(
-    log,
-    completionParams
-  );
+  const openAIBatchProcessor = createOpenAIBatchProcessor(log, completionParams);
 
   let prompt: AIPrompt;
   try {
@@ -506,10 +504,7 @@ async function runAICompletionCodemod(
     );
   }
 
-  const result = await openAIBatchProcessor.complete(
-    prompt,
-    codemodOpts.filePath
-  );
+  const result = await openAIBatchProcessor.complete(prompt, codemodOpts.filePath);
 
   return getCodemodTransformResult(codemod, result);
 }
@@ -525,8 +520,8 @@ async function getAIChatCodemodParams(codemod: AIChatCodemod, codemodOpts: Codem
   } catch (e: unknown) {
     throw makePhaseError(
       e as Error,
-      'codemod.getCompletionRequestParams()',
-      "Check your getCompletionRequestParams() method for a bug, or add this file to your codemod's ignore list."
+      'codemod.getChatRequestParams()',
+      "Check your getChatRequestParams() method for a bug, or add this file to your codemod's ignore list."
     );
   }
 
@@ -536,8 +531,8 @@ async function getAIChatCodemodParams(codemod: AIChatCodemod, codemodOpts: Codem
   } catch (e: unknown) {
     throw makePhaseError(
       e as Error,
-      'codemod.getPrompt()',
-      "Check your getCompletionRequestParams() method for a bug, or add this file to your codemod's ignore list."
+      'codemod.getMessages()',
+      "Check your getMessages() method for a bug, or add this file to your codemod's ignore list."
     );
   }
 
