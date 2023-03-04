@@ -358,7 +358,7 @@ export interface AIChatCodemod<
 }
 
 /**
- * Transform a file using AI, and one of OpenAI's completion models (e.g. text-davinci-003).
+ * Transform a file using AI, and one of OpenAI's completion models (e.g. text-davinci-002).
  *
  * In my experiments, this model has given me worse results than AIChatCodemod.
  *

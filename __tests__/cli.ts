@@ -62,18 +62,20 @@ describe('error handling', () => {
       );
     });
     test('default params are used', () => {
-      expect(validateAndGetRequestParams({
-        openAICompletionRequestConfig: undefined,
-        openAICompletionRequestFile: undefined,
-        completionPromptFile: undefined,
-        chatMessageFile: undefined,
-        completionPrompt: 'my prompt',
-        chatMessage: undefined,
-        openAIChatRequestConfig: undefined,
-        openAIChatRequestFile: undefined
-      })).toMatchInlineSnapshot(`
+      expect(
+        validateAndGetRequestParams({
+          openAICompletionRequestConfig: undefined,
+          openAICompletionRequestFile: undefined,
+          completionPromptFile: undefined,
+          chatMessageFile: undefined,
+          completionPrompt: "my prompt",
+          chatMessage: undefined,
+          openAIChatRequestConfig: undefined,
+          openAIChatRequestFile: undefined,
+        })
+      ).toMatchInlineSnapshot(`
       {
-        "model": "text-davinci-003",
+        "model": "text-davinci-002",
         "prompt": "my prompt",
         "temperature": 0,
       }
