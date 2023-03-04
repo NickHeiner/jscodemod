@@ -509,7 +509,11 @@ async function runAICompletionCodemod(
 async function runAIChatCodemod(codemod: AIChatCodemod, codemodOpts: CodemodArgsWithSource, log: NTHLogger) {
   let chatCompletionParams: CreateChatCompletionRequest;
   try {
-    chatCompletionParams = await getChatRequestParams(codemod, codemodOpts);
+    const paramsWithoutMessages = await getChatRequestParams(codemod, codemodOpts);
+    chatCompletionParams = {
+      messages: [],
+      ...paramsWithoutMessages,
+    };
   } catch (e: unknown) {
     throw makePhaseError(
       e as Error,

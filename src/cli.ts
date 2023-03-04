@@ -1,5 +1,5 @@
 import yargs from 'yargs';
-import jscodemod, {defaultPiscinaLowerBoundInclusive} from './';
+import jscodemod, {defaultPiscinaLowerBoundInclusive, Options} from './';
 import _ from 'lodash';
 import 'loud-rejection/register';
 import getLogger from './get-logger';
@@ -138,7 +138,6 @@ const yargsChain = yargs
         "API params to pass to OpenAI's createCompletionRequest API. See https://beta.openai.com/docs/api-reference/completions/create. The argument you pass to this flag will be interpreted as JSON."
     },
     openAICompletionRequestFile: {
-      config: true,
       required: false,
       type: 'string',
       conflicts: ['openAICompletionRequestConfig', 'codemod'],
@@ -169,7 +168,6 @@ const yargsChain = yargs
         "API params to pass to OpenAI's chat API. See https://beta.openai.com/docs/api-reference/chat/create. The argument you pass to this flag will be interpreted as JSON."
     },
     openAIChatRequestFile: {
-      config: true,
       required: false,
       type: 'string',
       conflicts: ['openAICompletionRequestConfig', 'openAIChatRequestConfig', 'codemod'],
@@ -205,8 +203,9 @@ const yargsChain = yargs
     }
 
     const aiRequestParams = validateAndGetRequestParams(argv);
+    log.warn({aiRequestParams});
     if (!(argv.codemod || argv.builtInCodemod || (aiRequestParams &&
-      ('message' in aiRequestParams || 'prompt' in aiRequestParams)))) {
+      ('messages' in aiRequestParams || 'prompt' in aiRequestParams)))) {
       throw new Error('You must pass either the --codemod, --builtInCodemod, --prompt, or --chatMessage flags.');
     }
 
@@ -222,7 +221,7 @@ export function validateAndGetRequestParams(
     chatMessage, openAIChatRequestConfig, openAIChatRequestFile}: Pick<Args, 'openAICompletionRequestConfig' |
     'openAICompletionRequestFile' | 'completionPromptFile' | 'chatMessageFile' | 'completionPrompt' | 'chatMessage' |
     'openAIChatRequestConfig' | 'openAIChatRequestFile'>
-): CreateCompletionRequest | CreateChatCompletionRequest | null {
+): CreateCompletionRequest | CreateChatCompletionRequest | undefined {
 
   const isChatCodemod = chatMessage || chatMessageFile || openAIChatRequestFile ||
     openAIChatRequestConfig;
@@ -279,7 +278,7 @@ export function validateAndGetRequestParams(
       defaultCompletionParams
     );
   }
-  return null;
+  return undefined;
 }
 
 /**
@@ -303,10 +302,11 @@ export async function main() {
   // This is not an exhaustive error wrapper, but I think it's ok for now. Making it catch more cases would introduce
   // complexity without adding much safety.
   try {
-    const opts = {
+    // @ts-expect-error I'm not sure how to make this work with `inputFileList` and `inputFilesPatterns`.
+    const opts: Options = {
       ..._.pick(argv, 'tsconfig', 'tsOutDir', 'tsc', 'dry', 'resetDirtyInputFiles', 'porcelain', 'jsonOutput',
         'piscinaLowerBoundInclusive', 'inputFileList', 'inputFilesPatterns'),
-      createCompletionRequestParams: validateAndGetRequestParams(argv),
+      openAIAPIRequestParams: validateAndGetRequestParams(argv),
       log
     };
 
@@ -326,12 +326,7 @@ export async function main() {
     // @ts-expect-error
     const codemodPath = argv.builtInCodemod ? builtInCodemods[argv.builtInCodemod] : argv.codemod;
 
-    const codemodMetaResults = await jscodemod(
-      codemodPath,
-      // I'm not sure why this is an error, but I think the code is correct.
-      // @ts-expect-error
-      opts
-    );
+    const codemodMetaResults = await jscodemod(codemodPath, opts);
 
     const erroredFiles = _(codemodMetaResults)
       .filter({action: 'error'})
