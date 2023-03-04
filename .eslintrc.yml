@@ -22,8 +22,15 @@ rules:
 
   'no-use-before-define': ["error", { "functions": false, "variables": true }] 
 
-  no-mixed-operators: error
   no-trailing-spaces: warn
+
+  # Disable style rules to let prettier own it
+  object-curly-spacing: off
+  comma-dangle: off
+  max-len: off
+  indent: off
+  # Slightly spooky
+  no-mixed-operators: off
 
 env:
   es6: true

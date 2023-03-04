@@ -1,7 +1,9 @@
 import buildFullPrompt from '../src/build-full-prompt';
 
 it('handles multiline inputs', () => {
-  expect(buildFullPrompt(`
+  expect(
+    buildFullPrompt(
+      `
     My prompt
 
     {{INPUT_SOURCE_CODE}}
@@ -9,7 +11,10 @@ it('handles multiline inputs', () => {
     More text
 
     {{INPUT_SOURCE_CODE}}
-  `, 'source_code')).toMatchInlineSnapshot(`
+  `,
+      'source_code'
+    )
+  ).toMatchInlineSnapshot(`
 "/* 
     My prompt
 

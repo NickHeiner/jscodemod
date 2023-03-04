@@ -1,5 +1,5 @@
-import {makePhaseError} from './make-phase-error';
-import {Codemod} from './types';
+import { makePhaseError } from './make-phase-error';
+import { Codemod } from './types';
 
 function loadCodemod(codemodPath: string): Codemod {
   let codemod;
@@ -13,7 +13,7 @@ function loadCodemod(codemodPath: string): Codemod {
       e as Error,
       'loading your codemod',
       'Figure out why your codemod throws an error when require()d. If your codemod is written in TS, do you have TS' +
-      " configured to compile to a JS version that your Node version doesn't support?"
+        " configured to compile to a JS version that your Node version doesn't support?"
     );
   }
 

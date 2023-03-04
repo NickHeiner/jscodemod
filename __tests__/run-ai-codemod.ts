@@ -1,9 +1,9 @@
-import {OpenAIAPIRateLimiter, __test} from '../src/run-ai-codemod';
+import { OpenAIAPIRateLimiter, __test } from '../src/run-ai-codemod';
 import createLog from 'nth-log';
-import {AIChatCodemod} from '../build';
-import {CreateChatCompletionRequest} from 'openai';
+import { AIChatCodemod } from '../build';
+import { CreateChatCompletionRequest } from 'openai';
 
-const log = createLog({name: 'test'});
+const log = createLog({ name: 'test' });
 
 /**
  * These tests are very limited.
@@ -12,11 +12,13 @@ const log = createLog({name: 'test'});
 jest.useFakeTimers();
 describe('OpenAIAPIRateLimiter', () => {
   it('respects the call rate limit', () => {
-    const makeRequest = jest.fn(() => Promise.resolve({
-      tokensUsed: 5,
-      rateLimitReached: false
-    }));
-    const getNextRequest = () => ({makeRequest, estimatedTokens: 6});
+    const makeRequest = jest.fn(() =>
+      Promise.resolve({
+        tokensUsed: 5,
+        rateLimitReached: false,
+      })
+    );
+    const getNextRequest = () => ({ makeRequest, estimatedTokens: 6 });
     const tokenRateLimit = 20;
     const rateLimiter = new OpenAIAPIRateLimiter(log, 3, tokenRateLimit, getNextRequest);
 
@@ -55,12 +57,14 @@ describe('OpenAIAPIRateLimiter', () => {
   });
 
   it('respects the token rate limit', () => {
-    const makeRequest = jest.fn(() => Promise.resolve({
-      tokensUsed: 5,
-      rateLimitReached: false
-    }));
+    const makeRequest = jest.fn(() =>
+      Promise.resolve({
+        tokensUsed: 5,
+        rateLimitReached: false,
+      })
+    );
     let estimatedTokens = 6;
-    const getNextRequest = () => ({makeRequest, estimatedTokens});
+    const getNextRequest = () => ({ makeRequest, estimatedTokens });
     const tokenRateLimit = 20;
     const rateLimiter = new OpenAIAPIRateLimiter(log, 3, tokenRateLimit, getNextRequest);
     estimatedTokens = tokenRateLimit + 1;
@@ -81,14 +85,18 @@ describe('OpenAIAPIRateLimiter', () => {
    * the idiosyncrasies of Jest's fake timers.
    */
   it.skip('respects the API-provided rate limit feedback', () => {
-    const makeRequest = jest.fn(() => Promise.resolve({
-      tokensUsed: 5,
-      rateLimitReached: false
-    }));
-    const getNextRequest = () => ({makeRequest, estimatedTokens: 6});
+    const makeRequest = jest.fn(() =>
+      Promise.resolve({
+        tokensUsed: 5,
+        rateLimitReached: false,
+      })
+    );
+    const getNextRequest = () => ({ makeRequest, estimatedTokens: 6 });
     const tokenRateLimit = 20;
     const rateLimiter = new OpenAIAPIRateLimiter(log, 3, tokenRateLimit, getNextRequest);
-    makeRequest.mockImplementation(() => Promise.resolve({tokensUsed: 5, rateLimitReached: true}));
+    makeRequest.mockImplementation(() =>
+      Promise.resolve({ tokensUsed: 5, rateLimitReached: true })
+    );
 
     rateLimiter.attemptCall();
     rateLimiter.attemptCall();
@@ -108,22 +116,20 @@ describe('OpenAIAPIRateLimiter', () => {
 describe('getAIChatCodemodParams', () => {
   test('does not mutate messages when called multiple times', async () => {
     const codemod: AIChatCodemod = {
-      getMessages: source => [
-        {role: 'user', content: source}
-      ],
-      getGlobalAPIRequestParams: () => ({
-        model: 'my-model',
-        messages: []
-      } as CreateChatCompletionRequest)
+      getMessages: source => [{ role: 'user', content: source }],
+      getGlobalAPIRequestParams: () =>
+        ({
+          model: 'my-model',
+          messages: [],
+        } as CreateChatCompletionRequest),
     };
 
-    __test.getAIChatCodemodParams(codemod, {source: 'file source code', filePath: 'file.js'});
-    const secondResult = await __test.getAIChatCodemodParams(
-      codemod, {source: 'file source code', filePath: 'file.js'}
-    );
+    __test.getAIChatCodemodParams(codemod, { source: 'file source code', filePath: 'file.js' });
+    const secondResult = await __test.getAIChatCodemodParams(codemod, {
+      source: 'file source code',
+      filePath: 'file.js',
+    });
 
-    expect(secondResult.messages).toEqual([
-      {role: 'user', content: 'file source code'}
-    ]);
+    expect(secondResult.messages).toEqual([{ role: 'user', content: 'file source code' }]);
   });
 });

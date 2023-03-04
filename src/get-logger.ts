@@ -1,14 +1,10 @@
 import _ from 'lodash';
 import createLogger from 'nth-log';
 import fs from 'fs';
-import {TODO} from './types';
+import { TODO } from './types';
 
-const getLogger = _.once((opts?: {
-  jsonOutput: boolean;
-  porcelain: boolean;
-  name?: string
-}) => {
-  const logOpts: {name: string; stream?: TODO} = {name: 'jscodemod-coordinator'};
+const getLogger = _.once((opts?: { jsonOutput: boolean; porcelain: boolean; name?: string }) => {
+  const logOpts: { name: string; stream?: TODO } = { name: 'jscodemod-coordinator' };
   if (opts?.jsonOutput) {
     logOpts.stream = process.stdout;
   }

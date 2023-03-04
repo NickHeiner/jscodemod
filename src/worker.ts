@@ -2,14 +2,14 @@ import getLogger from './get-logger';
 import piscina from 'piscina';
 import loadCodemod from './load-codemod';
 import _ from 'lodash';
-import runCodemodOnFile, {CodemodMetaResult} from './run-codemod-on-file';
-import {CodemodThatUsesTheRunner} from './types';
+import runCodemodOnFile, { CodemodMetaResult } from './run-codemod-on-file';
+import { CodemodThatUsesTheRunner } from './types';
 
 // I wonder if we could measure perf gains by trimming this import list.
 
 const baseLog = getLogger({
   name: 'jscodemod-worker',
-  ...piscina.workerData.logOpts
+  ...piscina.workerData.logOpts,
 });
 
 /**
@@ -20,9 +20,13 @@ const baseLog = getLogger({
  */
 const codemod = loadCodemod(piscina.workerData.codemodPath) as CodemodThatUsesTheRunner;
 
-export default function main(
-  {inputFile, runStartTimeMs}: {inputFile: string, runStartTimeMs: number}
-): Promise<CodemodMetaResult<unknown>> {
+export default function main({
+  inputFile,
+  runStartTimeMs,
+}: {
+  inputFile: string;
+  runStartTimeMs: number;
+}): Promise<CodemodMetaResult<unknown>> {
   return runCodemodOnFile(
     codemod,
     inputFile,

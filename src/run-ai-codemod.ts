@@ -1,22 +1,26 @@
-import {NTHLogger, LogMetadata} from 'nth-log';
-import {makePhaseError} from './make-phase-error';
+import { NTHLogger, LogMetadata } from 'nth-log';
+import { makePhaseError } from './make-phase-error';
 import {
   AICompletionCodemod,
   CodemodArgsWithSource,
   CodemodResult,
   AIPrompt,
-  AIChatCodemod
+  AIChatCodemod,
 } from './types';
 import {
-  Configuration, OpenAIApi, CreateChatCompletionResponse, CreateChatCompletionRequest, CreateCompletionRequest,
-  CreateCompletionResponse
+  Configuration,
+  OpenAIApi,
+  CreateChatCompletionResponse,
+  CreateChatCompletionRequest,
+  CreateCompletionRequest,
+  CreateCompletionResponse,
 } from 'openai';
 import _ from 'lodash';
-import {defaultChatParams, defaultCompletionParams} from './default-completion-request-params';
+import { defaultChatParams, defaultCompletionParams } from './default-completion-request-params';
 import pDebounce from 'p-debounce';
-import {EventEmitter} from 'events';
+import { EventEmitter } from 'events';
 // @ts-expect-error
-import {countTokens} from '@nick.heiner/gpt-3-encoder/Encoder';
+import { countTokens } from '@nick.heiner/gpt-3-encoder/Encoder';
 import assert from 'assert';
 
 const highlightRequestTimingLogic = false;
@@ -42,8 +46,9 @@ function getOrganizationId() {
 }
 
 function defaultExtractResultFromCompletion(
-  completion?: Exclude<CreateChatCompletionResponse['choices'][0]['message'], undefined>['content'] |
-    CreateCompletionResponse['choices'][0]['text']
+  completion?:
+    | Exclude<CreateChatCompletionResponse['choices'][0]['message'], undefined>['content']
+    | CreateCompletionResponse['choices'][0]['text']
 ) {
   if (!completion) {
     throw makePhaseError(
@@ -63,9 +68,7 @@ function getCodemodTransformResult(
   if (codemod.extractTransformationFromCompletion) {
     return codemod.extractTransformationFromCompletion(response);
   }
-  return defaultExtractResultFromCompletion(
-    response.choices[0].message?.content
-  );
+  return defaultExtractResultFromCompletion(response.choices[0].message?.content);
 }
 
 interface OpenAIErrorResponse extends Error {
@@ -78,9 +81,9 @@ interface OpenAIErrorResponse extends Error {
         type: string;
         param: unknown;
         code: unknown;
-      }
-    }
-  }
+      };
+    };
+  };
 }
 
 const secondsPerMinute = 60;
@@ -101,7 +104,7 @@ function getRetryTimeoutMs(attempt: number) {
   );
 }
 
-type OpenAIAPIRateLimitedRequest = () => Promise<{tokensUsed: number, rateLimitReached: boolean}>
+type OpenAIAPIRateLimitedRequest = () => Promise<{ tokensUsed: number; rateLimitReached: boolean }>;
 /**
  * This assumes that, at the beginning of program execution, you have full rate limit capacity. If you just finished
  * some other operation that used rate limit, then you immediately ran this program, this won't prevent you from hitting
@@ -119,7 +122,7 @@ type OpenAIAPIRateLimitedRequest = () => Promise<{tokensUsed: number, rateLimitR
  */
 export class OpenAIAPIRateLimiter {
   private readonly timeouts: Array<NodeJS.Timeout> = [];
-  private readonly callRecords: Array<{timeMs: number, tokensUsed: number}> = [];
+  private readonly callRecords: Array<{ timeMs: number; tokensUsed: number }> = [];
   private openAIAPIAttemptRetryCount = 0;
 
   attemptCall: () => void;
@@ -132,9 +135,12 @@ export class OpenAIAPIRateLimiter {
     private log: NTHLogger,
     private readonly requestsPerMinuteLimit: number,
     private readonly tokensPerMinuteLimit: number,
-    private readonly getNextRequest: () => {
-      estimatedTokens: number, makeRequest: OpenAIAPIRateLimitedRequest
-    } | undefined
+    private readonly getNextRequest: () =>
+      | {
+          estimatedTokens: number;
+          makeRequest: OpenAIAPIRateLimitedRequest;
+        }
+      | undefined
   ) {
     const rateLimitReciprocal = secondsPerMinute / requestsPerMinuteLimit;
     /**
@@ -155,8 +161,11 @@ export class OpenAIAPIRateLimiter {
       return;
     }
 
-    const currentWindowStartTime = Date.now() - (secondsPerMinute * millisecondsPerSecond);
-    const callsInCurrentWindow = _.takeRightWhile(this.callRecords, ({timeMs}) => timeMs >= currentWindowStartTime);
+    const currentWindowStartTime = Date.now() - secondsPerMinute * millisecondsPerSecond;
+    const callsInCurrentWindow = _.takeRightWhile(
+      this.callRecords,
+      ({ timeMs }) => timeMs >= currentWindowStartTime
+    );
     const countCallsInCurrentWindow = callsInCurrentWindow.length;
     const hasExceededCallCountLimit = countCallsInCurrentWindow > this.requestsPerMinuteLimit;
     const tokensUsedInCurrentWindow = _.sumBy(callsInCurrentWindow, 'tokensUsed');
@@ -167,13 +176,16 @@ export class OpenAIAPIRateLimiter {
     if (hasExceededCallCountLimit || hasExceededTokenUseLimit) {
       const oldestCallRecord = callsInCurrentWindow[0];
       const timeUntilOldestCallRecordExpiresMs = oldestCallRecord.timeMs - currentWindowStartTime;
-      this.log[loglevel]({
-        hasExceededCallCountLimit,
-        hasExceededTokenUseLimit,
-        countCallsInCurrentWindow,
-        tokensUsedInCurrentWindow,
-        timeUntilOldestCallRecordExpiresMs
-      }, "The local rate limiter shows we've reached rate limit. Waiting until the oldest call expires to try again.");
+      this.log[loglevel](
+        {
+          hasExceededCallCountLimit,
+          hasExceededTokenUseLimit,
+          countCallsInCurrentWindow,
+          tokensUsedInCurrentWindow,
+          timeUntilOldestCallRecordExpiresMs,
+        },
+        "The local rate limiter shows we've reached rate limit. Waiting until the oldest call expires to try again."
+      );
       this.setTimeout(this.attemptCall, timeUntilOldestCallRecordExpiresMs);
       return;
     }
@@ -182,10 +194,10 @@ export class OpenAIAPIRateLimiter {
     const tokensUsedAllCalls = _.sumBy(this.callRecords, 'tokensUsed');
 
     this.log[loglevel](
-      {countCallsInCurrentWindow, tokensUsedInCurrentWindow, countAllCalls, tokensUsedAllCalls},
+      { countCallsInCurrentWindow, tokensUsedInCurrentWindow, countAllCalls, tokensUsedAllCalls },
       'Making request'
     );
-    const callRecord = {timeMs: Date.now(), tokensUsed: nextRequest.estimatedTokens};
+    const callRecord = { timeMs: Date.now(), tokensUsed: nextRequest.estimatedTokens };
     this.callRecords.push(callRecord);
     const reqResult = await nextRequest.makeRequest();
 
@@ -196,7 +208,7 @@ export class OpenAIAPIRateLimiter {
       this.timeouts.length = 0;
       const retryTimeoutMs = getRetryTimeoutMs(this.openAIAPIAttemptRetryCount++);
       this.log[loglevel](
-        {retryTimeoutMs, openAIAPIAttemptRetryCount: this.openAIAPIAttemptRetryCount},
+        { retryTimeoutMs, openAIAPIAttemptRetryCount: this.openAIAPIAttemptRetryCount },
         // eslint-disable-next-line max-len
         "OpenAI's response says we've reached rate limit. Cancelling other pending requests and exponentially backing off."
       );
@@ -209,7 +221,9 @@ export class OpenAIAPIRateLimiter {
 }
 
 function makeFileTooLargeError(
-  maxTokensPerRequest: number, tokensRequiredToTransformThisFile: number, filePath: string
+  maxTokensPerRequest: number,
+  tokensRequiredToTransformThisFile: number,
+  filePath: string
 ) {
   const err = new Error(
     /* eslint-disable max-len */
@@ -224,7 +238,7 @@ You can read more about model limits at https://beta.openai.com/docs/models/over
   /* eslint-enable max-len */
   Object.assign(err, {
     maxTokensPerRequest,
-    tokensRequiredToTransformThisFile
+    tokensRequiredToTransformThisFile,
   });
   return err;
 }
@@ -259,12 +273,12 @@ class OpenAIBatchProcessor {
   private readonly rateLimiter: OpenAIAPIRateLimiter;
 
   constructor(log: NTHLogger, completionParams: CreateCompletionRequest) {
-    this.log = log.child({sourceCodeFile: undefined});
+    this.log = log.child({ sourceCodeFile: undefined });
     this.completionParams = completionParams;
 
     const configuration = new Configuration({
       organization: getOrganizationId(),
-      apiKey: getAPIKey()
+      apiKey: getAPIKey(),
     });
 
     this.openai = new OpenAIApi(configuration);
@@ -283,17 +297,19 @@ class OpenAIBatchProcessor {
   }
 
   private getOverheadForBatch(tokensInBatch: number) {
-    return this.maxTokensPerRequest - getEstimatedFullTokenCountNeededForRequestFromTokensInPrompt(tokensInBatch);
+    return (
+      this.maxTokensPerRequest -
+      getEstimatedFullTokenCountNeededForRequestFromTokensInPrompt(tokensInBatch)
+    );
   }
 
   private addPrompt(prompt: AIPrompt, filePath: string) {
-    const log = this.log.child({method: 'OpenAIBatchProcessor#addPrompt'});
+    const log = this.log.child({ method: 'OpenAIBatchProcessor#addPrompt' });
 
     const addNewBatch = () => {
       const newBatch = [prompt];
       const tokensInNewBatch = this.getTokensForBatch(newBatch);
-      const overheadRemainingInNewestBatch =
-        this.getOverheadForBatch(tokensInNewBatch);
+      const overheadRemainingInNewestBatch = this.getOverheadForBatch(tokensInNewBatch);
       if (overheadRemainingInNewestBatch < 0) {
         throw makeFileTooLargeError(this.maxTokensPerRequest, tokensInNewBatch, filePath);
       } else {
@@ -310,14 +326,12 @@ class OpenAIBatchProcessor {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const mostRecentBatch = _.last(this.batches)!;
     const tokensInMostRecentBatch = this.getTokensForBatch(mostRecentBatch);
-    const overheadRemainingInMostRecentBatch = this.getOverheadForBatch(
-      tokensInMostRecentBatch
-    );
+    const overheadRemainingInMostRecentBatch = this.getOverheadForBatch(tokensInMostRecentBatch);
     const tokensForLatestPrompt = countTokens(prompt);
     log.trace({
       tokensForLatestPrompt,
       overheadRemainingInMostRecentBatch,
-      tokensInMostRecentBatch
+      tokensInMostRecentBatch,
     });
     if (tokensForLatestPrompt > overheadRemainingInMostRecentBatch) {
       addNewBatch();
@@ -328,7 +342,7 @@ class OpenAIBatchProcessor {
   }
 
   complete(prompt: AIPrompt, filePath: string): Promise<CreateCompletionResponse> {
-    this.log.trace({prompt}, 'Adding prompt to batch');
+    this.log.trace({ prompt }, 'Adding prompt to batch');
     this.addPrompt(prompt, filePath);
     this.rateLimiter.attemptCall();
     return new Promise((resolve, reject) => {
@@ -344,21 +358,23 @@ class OpenAIBatchProcessor {
       ...this.completionParams,
       prompt: batch,
       // eslint-disable-next-line camelcase
-      max_tokens: maxTokens
+      max_tokens: maxTokens,
     };
-    const logMetadata = highlightRequestTimingLogic ? {
-      level: 'warn',
-      filesInBatch: batch.length
-    } satisfies LogMetadata : {
-      level: 'debug',
-      completionRequestParams
-    } satisfies LogMetadata;
+    const logMetadata = highlightRequestTimingLogic
+      ? ({
+          level: 'warn',
+          filesInBatch: batch.length,
+        } satisfies LogMetadata)
+      : ({
+          level: 'debug',
+          completionRequestParams,
+        } satisfies LogMetadata);
     const axiosResponse = await this.log.logPhase(
-      {phase: 'OpenAI request', ...logMetadata},
+      { phase: 'OpenAI request', ...logMetadata },
       async (_, setAdditionalLogData) => {
         const response = await this.openai.createCompletion(completionRequestParams);
         if (!highlightRequestTimingLogic) {
-          setAdditionalLogData({completionResponse: response.data});
+          setAdditionalLogData({ completionResponse: response.data });
         }
         return response;
       }
@@ -376,9 +392,9 @@ class OpenAIBatchProcessor {
       const completion = axiosResponse.data.choices[index];
       const completionWithOnlyThisChoice = {
         ...axiosResponse.data,
-        choices: [completion]
+        choices: [completion],
       };
-      this.log.trace({completion, prompt});
+      this.log.trace({ completion, prompt });
       this.successPerPromptEventEmitter.emit(prompt, completionWithOnlyThisChoice);
     });
 
@@ -399,7 +415,8 @@ class OpenAIBatchProcessor {
     const maxTokens = this.maxTokensPerRequest - tokensInBatch;
     assert(maxTokens >= 0, 'Bug in jscodemod: maxTokens is negative');
 
-    const estimatedTokens = getEstimatedFullTokenCountNeededForRequestFromTokensInPrompt(tokensInBatch);
+    const estimatedTokens =
+      getEstimatedFullTokenCountNeededForRequestFromTokensInPrompt(tokensInBatch);
 
     return {
       estimatedTokens,
@@ -413,7 +430,7 @@ class OpenAIBatchProcessor {
           const responseIsError = e && typeof e === 'object' && 'response' in e;
           if (!responseIsError) {
             this.log.error(
-              {err: e},
+              { err: e },
               // eslint-disable-next-line max-len
               "OpenAI request failed. This could indicate a bug in jscodemod. This error doesn't necessarily mean the entire codemod run failed; if some files were successfully transformed, you can save them before trying again."
             );
@@ -421,7 +438,7 @@ class OpenAIBatchProcessor {
           }
           const openAIErrorResponse = e as OpenAIErrorResponse;
           rateLimitReached =
-            (openAIErrorResponse.response.data.error.message.includes('Rate limit reached') ||
+            openAIErrorResponse.response.data.error.message.includes('Rate limit reached') ||
             /* eslint-disable max-len */
             /**
              * One possible error response from the API:
@@ -435,11 +452,12 @@ class OpenAIBatchProcessor {
                 }
              */
             /* eslint-enable max-len */
-              openAIErrorResponse.response.data.error.message
-                .includes('That model is currently overloaded with other requests.'));
+            openAIErrorResponse.response.data.error.message.includes(
+              'That model is currently overloaded with other requests.'
+            );
           if (rateLimitReached) {
             this.log[highlightRequestTimingLogic ? 'warn' : 'debug']({
-              openAIResponseMessage: openAIErrorResponse.response.data.error.message
+              openAIResponseMessage: openAIErrorResponse.response.data.error.message,
             });
           } else {
             const error = new Error(openAIErrorResponse.response.data.error.message);
@@ -454,15 +472,16 @@ class OpenAIBatchProcessor {
 
         return {
           tokensUsed,
-          rateLimitReached
+          rateLimitReached,
         };
-      }
+      },
     };
   }
 }
 
 const createOpenAIBatchProcessor = _.once(
-  (log: NTHLogger, completionParams: CreateCompletionRequest) => new OpenAIBatchProcessor(log, completionParams)
+  (log: NTHLogger, completionParams: CreateCompletionRequest) =>
+    new OpenAIBatchProcessor(log, completionParams)
 );
 
 const getCompletionRequestParams = _.once(
@@ -475,7 +494,8 @@ const getCompletionRequestParams = _.once(
 const getChatRequestParams = _.once((codemod: AIChatCodemod, codemodOpts: CodemodArgsWithSource) =>
   codemod.getGlobalAPIRequestParams
     ? codemod.getGlobalAPIRequestParams(_.omit(codemodOpts))
-    : defaultChatParams);
+    : defaultChatParams
+);
 
 async function runAICompletionCodemod(
   codemod: AICompletionCodemod,
@@ -516,7 +536,7 @@ async function getAIChatCodemodParams(codemod: AIChatCodemod, codemodOpts: Codem
     const paramsWithoutMessages = await getChatRequestParams(codemod, codemodOpts);
     chatCompletionParams = {
       ..._.cloneDeep(paramsWithoutMessages),
-      messages: []
+      messages: [],
     };
   } catch (e: unknown) {
     throw makePhaseError(
@@ -541,8 +561,12 @@ async function getAIChatCodemodParams(codemod: AIChatCodemod, codemodOpts: Codem
   const maxTokens = chatCompletionParams.max_tokens ?? 4096;
   chatCompletionParams.messages.push(...messages);
 
-  const tokensForMessages = _(messages).map('content').sumBy(content => countTokens(content)) * tokenSafetyMargin;
-  const tokensNeeded = getEstimatedFullTokenCountNeededForRequestFromTokensInPrompt(tokensForMessages);
+  const tokensForMessages =
+    _(messages)
+      .map('content')
+      .sumBy(content => countTokens(content)) * tokenSafetyMargin;
+  const tokensNeeded =
+    getEstimatedFullTokenCountNeededForRequestFromTokensInPrompt(tokensForMessages);
   if (tokensNeeded > maxTokens) {
     throw makeFileTooLargeError(maxTokens, tokensNeeded, codemodOpts.filePath);
   }
@@ -554,7 +578,7 @@ async function runAIChatCodemod(codemod: AIChatCodemod, codemodOpts: CodemodArgs
 
   const configuration = new Configuration({
     organization: getOrganizationId(),
-    apiKey: getAPIKey()
+    apiKey: getAPIKey(),
   });
   const openai = new OpenAIApi(configuration);
   const completion = await openai.createChatCompletion(chatCompletionParams);
@@ -574,5 +598,5 @@ export default function runAICodemod(
 }
 
 export const __test = {
-  getAIChatCodemodParams
+  getAIChatCodemodParams,
 };
