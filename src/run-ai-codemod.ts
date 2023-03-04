@@ -514,7 +514,7 @@ async function runAICompletionCodemod(
   return getCodemodTransformResult(codemod, result);
 }
 
-async function runAIChatCodemod(codemod: AIChatCodemod, codemodOpts: CodemodArgsWithSource, log: NTHLogger) {
+async function getAIChatCodemodParams(codemod: AIChatCodemod, codemodOpts: CodemodArgsWithSource) {
   let chatCompletionParams: CreateChatCompletionRequest;
   try {
     const paramsWithoutMessages = await getChatRequestParams(codemod, codemodOpts);
@@ -548,9 +548,13 @@ async function runAIChatCodemod(codemod: AIChatCodemod, codemodOpts: CodemodArgs
   const tokensForMessages = _(messages).map('content').sumBy(content => countTokens(content)) * tokenSafetyMargin;
   const tokensNeeded = getEstimatedFullTokenCountNeededForRequestFromTokensInPrompt(tokensForMessages);
   if (tokensNeeded > maxTokens) {
-    log.trace({tokensNeeded, maxTokens, tokensForMessages, messages});
     throw makeFileTooLargeError(maxTokens, tokensNeeded, codemodOpts.filePath);
   }
+  return chatCompletionParams;
+}
+
+async function runAIChatCodemod(codemod: AIChatCodemod, codemodOpts: CodemodArgsWithSource) {
+  const chatCompletionParams = await getAIChatCodemodParams(codemod, codemodOpts);
 
   const configuration = new Configuration({
     organization: getOrganizationId(),
@@ -568,7 +572,11 @@ export default function runAICodemod(
   log: NTHLogger
 ) {
   if ('getMessages' in codemod) {
-    return runAIChatCodemod(codemod, codemodOpts, log);
+    return runAIChatCodemod(codemod, codemodOpts);
   }
   return runAICompletionCodemod(codemod, codemodOpts, log);
+}
+
+export const __test = {
+  getAIChatCodemodParams
 }
