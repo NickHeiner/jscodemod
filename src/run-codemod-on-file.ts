@@ -324,9 +324,9 @@ export default async function runCodemodOnFile(
     {
       phase: 'parse args',
       level: 'trace',
-      // TODO The types are messed up. A sync return to this method is fine.
-      // @ts-expect-error
     },
+    // TODO The types are messed up. A sync return to this method is fine.
+    // @ts-expect-error
     () => codemod.parseArgs?.(rawArgs)
   );
 
