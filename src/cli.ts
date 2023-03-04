@@ -203,7 +203,6 @@ const yargsChain = yargs
     }
 
     const aiRequestParams = validateAndGetRequestParams(argv);
-    log.warn({aiRequestParams});
     if (!(argv.codemod || argv.builtInCodemod || (aiRequestParams &&
       ('messages' in aiRequestParams || 'prompt' in aiRequestParams)))) {
       throw new Error('You must pass either the --codemod, --builtInCodemod, --prompt, or --chatMessage flags.');

@@ -169,12 +169,12 @@ const constantizeLogEntryForTest = logEntry => {
   return nthLogConstantizeLogEntryForTest(logEntry);
 };
 
-const getJsonLogs = (stdout: string) => stdout.split('\n').map(line => {
+const getJsonLogs = (stdout: string) => stdout.split('\n').map((line, index, allLines) => {
   let parsedLine;
   try {
     parsedLine = parseJson(line);
   } catch (e) {
-    log.error({line}, 'Could not parse line');
+    log.error({line, allLines}, 'Could not parse line');
     throw e;
   }
   const logLine = constantizeLogEntryForTest(parsedLine);
@@ -474,17 +474,12 @@ describe('error handling', () => {
   });
 
   createTest({
-    modifier: 'only',
     testName: 'pass a prompt, and a chat param that includes a prompt',
     fixtureName: 'ai-validation',
-    spawnArgs: ['--chatMessage', 'my-prompt', '--openAIChatRequestFile', 'chat-config.json', 'source.js', '--json-output'],
+    spawnArgs: ['--chatMessage', 'my-prompt', '--openAIChatRequestFile', 'chat-config.json', 'source.js', '--json-output', '--dry'],
     expectedExitCode: 1,
-    assert(spawnResult) {
-      const jsonLogs = getJsonLogs(spawnResult.stdout);
-      expect(jsonLogs).toContainEqual(expect.objectContaining({
-        // eslint-disable-next-line max-len
-        msg: 'If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags.'
-      }));
+    assert({stderr}) {
+      expect(stderr).toMatch(/If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags./);
     }
   });
 
