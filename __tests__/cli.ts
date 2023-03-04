@@ -68,10 +68,10 @@ describe('error handling', () => {
           openAICompletionRequestFile: undefined,
           completionPromptFile: undefined,
           chatMessageFile: undefined,
-          completionPrompt: "my prompt",
+          completionPrompt: 'my prompt',
           chatMessage: undefined,
           openAIChatRequestConfig: undefined,
-          openAIChatRequestFile: undefined,
+          openAIChatRequestFile: undefined
         })
       ).toMatchInlineSnapshot(`
       {

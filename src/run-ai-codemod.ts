@@ -8,7 +8,8 @@ import {
   AIChatCodemod
 } from './types';
 import {
-  Configuration, OpenAIApi, CreateChatCompletionResponse, CreateChatCompletionRequest, CreateCompletionRequest, CreateCompletionResponse
+  Configuration, OpenAIApi, CreateChatCompletionResponse, CreateChatCompletionRequest, CreateCompletionRequest,
+  CreateCompletionResponse
 } from 'openai';
 import _ from 'lodash';
 import {defaultChatParams, defaultCompletionParams} from './default-completion-request-params';
