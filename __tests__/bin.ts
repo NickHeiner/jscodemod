@@ -1,7 +1,5 @@
 import {validateAndGetRequestParams} from '../src/cli';
-import fs from 'fs';
 import { CreateChatCompletionRequest } from 'openai';
-import * as loadJsonFile from 'load-json-file';
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -36,26 +34,23 @@ describe('error handling', () => {
         openAIChatRequestFile: undefined
       })).toThrow('If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags.');
     });
-    test('prompt is passed in both file and config', () => {
-      jest.spyOn(fs, 'readFileSync').mockImplementation((path, ...rest) => {
-        if (path === 'prompt.txt') {
-          return 'prompt dupe';
-        }
-        return fs.readFileSync(path, ...rest);
-      });
-
-      expect(() => validateAndGetRequestParams({
-        openAICompletionRequestConfig: JSON.stringify({
-          prompt: 'prompt dupe'
-        }),
+    test('default params are used', () => {
+      expect(validateAndGetRequestParams({
+        openAICompletionRequestConfig: undefined,
         openAICompletionRequestFile: undefined,
-        completionPromptFile: 'prompt.txt',
+        completionPromptFile: undefined,
         chatMessageFile: undefined,
-        completionPrompt: undefined,
+        completionPrompt: 'my prompt',
         chatMessage: undefined,
         openAIChatRequestConfig: undefined,
-        openAIChatRequestFile: undefined
-      })).toThrow('If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags.');
+        openAIChatRequestFile: undefined 
+      })).toMatchInlineSnapshot(`
+      {
+        "model": "text-davinci-003",
+        "prompt": "my prompt",
+        "temperature": 0,
+      }
+      `);
     });
   });
   describe('chat', () => {
@@ -68,42 +63,34 @@ describe('error handling', () => {
         completionPrompt: undefined,
         chatMessage: 'message',
         openAIChatRequestConfig: JSON.stringify({
-          message: 'message dupe'
-        }),
+          messages: [{role: 'user', content: 'message dupe'}],
+          model: 'my-model',
+        } satisfies CreateChatCompletionRequest),
         openAIChatRequestFile: undefined
       })).toThrow('If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags.');
     });
-    test.only('prompt is passed in both file and config', () => {
-      const originalReadFileSync = fs.readFileSync;
-      jest.spyOn(fs, 'readFileSync').mockImplementation((path, ...rest) => {
-        if (path === 'message.txt') {
-          return 'message dupe';
-        }
-        return originalReadFileSync(path, ...rest);
-      });
-
-      const originalLoadJsonFileSync = loadJsonFile.sync;
-      jest.spyOn(loadJsonFile, 'sync').mockImplementation(filePath => {
-        console.log(filePath);
-        if (filePath === 'chat-config.json') {
-          return {
-            messages: [{role: 'user', content: 'message'}],
-            model: 'my-model'
-          } as CreateChatCompletionRequest;
-        }
-        return originalLoadJsonFileSync(filePath);
-      })
-
-      expect(() => validateAndGetRequestParams({
+    test('default params are used', () => {
+      expect(validateAndGetRequestParams({
         openAICompletionRequestConfig: undefined,
         openAICompletionRequestFile: undefined,
         completionPromptFile: undefined,
-        chatMessageFile: 'message.txt',
+        chatMessageFile: undefined,
         completionPrompt: undefined,
-        chatMessage: undefined,
+        chatMessage: 'my message',
         openAIChatRequestConfig: undefined,
-        openAIChatRequestFile: 'chat-config.json'
-      })).toThrow('If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags.');
+        openAIChatRequestFile: undefined })
+      ).toMatchInlineSnapshot(`
+      {
+        "messages": [
+          {
+            "content": "my message",
+            "role": "user",
+          },
+        ],
+        "model": "gpt-3.5-turbo",
+        "temperature": 0,
+      }
+      `);
     });
   });
 });

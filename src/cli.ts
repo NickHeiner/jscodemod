@@ -239,7 +239,6 @@ export function validateAndGetRequestParams(
     const promptFromFile = promptFilePath && fs.readFileSync(promptFilePath, 'utf8');
     const promptFromFlags = promptFromFile || prompt;
 
-    console.log({loadJsonFileSync});
     let requestParams = defaultConfig;
     if (requestConfig) {
       requestParams = JSON.parse(requestConfig);
