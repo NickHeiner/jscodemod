@@ -287,7 +287,7 @@ async function jscodemod(
     const {openAIAPIRequestParams} = options;
     if (openAIAPIRequestParams) {
       let codemod: AICompletionCodemod | AIChatCodemod;
-      if ('prompt' in openAIAPIRequestParams && openAIAPIRequestParams.prompt && 
+      if ('prompt' in openAIAPIRequestParams && openAIAPIRequestParams.prompt &&
         typeof openAIAPIRequestParams.prompt === 'string') {
         const {prompt} = openAIAPIRequestParams;
         codemod = {
@@ -295,8 +295,7 @@ async function jscodemod(
           getGlobalCompletionRequestParams: () => openAIAPIRequestParams,
           getPrompt: source => buildFullPrompt(prompt, source)
         } satisfies AICompletionCodemod;
-      }
-      else if ('messages' in openAIAPIRequestParams) {
+      } else if ('messages' in openAIAPIRequestParams) {
         codemod = {
           name: 'codemod-generated-from-CLI-flags',
           getGlobalCompletionRequestParams: () => (openAIAPIRequestParams as CreateChatCompletionRequest),
@@ -306,7 +305,7 @@ async function jscodemod(
           ]
         } satisfies AIChatCodemod;
       } else {
-        const promptThatWasPassed = openAIAPIRequestParams.prompt || 
+        const promptThatWasPassed = openAIAPIRequestParams.prompt ||
           ('messages' in openAIAPIRequestParams && openAIAPIRequestParams.messages);
 
         /* eslint-disable max-len */

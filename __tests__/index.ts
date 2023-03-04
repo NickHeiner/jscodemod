@@ -431,6 +431,45 @@ describe('error handling', () => {
     }
   });
 
+  createTest({
+    testName: 'pass a built-in codemod that does not exist',
+    fixtureName: 'prepend-string',
+    spawnArgs: ['--builtInCodemod', 'does-not-exist', 'source/*.js'],
+    expectedExitCode: 1,
+    assert({stderr}) {
+      expect(stderr).toMatch(/Argument: builtInCodemod, Given: "does-not-exist", Choices: "js-to-ts"/);
+    }
+  });
+
+  createTest({
+    testName: 'pass a prompt, and a completion param that includes a prompt',
+    fixtureName: 'prepend-string',
+    spawnArgs: ['--completionPrompt', 'my-prompt', '--openAICompletionRequestConfig', '{"prompt": "my other prompt"}', 'source/*.js', '--json-output'],
+    expectedExitCode: 1,
+    assert(spawnResult) {
+      const jsonLogs = getJsonLogs(spawnResult.stdout);
+      expect(jsonLogs).toContainEqual(expect.objectContaining({
+        // eslint-disable-next-line max-len
+        msg: 'If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags.'
+      }));
+    }
+  });
+
+  createTest({
+    modifier: 'only',
+    testName: 'pass a prompt, and a completion param that includes a prompt',
+    fixtureName: 'prepend-string',
+    spawnArgs: ['--chatMessage', 'my-prompt', '--openAIChatRequestConfig', '{"messages": [{"role": "user", "contents": "my other prompt"}]}', 'source/*.js', '--json-output'],
+    expectedExitCode: 1,
+    assert(spawnResult) {
+      const jsonLogs = getJsonLogs(spawnResult.stdout);
+      expect(jsonLogs).toContainEqual(expect.objectContaining({
+        // eslint-disable-next-line max-len
+        msg: 'If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags.'
+      }));
+    }
+  });
+
   const createTestForThrowingError = (codemodName: string, codemodFileName: string) =>
     createTest({
       testName: `handles codemod ${codemodName} (${codemodFileName}) throwing an error`,
