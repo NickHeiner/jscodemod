@@ -1,9 +1,18 @@
 import {NTHLogger, LogMetadata} from 'nth-log';
 import {makePhaseError} from './make-phase-error';
-import {AICodemod, CodemodArgsWithSource, CodemodResult, AIPrompt} from './types';
-import {Configuration, OpenAIApi, CreateCompletionResponse, CreateCompletionRequest} from 'openai';
+import {
+  AICompletionCodemod,
+  CodemodArgsWithSource,
+  CodemodResult,
+  AIPrompt,
+  AIChatCodemod
+} from './types';
+import {
+  Configuration, OpenAIApi, CreateChatCompletionResponse, CreateChatCompletionRequest, CreateCompletionRequest,
+  CreateCompletionResponse
+} from 'openai';
 import _ from 'lodash';
-import defaultCompletionRequestParams from './default-completion-request-params';
+import {defaultChatParams, defaultCompletionParams} from './default-completion-request-params';
 import pDebounce from 'p-debounce';
 import {EventEmitter} from 'events';
 // @ts-expect-error
@@ -33,7 +42,8 @@ function getOrganizationId() {
 }
 
 function defaultExtractResultFromCompletion(
-  completion: CreateCompletionResponse['choices'][0]['text']
+  completion?: Exclude<CreateChatCompletionResponse['choices'][0]['message'], undefined>['content'] |
+    CreateCompletionResponse['choices'][0]['text']
 ) {
   if (!completion) {
     throw makePhaseError(
@@ -47,13 +57,15 @@ function defaultExtractResultFromCompletion(
 }
 
 function getCodemodTransformResult(
-  codemod: AICodemod,
-  response: CreateCompletionResponse
+  codemod: AICompletionCodemod | AIChatCodemod,
+  response: CreateChatCompletionResponse
 ): CodemodResult<unknown> {
   if (codemod.extractTransformationFromCompletion) {
     return codemod.extractTransformationFromCompletion(response);
   }
-  return defaultExtractResultFromCompletion(response.choices[0].text);
+  return defaultExtractResultFromCompletion(
+    response.choices[0].message?.content
+  );
 }
 
 interface OpenAIErrorResponse extends Error {
@@ -196,6 +208,38 @@ export class OpenAIAPIRateLimiter {
   }
 }
 
+function makeFileTooLargeError(
+  maxTokensPerRequest: number, tokensRequiredToTransformThisFile: number, filePath: string
+) {
+  const err = new Error(
+    /* eslint-disable max-len */
+    `Could not transform file "${filePath}". It is too large. To address this:
+    
+1. Use the codemod's \`ignore\` API to ignore it.
+2. Or split the file into smaller pieces.
+3. Or use a model with a larger token limit.
+
+You can read more about model limits at https://beta.openai.com/docs/models/overview. To see how many tokens your code is, see the tool at https://beta.openai.com/tokenizer. Your code must take up less than half the token limit of the model, because the token limit applies to both the input and the output, so we need to leave a headroom of 50% for the model to have room to respond.`
+  );
+  /* eslint-enable max-len */
+  Object.assign(err, {
+    maxTokensPerRequest,
+    tokensRequiredToTransformThisFile
+  });
+  return err;
+}
+
+/**
+ * This gives the model headroom to return a codemodded file that's longer than our input file.
+ * If you're expecting the model to transform your file by substantially increasing its length, you'll need this
+ * value to be higher.
+ */
+const tokenSafetyMargin = 1.1;
+
+function getEstimatedFullTokenCountNeededForRequestFromTokensInPrompt(tokensInPrompt: number) {
+  return tokensInPrompt * 2;
+}
+
 class OpenAIBatchProcessor {
   private openai: OpenAIApi;
   private completionParams: CreateCompletionRequest;
@@ -203,13 +247,6 @@ class OpenAIBatchProcessor {
   private log: NTHLogger;
   private successPerPromptEventEmitter = new EventEmitter();
   private failurePerPromptEventEmitter = new EventEmitter();
-
-  /**
-   * This gives the model headroom to return a codemodded file that's longer than our input file.
-   * If you're expecting the model to transform your file by substantially increasing its length, you'll need this
-   * value to be higher.
-   */
-  private readonly tokenSafetyMargin = 1.1;
 
   // I've set these params to have substantial headroom, because the OpenAI API gives rate limit responses well below
   // the actual limits published online, or as indicated in the API responses themselves.
@@ -242,57 +279,48 @@ class OpenAIBatchProcessor {
 
   private getTokensForBatch(batch: AIPrompt[]) {
     const tokensInBatch = _.sumBy(batch, prompt => countTokens(prompt));
-    return Math.ceil(tokensInBatch * this.tokenSafetyMargin);
-  }
-
-  private getEstimatedFullTokenCountNeededForRequestFromTokensInPrompt(tokensInPrompt: number) {
-    return tokensInPrompt * 2;
+    return Math.ceil(tokensInBatch * tokenSafetyMargin);
   }
 
   private getOverheadForBatch(tokensInBatch: number) {
-    return this.maxTokensPerRequest - this.getEstimatedFullTokenCountNeededForRequestFromTokensInPrompt(tokensInBatch);
+    return this.maxTokensPerRequest - getEstimatedFullTokenCountNeededForRequestFromTokensInPrompt(tokensInBatch);
   }
 
   private addPrompt(prompt: AIPrompt, filePath: string) {
     const log = this.log.child({method: 'OpenAIBatchProcessor#addPrompt'});
+
+    const addNewBatch = () => {
+      const newBatch = [prompt];
+      const tokensInNewBatch = this.getTokensForBatch(newBatch);
+      const overheadRemainingInNewestBatch =
+        this.getOverheadForBatch(tokensInNewBatch);
+      if (overheadRemainingInNewestBatch < 0) {
+        throw makeFileTooLargeError(this.maxTokensPerRequest, tokensInNewBatch, filePath);
+      } else {
+        this.batches.push([prompt]);
+      }
+    };
+
     log.trace('Adding prompt to batch');
     if (!this.batches.length) {
-      log.trace('Creating new batch because there are no batches');
-      this.batches.push([prompt]);
+      addNewBatch();
       return;
     }
     // This is safe because of the length check above.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const mostRecentBatch = _.last(this.batches)!;
     const tokensInMostRecentBatch = this.getTokensForBatch(mostRecentBatch);
-    const overheadRemainingInMostRecentBatch = this.getOverheadForBatch(tokensInMostRecentBatch);
+    const overheadRemainingInMostRecentBatch = this.getOverheadForBatch(
+      tokensInMostRecentBatch
+    );
     const tokensForLatestPrompt = countTokens(prompt);
-    log.trace({tokensForLatestPrompt, overheadRemainingInMostRecentBatch, tokensInMostRecentBatch});
+    log.trace({
+      tokensForLatestPrompt,
+      overheadRemainingInMostRecentBatch,
+      tokensInMostRecentBatch
+    });
     if (tokensForLatestPrompt > overheadRemainingInMostRecentBatch) {
-      const newBatch = [prompt];
-      const tokensInNewBatch = this.getTokensForBatch(newBatch);
-      const overheadRemainingInNewestBatch = this.getOverheadForBatch(tokensInNewBatch);
-      if (overheadRemainingInNewestBatch < 0) {
-        const err = new Error(
-          /* eslint-disable max-len */
-          `Could not transform file "${filePath}". It is too large. To address this:
-          
-  1. Use the codemod's \`ignore\` API to ignore it.
-  2. Or split the file into smaller pieces.
-  3. Or use a model with a larger token limit.
-
-  You can read more about model limits at https://beta.openai.com/docs/models/overview. To see how many tokens your code is, see the tool at https://beta.openai.com/tokenizer. Your code must take up less than half the token limit of the model, because the token limit applies to both the input and the output, so we need to leave a headroom of 50% for the model to have room to respond.`
-        );
-        /* eslint-enable max-len */
-        Object.assign(err, {
-          maxTokensPerRequest: this.maxTokensPerRequest,
-          tokensRequiredToTransformThisFile: tokensInNewBatch
-        });
-        throw err;
-      } else {
-        log.trace('Creating new batch');
-        this.batches.push([prompt]);
-      }
+      addNewBatch();
     } else {
       log.trace('Adding to existing batch');
       mostRecentBatch.push(prompt);
@@ -371,7 +399,7 @@ class OpenAIBatchProcessor {
     const maxTokens = this.maxTokensPerRequest - tokensInBatch;
     assert(maxTokens >= 0, 'Bug in jscodemod: maxTokens is negative');
 
-    const estimatedTokens = this.getEstimatedFullTokenCountNeededForRequestFromTokensInPrompt(tokensInBatch);
+    const estimatedTokens = getEstimatedFullTokenCountNeededForRequestFromTokensInPrompt(tokensInBatch);
 
     return {
       estimatedTokens,
@@ -409,9 +437,15 @@ class OpenAIBatchProcessor {
             /* eslint-enable max-len */
               openAIErrorResponse.response.data.error.message
                 .includes('That model is currently overloaded with other requests.'));
-          this.log[highlightRequestTimingLogic ? 'warn' : 'debug']({
-            openAIResponseMessage: openAIErrorResponse.response.data.error.message
-          });
+          if (rateLimitReached) {
+            this.log[highlightRequestTimingLogic ? 'warn' : 'debug']({
+              openAIResponseMessage: openAIErrorResponse.response.data.error.message
+            });
+          } else {
+            const error = new Error(openAIErrorResponse.response.data.error.message);
+            error.cause = e;
+            throw e;
+          }
         }
 
         if (rateLimitReached) {
@@ -431,15 +465,23 @@ const createOpenAIBatchProcessor = _.once(
   (log: NTHLogger, completionParams: CreateCompletionRequest) => new OpenAIBatchProcessor(log, completionParams)
 );
 
-const getCompletionRequestParams = _.once((codemod: AICodemod, codemodOpts: CodemodArgsWithSource) =>
-  codemod.getGlobalCompletionRequestParams
-    ? codemod.getGlobalCompletionRequestParams(_.omit(codemodOpts))
-    : defaultCompletionRequestParams);
+const getCompletionRequestParams = _.once(
+  (codemod: AICompletionCodemod, codemodOpts: CodemodArgsWithSource) =>
+    codemod.getGlobalAPIRequestParams
+      ? codemod.getGlobalAPIRequestParams(_.omit(codemodOpts))
+      : defaultCompletionParams
+);
 
-/**
- * There's a rare bug with this where the codemod runner exits silently.
- */
-export default async function runAICodemod(codemod: AICodemod, codemodOpts: CodemodArgsWithSource, log: NTHLogger) {
+const getChatRequestParams = _.once((codemod: AIChatCodemod, codemodOpts: CodemodArgsWithSource) =>
+  codemod.getGlobalAPIRequestParams
+    ? codemod.getGlobalAPIRequestParams(_.omit(codemodOpts))
+    : defaultChatParams);
+
+async function runAICompletionCodemod(
+  codemod: AICompletionCodemod,
+  codemodOpts: CodemodArgsWithSource,
+  log: NTHLogger
+) {
   let completionParams: CreateCompletionRequest;
   try {
     completionParams = await getCompletionRequestParams(codemod, codemodOpts);
@@ -452,7 +494,7 @@ export default async function runAICodemod(codemod: AICodemod, codemodOpts: Code
   }
   const openAIBatchProcessor = createOpenAIBatchProcessor(log, completionParams);
 
-  let prompt: string;
+  let prompt: AIPrompt;
   try {
     prompt = await codemod.getPrompt(codemodOpts.source);
   } catch (e: unknown) {
@@ -467,3 +509,70 @@ export default async function runAICodemod(codemod: AICodemod, codemodOpts: Code
 
   return getCodemodTransformResult(codemod, result);
 }
+
+async function getAIChatCodemodParams(codemod: AIChatCodemod, codemodOpts: CodemodArgsWithSource) {
+  let chatCompletionParams: CreateChatCompletionRequest;
+  try {
+    const paramsWithoutMessages = await getChatRequestParams(codemod, codemodOpts);
+    chatCompletionParams = {
+      ..._.cloneDeep(paramsWithoutMessages),
+      messages: []
+    };
+  } catch (e: unknown) {
+    throw makePhaseError(
+      e as Error,
+      'codemod.getChatRequestParams()',
+      "Check your getChatRequestParams() method for a bug, or add this file to your codemod's ignore list."
+    );
+  }
+
+  let messages: ReturnType<typeof codemod.getMessages>;
+  try {
+    messages = await codemod.getMessages(codemodOpts.source);
+  } catch (e: unknown) {
+    throw makePhaseError(
+      e as Error,
+      'codemod.getMessages()',
+      "Check your getMessages() method for a bug, or add this file to your codemod's ignore list."
+    );
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+  const maxTokens = chatCompletionParams.max_tokens ?? 4096;
+  chatCompletionParams.messages.push(...messages);
+
+  const tokensForMessages = _(messages).map('content').sumBy(content => countTokens(content)) * tokenSafetyMargin;
+  const tokensNeeded = getEstimatedFullTokenCountNeededForRequestFromTokensInPrompt(tokensForMessages);
+  if (tokensNeeded > maxTokens) {
+    throw makeFileTooLargeError(maxTokens, tokensNeeded, codemodOpts.filePath);
+  }
+  return chatCompletionParams;
+}
+
+async function runAIChatCodemod(codemod: AIChatCodemod, codemodOpts: CodemodArgsWithSource) {
+  const chatCompletionParams = await getAIChatCodemodParams(codemod, codemodOpts);
+
+  const configuration = new Configuration({
+    organization: getOrganizationId(),
+    apiKey: getAPIKey()
+  });
+  const openai = new OpenAIApi(configuration);
+  const completion = await openai.createChatCompletion(chatCompletionParams);
+
+  return getCodemodTransformResult(codemod, completion.data);
+}
+
+export default function runAICodemod(
+  codemod: AICompletionCodemod | AIChatCodemod,
+  codemodOpts: CodemodArgsWithSource,
+  log: NTHLogger
+) {
+  if ('getMessages' in codemod) {
+    return runAIChatCodemod(codemod, codemodOpts);
+  }
+  return runAICompletionCodemod(codemod, codemodOpts, log);
+}
+
+export const __test = {
+  getAIChatCodemodParams
+};

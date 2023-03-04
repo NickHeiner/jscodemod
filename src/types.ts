@@ -1,13 +1,20 @@
 import type {Promisable} from 'type-fest';
 import type {Options as RecastOptions} from 'recast';
-import type {CreateCompletionRequest, CreateCompletionResponse} from 'openai';
+import type {
+  CreateChatCompletionRequest,
+  CreateCompletionRequest,
+  CreateCompletionResponse,
+  CreateChatCompletionResponse
+} from 'openai';
 
 import {PluginItem, TransformOptions} from '@babel/core';
 
 import jscodemod, {Options} from './';
 
 export type TransformedCode = string | undefined | null;
-export type CodemodResult<TransformResultMeta> = TransformedCode | {code: TransformedCode, meta: TransformResultMeta};
+export type CodemodResult<TransformResultMeta> =
+  | TransformedCode
+  | { code: TransformedCode; meta: TransformResultMeta };
 
 export type BaseCodemodArgs<ParsedArgs = unknown> = {
   /**
@@ -19,28 +26,31 @@ export type BaseCodemodArgs<ParsedArgs = unknown> = {
    * Parsed arguments returned by `yourCodemod.parseArgs()`, if any.
    */
   commandLineArgs?: ParsedArgs;
-}
+};
 
-export interface CodemodArgsWithSource<ParsedArgs = unknown> extends BaseCodemodArgs<ParsedArgs> {
+export interface CodemodArgsWithSource<ParsedArgs = unknown>
+  extends BaseCodemodArgs<ParsedArgs> {
   /**
    * the contents of the file to transform.
    */
   source: string;
 }
 
-export type GetPluginResult = PluginItem | {
-  /**
-   * If true, use Recast to maintain code formatting. If false, just take Babel's generated output directly.
-   *
-   * Most of the time, you'll want this, because Babel's code generator doesn't make any attempt to match the input
-   * styling. However, Recast sometimes introduces oddities of its own, as noted in
-   * [the docs](https://github.com/NickHeiner/jscodemod/blob/master/docs/gotchas.md#getplugin-recast-issues).
-   *
-   * Defaults to true.
-   */
-  useRecast?: boolean;
-  plugin: PluginItem;
-};
+export type GetPluginResult =
+  | PluginItem
+  | {
+      /**
+       * If true, use Recast to maintain code formatting. If false, just take Babel's generated output directly.
+       *
+       * Most of the time, you'll want this, because Babel's code generator doesn't make any attempt to match the input
+       * styling. However, Recast sometimes introduces oddities of its own, as noted in
+       * [the docs](https://github.com/NickHeiner/jscodemod/blob/master/docs/gotchas.md#getplugin-recast-issues).
+       *
+       * Defaults to true.
+       */
+      useRecast?: boolean;
+      plugin: PluginItem;
+    };
 
 interface BaseCodemod<ParsedArgs = unknown, TransformResultMeta = unknown> {
   /**
@@ -91,7 +101,7 @@ interface BaseCodemod<ParsedArgs = unknown, TransformResultMeta = unknown> {
    *
    * @param rawCommandLineArgs a string of passed arguments, like "--args --to --pass-through"
    */
-  parseArgs?: (rawCommandLineArgs?: string[]) => Promisable<ParsedArgs>
+  parseArgs?: (rawCommandLineArgs?: string[]) => Promisable<ParsedArgs>;
 
   /**
    * After all transforms have been run, this function will be invoked once with an array of files there were modified.
@@ -104,20 +114,23 @@ interface BaseCodemod<ParsedArgs = unknown, TransformResultMeta = unknown> {
    *                       opts.jscodemod(), `resetDirtyInputFiles` will default to true.
    * @param opts.codemodArgs The codemod args returned by codemod.parseArgs(), if that method is defined.
    */
-  postProcess?: (modifiedFiles: string[], opts: {
-    codemodArgs: ParsedArgs,
+  postProcess?: (
+    modifiedFiles: string[],
+    opts: {
+      codemodArgs: ParsedArgs;
 
-    /**
-     * A map from absolute file path to any TransformResultMeta that was returned by the transform
-     * function. If no TransformResultMeta was returned for a file, then `resultMeta.get(filePath)`
-     * will be undefined.
-     */
-    resultMeta: Map<string, TransformResultMeta>,
-    jscodemod(
-      pathToCodemod: string,
-      options: Partial<Options>
-    ): ReturnType<typeof jscodemod>
-  }) => void | Promise<unknown>;
+      /**
+       * A map from absolute file path to any TransformResultMeta that was returned by the transform
+       * function. If no TransformResultMeta was returned for a file, then `resultMeta.get(filePath)`
+       * will be undefined.
+       */
+      resultMeta: Map<string, TransformResultMeta>;
+      jscodemod(
+        pathToCodemod: string,
+        options: Partial<Options>
+      ): ReturnType<typeof jscodemod>;
+    }
+  ) => void | Promise<unknown>;
 }
 
 /**
@@ -128,8 +141,10 @@ interface BaseCodemod<ParsedArgs = unknown, TransformResultMeta = unknown> {
  * file, and jscodemod actually writes the files. transformAll() just takes a set of files, and does whatever it wants
  * to do. So, if you want files to be written, with this codemod, you do it yourself.
  */
-export interface LowLevelBulkCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
-  extends BaseCodemod<ParsedArgs, TransformResultMeta> {
+export interface LowLevelBulkCodemod<
+  ParsedArgs = unknown,
+  TransformResultMeta = unknown
+> extends BaseCodemod<ParsedArgs, TransformResultMeta> {
   /**
    * Transform every file at once.
    *
@@ -139,29 +154,34 @@ export interface LowLevelBulkCodemod<ParsedArgs = unknown, TransformResultMeta =
    * @return A list of the modified files.
    */
   transformAll(opts: {
-    fileNames: string[],
+    fileNames: string[];
     commandLineArgs?: ParsedArgs;
-  }): Promisable<string[]>,
+  }): Promisable<string[]>;
 }
 
 /**
  * A simple codemod that simply takes a file and returns a result indicating how it should be transformed. Use this when
  * the other higher-level codemod types don't fit your usecase.
  */
-export interface LowLevelCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
-  extends BaseCodemod<ParsedArgs, TransformResultMeta> {
+export interface LowLevelCodemod<
+  ParsedArgs = unknown,
+  TransformResultMeta = unknown
+> extends BaseCodemod<ParsedArgs, TransformResultMeta> {
   /**
    * Transform a single file. Return null or undefined to indicate that the file should not be modified.
    */
-  transform(opts: CodemodArgsWithSource<ParsedArgs>): Promisable<CodemodResult<TransformResultMeta>>;
+  transform(
+    opts: CodemodArgsWithSource<ParsedArgs>
+  ): Promisable<CodemodResult<TransformResultMeta>>;
 }
 
 /**
  * A codemod that uses a Babel plugin to indicate how the code will be transformed.
  */
-export interface BabelCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
-  extends BaseCodemod<ParsedArgs, TransformResultMeta> {
-
+export interface BabelCodemod<
+  ParsedArgs = unknown,
+  TransformResultMeta = unknown
+> extends BaseCodemod<ParsedArgs, TransformResultMeta> {
   /**
    * The set of babel presets needed to compile your code, like `@babel/preset-env`.
    */
@@ -233,16 +253,18 @@ export interface BabelCodemod<ParsedArgs = unknown, TransformResultMeta = unknow
    * @param opts.filePath the path to the file to transform.
    * @param opts.commandLineArgs parsed arguments returned by `yourCodemod.parseArgs()`, if any.
    */
-  getPlugin: (opts: BaseCodemodArgs<ParsedArgs> & {
-    /** Call this if you plan to call astDidChange(). */
-    willNotifyOnAstChange: () => void;
+  getPlugin: (
+    opts: BaseCodemodArgs<ParsedArgs> & {
+      /** Call this if you plan to call astDidChange(). */
+      willNotifyOnAstChange: () => void;
 
-    /** Call this if you modified the AST, and you previously called willNotifyOnAstChange(). */
-    astDidChange: () => void;
+      /** Call this if you modified the AST, and you previously called willNotifyOnAstChange(). */
+      astDidChange: () => void;
 
-    /** Set a meta result to be associated with this file. This value will be passed to the postProcess hook. */
-    setMetaResult: (meta: TransformResultMeta) => void;
-  }) => Promisable<GetPluginResult>;
+      /** Set a meta result to be associated with this file. This value will be passed to the postProcess hook. */
+      setMetaResult: (meta: TransformResultMeta) => void;
+    }
+  ) => Promisable<GetPluginResult>;
 }
 
 export type AIPrompt = string;
@@ -268,41 +290,99 @@ export type AIPrompt = string;
  * ## Requirements
  * * You need an [OpenAI API key](https://beta.openai.com/overview).
  */
-export interface AICodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
-  extends BaseCodemod<ParsedArgs, TransformResultMeta> {
+export interface BaseAICodemod<
+  RequestParams,
+  Response,
+  ParsedArgs = unknown,
+  TransformResultMeta = unknown
+> extends BaseCodemod<ParsedArgs, TransformResultMeta> {
+  /**
+   * If you omit this method, the values default to those set in `./default-completion-request-params.ts`.
+   *
+   * You can't specify max_tokens. That will be set automatically to give the model room to write as much as it wants
+   * in response to your input.
+   *
+   * @see https://beta.openai.com/docs/api-reference/completions/create
+   * @returns Parameters for a call to OpenAI's API.
+   */
+  getGlobalAPIRequestParams?: (
+    opts: BaseCodemodArgs<ParsedArgs>
+  ) => Promisable<RequestParams>;
 
-    /**
-     * If you omit this method, the values default to those set in `./default-completion-request-params.ts`.
-     *
-     * You can't specify max_tokens. That will be set automatically to give the model room to write as much as it wants
-     * in response to your input.
-     *
-     * @see https://beta.openai.com/docs/api-reference/completions/create
-     * @returns Parameters for a call to OpenAI's API.
-     */
-    getGlobalCompletionRequestParams?: (opts: BaseCodemodArgs<ParsedArgs>)
-      => Promisable<Omit<CreateCompletionRequest, 'max_tokens'>>;
+  /**
+   * Optional. Only add this if you're getting bad results without it.
+   *
+   * Given a response from the AI, return a result indicating how your file should be transformed.
+   *
+   * In particular, if you pass an input param that causes the model to return multiple results, you can use this
+   * method to pick which result you want.
+   *
+   * Sometimes, the AI will return extra content at the end of your transformed code. If that happens, this function
+   * gives you a chance to cut it out. But before you try that, it's probably better to tweak your prompt to be more
+   * specific about what you want.
+   */
+  extractTransformationFromCompletion?: (
+    response: Response
+  ) => CodemodResult<TransformResultMeta>;
 
-    getPrompt: (source: string) => Promisable<AIPrompt>;
-
-    /**
-     * Optional. Only add this if you're getting bad results without it.
-     *
-     * Given a response from the AI, return a result indicating how your file should be transformed.
-     *
-     * In particular, if you pass an input param that causes the model to return multiple results, you can use this
-     * method to pick which result you want.
-     *
-     * Sometimes, the AI will return extra content at the end of your transformed code. If that happens, this function
-     * gives you a chance to cut it out. But before you try that, it's probably better to tweak your prompt to be more
-     * specific about what you want.
-     */
-    extractTransformationFromCompletion?: (response: CreateCompletionResponse) => CodemodResult<TransformResultMeta>
-
-    // TODO: Specify the types such that extractTransformationFromCompletion is required when the prompt is a string.
+  // TODO: Specify the types such that extractTransformationFromCompletion is required when the prompt is a string.
 }
 
-export type CodemodThatUsesTheRunner = BabelCodemod | LowLevelCodemod | AICodemod;
+/**
+ * Transform a file using ChatGPT.
+ *
+ * Of the AI codemod methods, this one has experimentally given me the best results.
+ *
+ * @see https://platform.openai.com/docs/guides/chat
+ * @see BaseAICodemod
+ */
+export interface AIChatCodemod<
+  ParsedArgs = unknown,
+  TransformResultMeta = unknown
+> extends BaseAICodemod<
+    CreateChatCompletionRequest,
+    CreateChatCompletionResponse,
+    ParsedArgs,
+    TransformResultMeta
+  > {
+  /**
+   * Get the messages to pass to chatGPT. See
+   * [the OpenAI docs](https://platform.openai.com/docs/guides/chat/chat-vs-completions) for details about what you
+   * want to pass here.
+   *
+   * @param source the source code to transform
+   */
+  getMessages: (
+    source: string
+  ) => Promisable<CreateChatCompletionRequest['messages']>;
+}
+
+/**
+ * Transform a file using AI, and one of OpenAI's completion models (e.g. text-davinci-002).
+ *
+ * In my experiments, this model has given me worse results than AIChatCodemod.
+ *
+ * @see https://platform.openai.com/docs/guides/code
+ * @see https://platform.openai.com/docs/guides/completion
+ * @see BaseAICodemod
+ */
+export interface AICompletionCodemod<
+  ParsedArgs = unknown,
+  TransformResultMeta = unknown
+> extends BaseAICodemod<
+    Omit<CreateCompletionRequest, 'max_tokens'>,
+    CreateCompletionResponse,
+    ParsedArgs,
+    TransformResultMeta
+  > {
+  getPrompt: (source: string) => Promisable<AIPrompt>;
+}
+
+export type CodemodThatUsesTheRunner =
+  | BabelCodemod
+  | LowLevelCodemod
+  | AICompletionCodemod
+  | AIChatCodemod;
 export type Codemod = CodemodThatUsesTheRunner | LowLevelBulkCodemod;
 
 // The `any` here is intentional.

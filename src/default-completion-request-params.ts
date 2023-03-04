@@ -1,6 +1,11 @@
-import {CreateCompletionRequest} from 'openai';
+import {CreateCompletionRequest, CreateChatCompletionRequest} from 'openai';
 
-export default {
-  model: 'text-davinci-003',
+export const defaultCompletionParams: Omit<CreateCompletionRequest, 'prompt'> = {
+  model: 'text-davinci-002',
   temperature: 0
-} satisfies CreateCompletionRequest;
+};
+
+export const defaultChatParams: Omit<CreateChatCompletionRequest, 'messages'> = {
+  model: 'gpt-3.5-turbo',
+  temperature: 0
+};

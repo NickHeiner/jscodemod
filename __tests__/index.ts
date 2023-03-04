@@ -100,6 +100,10 @@ function createTest({
         () => execa(binPath, spawnArgs, {cwd: codemodSpawnCwd, env: processOverrides})
       );
     } catch (error) {
+      /**
+       * TODO: there are some circumstances, like spawn resulting in EACCESS, where we actually do want to throw.
+       * In that case, the test is broken.
+       */
       spawnResult = error;
     }
 
@@ -165,12 +169,12 @@ const constantizeLogEntryForTest = logEntry => {
   return nthLogConstantizeLogEntryForTest(logEntry);
 };
 
-const getJsonLogs = (stdout: string) => stdout.split('\n').map(line => {
+const getJsonLogs = (stdout: string) => stdout.split('\n').map((line, index, allLines) => {
   let parsedLine;
   try {
     parsedLine = parseJson(line);
   } catch (e) {
-    log.error({line}, 'Could not parse line');
+    log.error({line, allLines}, 'Could not parse line');
     throw e;
   }
   const logLine = constantizeLogEntryForTest(parsedLine);
@@ -179,10 +183,6 @@ const getJsonLogs = (stdout: string) => stdout.split('\n').map(line => {
   }
   return logLine;
 });
-
-// I don't think extracting this to a var would help readability.
-// eslint-disable-next-line no-magic-numbers
-jest.setTimeout(15 * 1000);
 
 const gitRootFilePath = gitRoot(__dirname);
 
@@ -323,20 +323,6 @@ describe('happy path', () => {
     snapshot: true
   });
 
-  createTest({
-    testName: 'Omitting rootDir from tsconfig causes an error',
-    fixtureName: 'arrow-function-inline-return',
-    spawnArgs: [
-      '--codemod', path.join('codemod', 'index.ts'), '--tsconfig', 'tsconfig-no-root-dir.json', '--jsonOutput', 'source'
-    ],
-    expectedExitCode: 1,
-    snapshot: true,
-    assert(spawnResult, testDir) {
-      const sanitizedStdout = getJsonLogs(sanitizeOutput(spawnResult, testDir));
-      expect(sanitizedStdout).toMatchSnapshot();
-    }
-  });
-
   // This test also verifies that, even if the babel plugin changes the AST, if it doesn't call astDidChange(),
   // then the file will not be updated.
   createTest({
@@ -445,6 +431,58 @@ describe('error handling', () => {
     }
   });
 
+  createTest({
+    testName: 'pass a built-in codemod that does not exist',
+    fixtureName: 'prepend-string',
+    spawnArgs: ['--builtInCodemod', 'does-not-exist', 'source/*.js'],
+    expectedExitCode: 1,
+    assert({stderr}) {
+      expect(stderr).toMatch(/Argument: builtInCodemod, Given: "does-not-exist", Choices: "js-to-ts"/);
+    }
+  });
+
+  createTest({
+    testName: 'pass a prompt, and a completion param that includes a prompt',
+    fixtureName: 'prepend-string',
+    spawnArgs: ['--completionPrompt', 'my-prompt', '--openAICompletionRequestConfig', '{"prompt": "my other prompt"}',
+      'source/*.js', '--json-output'],
+    expectedExitCode: 1,
+    assert({stderr}) {
+      expect(stderr).toMatch(
+        // eslint-disable-next-line max-len
+        /If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags./
+      );
+    }
+  });
+
+  createTest({
+    testName: 'pass a prompt, and a chat param that includes a prompt',
+    fixtureName: 'prepend-string',
+    spawnArgs: ['--chatMessage', 'my-prompt', '--openAIChatRequestConfig',
+      '{"messages": [{"role": "user", "contents": "my other prompt"}]}', 'source/*.js', '--json-output'],
+    expectedExitCode: 1,
+    assert({stderr}) {
+      expect(stderr).toMatch(
+        // eslint-disable-next-line max-len
+        /If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags./
+      );
+    }
+  });
+
+  createTest({
+    testName: 'pass a prompt, and a chat param JSON file that includes a prompt',
+    fixtureName: 'ai-validation',
+    spawnArgs: ['--chatMessage', 'my-prompt', '--openAIChatRequestFile', 'chat-config.json', 'source.js',
+      '--json-output', '--dry'],
+    expectedExitCode: 1,
+    assert({stderr}) {
+      expect(stderr).toMatch(
+        // eslint-disable-next-line max-len
+        /If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags./
+      );
+    }
+  });
+
   const createTestForThrowingError = (codemodName: string, codemodFileName: string) =>
     createTest({
       testName: `handles codemod ${codemodName} (${codemodFileName}) throwing an error`,
@@ -478,6 +516,20 @@ describe('error handling', () => {
 });
 
 describe('TS compilation flags', () => {
+  createTest({
+    testName: 'Omitting rootDir from tsconfig causes an error',
+    fixtureName: 'arrow-function-inline-return',
+    spawnArgs: [
+      '--codemod', path.join('codemod', 'index.ts'), '--tsconfig', 'tsconfig-no-root-dir.json', '--jsonOutput', 'source'
+    ],
+    expectedExitCode: 1,
+    snapshot: true,
+    assert(spawnResult, testDir) {
+      const sanitizedStdout = getJsonLogs(sanitizeOutput(spawnResult, testDir));
+      expect(sanitizedStdout).toMatchSnapshot();
+    }
+  });
+
   createTest({
     testName: 'Path to TSC is not specified, and no TSC can be found.',
     fixtureName: 'no-tsc',

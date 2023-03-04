@@ -302,7 +302,7 @@ export default async function runCodemodOnFile(
     if ('transform' in codemod) {
       return runLowLevelCodemod(codemod, codemodOpts);
     }
-    if ('getPrompt' in codemod) {
+    if ('getPrompt' in codemod || 'getMessages' in codemod) {
       return runAICodemod(codemod, codemodOpts, log);
     }
     return runBabelCodemod(codemod, originalFileContents, log, codemodOpts, sourceCodeFile);
@@ -320,6 +320,10 @@ export default async function runCodemodOnFile(
     const errorMessageSuffix = 'phase' in error ? ` during ${error.phase}. ${error.suggestion}` : '';
 
     log.error({
+      /**
+       * There may be more keys on `e` that we wish to display. I'm not sure why I limited it to this known list.
+       * When I added `Object.keys(e)`, I saw other issues, but I'm not sure they're related.
+       */
       error: _.pick(e, 'message', 'stack', 'phase')
     }, `File ${sourceCodeFile}: Codemod "${codemodName}" threw an error${errorMessageSuffix}`);
   }

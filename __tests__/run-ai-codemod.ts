@@ -1,5 +1,7 @@
-import {OpenAIAPIRateLimiter} from '../src/run-ai-codemod';
+import {OpenAIAPIRateLimiter, __test} from '../src/run-ai-codemod';
 import createLog from 'nth-log';
+import {AIChatCodemod} from '../build';
+import {CreateChatCompletionRequest} from 'openai';
 
 const log = createLog({name: 'test'});
 
@@ -100,5 +102,28 @@ describe('OpenAIAPIRateLimiter', () => {
     // Validate that the retry occurred.
     expect(makeRequest).toHaveBeenCalledTimes(2);
     makeRequest.mockClear();
+  });
+});
+
+describe('getAIChatCodemodParams', () => {
+  test('does not mutate messages when called multiple times', async () => {
+    const codemod: AIChatCodemod = {
+      getMessages: source => [
+        {role: 'user', content: source}
+      ],
+      getGlobalAPIRequestParams: () => ({
+        model: 'my-model',
+        messages: []
+      } as CreateChatCompletionRequest)
+    };
+
+    __test.getAIChatCodemodParams(codemod, {source: 'file source code', filePath: 'file.js'});
+    const secondResult = await __test.getAIChatCodemodParams(
+      codemod, {source: 'file source code', filePath: 'file.js'}
+    );
+
+    expect(secondResult.messages).toEqual([
+      {role: 'user', content: 'file source code'}
+    ]);
   });
 });

@@ -1,0 +1,5 @@
+{
+  "model": "gpt-3.5-turbo",
+  "messages": [{"role": "user", "content": "asdf"}],
+  "temperature": 0.9  
+}

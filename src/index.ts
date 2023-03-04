@@ -12,7 +12,7 @@ import {cyan} from 'ansi-colors';
 import ora from 'ora';
 import createLog from 'nth-log';
 import compileTS from './compile-ts';
-import type {AICodemod, Codemod, TODO} from './types';
+import type {AIChatCodemod, AICompletionCodemod, Codemod, TODO} from './types';
 import execBigCommand from './exec-big-command';
 import getGitRoot from './get-git-root';
 import loadCodemod from './load-codemod';
@@ -23,7 +23,7 @@ import noOpLogger from './no-op-logger';
 import {promises as fs} from 'fs';
 import {EOL} from 'os';
 import prettyMs from 'pretty-ms';
-import type {CreateCompletionRequest} from 'openai';
+import type {CreateChatCompletionRequest, CreateCompletionRequest} from 'openai';
 import buildFullPrompt from './build-full-prompt';
 
 export {default as getTransformedContentsOfSingleFile} from './get-transformed-contents-of-single-file';
@@ -35,7 +35,18 @@ export * from './types';
  */
 export type TSOptions = {
   tsconfig?: string;
-  tsOutDir?: string
+  tsOutDir?: string;
+  /**
+   * If true, when you pass a TS codemod, JSCodemod will compile it.
+   *
+   * When false, JSCodemod will `require()` the TS codemod directly.
+   *
+   * You'd want to pass `false` if you were calling JSCodemod from a context where `require()`ing TS directly works. For
+   * instance, if you have ts-node enabled.
+   *
+   * Defaults to true.
+   */
+  compileTs?: boolean;
   tsc?: string;
   log: ReturnType<typeof createLog>;
 }
@@ -53,7 +64,7 @@ export type BaseOptions = {
   doPostProcess?: boolean;
   respectIgnores?: boolean;
   piscinaLowerBoundInclusive?: number;
-  createCompletionRequestParams?: CreateCompletionRequest
+  openAIAPIRequestParams?: CreateCompletionRequest | CreateChatCompletionRequest;
 }
 & ({
   inputFileList: string;
@@ -66,7 +77,7 @@ export type BaseOptions = {
 export type Options = Omit<TSOptions, 'log'> & Partial<Pick<TSOptions, 'log'>> & BaseOptions;
 
 type FalseyDefaultOptions = 'dry' | 'porcelain' | 'codemodArgs' | 'resetDirtyInputFiles' | 'jsonOutput'
-  | 'piscinaLowerBoundInclusive' | 'inputFileList' | 'inputFilesPatterns' | 'createCompletionRequestParams';
+  | 'piscinaLowerBoundInclusive' | 'inputFileList' | 'inputFilesPatterns' | 'openAIAPIRequestParams';
 export type InternalOptions = TSOptions
   & Pick<BaseOptions, FalseyDefaultOptions>
   & Required<Omit<BaseOptions, FalseyDefaultOptions>>;
@@ -74,7 +85,7 @@ export type InternalOptions = TSOptions
 // The rule is too broad.
 // eslint-disable-next-line require-await
 async function getCodemodPath(pathToCodemod: string, options: TSOptions) {
-  if (pathIsTS(pathToCodemod)) {
+  if (pathIsTS(pathToCodemod) && options.compileTs) {
     return compileTS(pathToCodemod, options);
   }
 
@@ -268,37 +279,53 @@ async function jscodemod(
     doPostProcess: true,
     writeFiles: true,
     respectIgnores: true,
+    compileTs: true,
     ...passedOptions
   };
 
   async function getCodemod() {
-    const {createCompletionRequestParams} = options;
-    if (createCompletionRequestParams) {
-      if (typeof createCompletionRequestParams.prompt !== 'string') {
+    const {openAIAPIRequestParams} = options;
+    if (openAIAPIRequestParams) {
+      let codemod: AICompletionCodemod | AIChatCodemod;
+      if ('prompt' in openAIAPIRequestParams && openAIAPIRequestParams.prompt &&
+        typeof openAIAPIRequestParams.prompt === 'string') {
+        const {prompt} = openAIAPIRequestParams;
+        codemod = {
+          name: 'codemod-generated-from-CLI-flags',
+          getGlobalAPIRequestParams: () => openAIAPIRequestParams,
+          getPrompt: source => buildFullPrompt(prompt, source)
+        } satisfies AICompletionCodemod;
+      } else if ('messages' in openAIAPIRequestParams) {
+        codemod = {
+          name: 'codemod-generated-from-CLI-flags',
+          getGlobalAPIRequestParams: () =>
+            openAIAPIRequestParams as CreateChatCompletionRequest,
+          getMessages: source => [
+            {role: 'user', content: source},
+            ...(openAIAPIRequestParams as CreateChatCompletionRequest).messages
+          ]
+        } satisfies AIChatCodemod;
+      } else {
+        const promptThatWasPassed = openAIAPIRequestParams.prompt ||
+          ('messages' in openAIAPIRequestParams && openAIAPIRequestParams.messages);
+
         /* eslint-disable max-len */
         throw new Error(`To run an AI codemod, you can do one of two things:
-1. Pass \`createCompletionRequestParams\`
-2. Pass a path to a codemod that implements the AICodemod type.
+  1. Pass \`openAIAPIRequestParams\` or \`openAIChatRequestParams\`.
+  2. Pass a path to a codemod that implements the AICodemod type.
 
-In case (1), your prompt must be a string. However, your prompt was a "${typeof createCompletionRequestParams.prompt}". If you want a non-string prompt, use option (2) listed above.`);
+  In case (1), your prompt must be a string. However, your prompt was "${promptThatWasPassed}". If you want a non-string prompt, use option (2) listed above.`);
         /* eslint-enable max-len */
       }
-      const {prompt} = createCompletionRequestParams;
-
-      const codemod: AICodemod = {
-        name: 'codemod-generated-from-CLI-flags',
-        getGlobalCompletionRequestParams: () => createCompletionRequestParams,
-        getPrompt: source => buildFullPrompt(prompt, source)
-      };
 
       return {codemod, codemodName: codemod.name, codemodPath: null};
     }
     if (!pathToCodemod) {
-      throw new Error('You must pass either `createCompletionRequestParams`, or a path to a codemod.');
+      throw new Error('You must pass either `openAIAPIRequestParams`, or a path to a codemod.');
     }
 
     const codemodPath = await getCodemodPath(pathToCodemod, {
-      ..._.pick(options, 'tsconfig', 'tsOutDir', 'tsc'),
+      ..._.pick(options, 'tsconfig', 'tsOutDir', 'tsc', 'compileTs'),
       log
     });
     const codemod = loadCodemod(codemodPath);
@@ -414,7 +441,7 @@ In case (1), your prompt must be a string. However, your prompt was a "${typeof 
     await resetDirtyInputFiles(gitRoot, filesToModify, log);
   }
 
-  const piscinaLowerBoundInclusive = passedOptions.createCompletionRequestParams
+  const piscinaLowerBoundInclusive = passedOptions.openAIAPIRequestParams
     ? Infinity : passedOptions.piscinaLowerBoundInclusive;
   const transformResults = await transformCode(codemod, log, codemodPath, filesToModify,
     piscinaLowerBoundInclusive,
