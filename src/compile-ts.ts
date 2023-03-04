@@ -49,9 +49,7 @@ async function getTSOutDir(specifiedTSOutDir?: string): Promise<string> {
     return specifiedTSOutDir;
   }
 
-  return tempy.directory({
-    prefix: `${packageJson.name.replace('/', '-')}-ts-out-dir`,
-  });
+  return tempy.directory({ prefix: `${packageJson.name.replace('/', '-')}-ts-out-dir` });
 }
 
 async function getTSConfigPath(pathToCodemod: string, specifiedTSConfig?: string) {
@@ -60,9 +58,7 @@ async function getTSConfigPath(pathToCodemod: string, specifiedTSConfig?: string
   }
 
   const codemodDir = path.dirname(pathToCodemod);
-  const { foundPath, checkedPaths } = await findUpDetailed('tsconfig.json', {
-    cwd: codemodDir,
-  });
+  const { foundPath, checkedPaths } = await findUpDetailed('tsconfig.json', { cwd: codemodDir });
 
   if (!foundPath) {
     const err = new Error(
@@ -133,9 +129,7 @@ async function compileTS(
   // If this var is not defined, then it means that the codemod had no node_modules. This seems very unlikely, but I
   // suppose it's possible.
   if (originalNodeModules) {
-    await execa('ln', ['-s', originalNodeModules, 'node_modules'], {
-      cwd: tsOutDir,
-    });
+    await execa('ln', ['-s', originalNodeModules, 'node_modules'], { cwd: tsOutDir });
   }
   log.debug({ originalNodeModules }, 'Searched for original node_modules');
 

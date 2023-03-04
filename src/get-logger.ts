@@ -4,9 +4,7 @@ import fs from 'fs';
 import { TODO } from './types';
 
 const getLogger = _.once((opts?: { jsonOutput: boolean; porcelain: boolean; name?: string }) => {
-  const logOpts: { name: string; stream?: TODO } = {
-    name: 'jscodemod-coordinator',
-  };
+  const logOpts: { name: string; stream?: TODO } = { name: 'jscodemod-coordinator' };
   if (opts?.jsonOutput) {
     logOpts.stream = process.stdout;
   }

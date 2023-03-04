@@ -30,6 +30,7 @@ function getAPIKey() {
     return process.env.OPENAI_API_KEY;
   }
   throw new Error(
+    // eslint-disable-next-line max-len
     'Env var `OPENAI_API_KEY` was not set. You must set it to your API key if you want to use an AI codemod. You can create an API key on https://beta.openai.com/account/api-keys.'
   );
 }
@@ -39,6 +40,7 @@ function getOrganizationId() {
     return process.env.OPENAI_ORG_ID;
   }
   throw new Error(
+    // eslint-disable-next-line max-len
     'Env var `OPENAI_ORG_ID` was not set. You must set it to your org ID if you want to use an AI codemod. You can find it on https://beta.openai.com/account/org-settings.'
   );
 }
@@ -52,6 +54,7 @@ function defaultExtractResultFromCompletion(
     throw makePhaseError(
       new Error('The AI returned a blank response.'),
       'extracting the transformed code from the completion',
+      // eslint-disable-next-line max-len
       "Implement your own extractTransformationFromCompletion method, or repeat this call and see if you randomly get an output that doesn't trigger this issue."
     );
   }
@@ -101,10 +104,7 @@ function getRetryTimeoutMs(attempt: number) {
   );
 }
 
-type OpenAIAPIRateLimitedRequest = () => Promise<{
-  tokensUsed: number;
-  rateLimitReached: boolean;
-}>;
+type OpenAIAPIRateLimitedRequest = () => Promise<{ tokensUsed: number; rateLimitReached: boolean }>;
 /**
  * This assumes that, at the beginning of program execution, you have full rate limit capacity. If you just finished
  * some other operation that used rate limit, then you immediately ran this program, this won't prevent you from hitting
@@ -194,18 +194,10 @@ export class OpenAIAPIRateLimiter {
     const tokensUsedAllCalls = _.sumBy(this.callRecords, 'tokensUsed');
 
     this.log[loglevel](
-      {
-        countCallsInCurrentWindow,
-        tokensUsedInCurrentWindow,
-        countAllCalls,
-        tokensUsedAllCalls,
-      },
+      { countCallsInCurrentWindow, tokensUsedInCurrentWindow, countAllCalls, tokensUsedAllCalls },
       'Making request'
     );
-    const callRecord = {
-      timeMs: Date.now(),
-      tokensUsed: nextRequest.estimatedTokens,
-    };
+    const callRecord = { timeMs: Date.now(), tokensUsed: nextRequest.estimatedTokens };
     this.callRecords.push(callRecord);
     const reqResult = await nextRequest.makeRequest();
 
@@ -216,10 +208,8 @@ export class OpenAIAPIRateLimiter {
       this.timeouts.length = 0;
       const retryTimeoutMs = getRetryTimeoutMs(this.openAIAPIAttemptRetryCount++);
       this.log[loglevel](
-        {
-          retryTimeoutMs,
-          openAIAPIAttemptRetryCount: this.openAIAPIAttemptRetryCount,
-        },
+        { retryTimeoutMs, openAIAPIAttemptRetryCount: this.openAIAPIAttemptRetryCount },
+        // eslint-disable-next-line max-len
         "OpenAI's response says we've reached rate limit. Cancelling other pending requests and exponentially backing off."
       );
       this.setTimeout(this.attemptCall, retryTimeoutMs);
@@ -441,6 +431,7 @@ class OpenAIBatchProcessor {
           if (!responseIsError) {
             this.log.error(
               { err: e },
+              // eslint-disable-next-line max-len
               "OpenAI request failed. This could indicate a bug in jscodemod. This error doesn't necessarily mean the entire codemod run failed; if some files were successfully transformed, you can save them before trying again."
             );
             throw e;

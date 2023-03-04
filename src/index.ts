@@ -259,10 +259,7 @@ async function resetDirtyInputFiles(gitRoot: string | null, filesToModify: strin
     .map(([_statusCode, filePath]) => path.join(gitRoot, filePath));
 
   const dirtyInputFiles = _.intersection(dirtyFiles, filesToModify);
-  log.debug({
-    modifiedInputFiles: dirtyInputFiles,
-    count: dirtyInputFiles.length,
-  });
+  log.debug({ modifiedInputFiles: dirtyInputFiles, count: dirtyInputFiles.length });
 
   if (dirtyInputFiles.length) {
     const spinner = ora(
@@ -457,12 +454,7 @@ async function jscodemod(
 
   const logMethod = options.dry ? 'info' : 'debug';
   log[logMethod](
-    {
-      filesToModify,
-      count: filesToModify.length,
-      inputFilesPatterns,
-      codemodName,
-    },
+    { filesToModify, count: filesToModify.length, inputFilesPatterns, codemodName },
     'Found files to modify.'
   );
 

@@ -124,10 +124,7 @@ describe('getAIChatCodemodParams', () => {
         } as CreateChatCompletionRequest),
     };
 
-    __test.getAIChatCodemodParams(codemod, {
-      source: 'file source code',
-      filePath: 'file.js',
-    });
+    __test.getAIChatCodemodParams(codemod, { source: 'file source code', filePath: 'file.js' });
     const secondResult = await __test.getAIChatCodemodParams(codemod, {
       source: 'file source code',
       filePath: 'file.js',

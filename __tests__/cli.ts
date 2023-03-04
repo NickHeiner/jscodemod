@@ -63,6 +63,7 @@ describe('error handling', () => {
           openAIChatRequestFile: undefined,
         })
       ).toThrow(
+        // eslint-disable-next-line max-len
         'If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags.'
       );
     });
@@ -104,6 +105,7 @@ describe('error handling', () => {
           openAIChatRequestFile: undefined,
         })
       ).toThrow(
+        // eslint-disable-next-line max-len
         'If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags.'
       );
     });

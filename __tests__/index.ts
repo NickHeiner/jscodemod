@@ -100,9 +100,7 @@ function createTest({
     if (setUpNodeModules) {
       await execa('yarn', { cwd: testDir });
       const symlinkLocation = path.join('node_modules', packageJson.name);
-      await fs.mkdir(path.resolve(testDir, path.dirname(symlinkLocation)), {
-        recursive: true,
-      });
+      await fs.mkdir(path.resolve(testDir, path.dirname(symlinkLocation)), { recursive: true });
       await execa('ln', ['-s', repoRoot, symlinkLocation], { cwd: testDir });
     }
 
@@ -112,18 +110,8 @@ function createTest({
     try {
       const codemodSpawnCwd = getCodemodCwd(testDir);
       spawnResult = await log.logPhase(
-        {
-          phase: 'spawn codemod',
-          level: 'debug',
-          binPath,
-          spawnArgs,
-          codemodSpawnCwd,
-        },
-        () =>
-          execa(binPath, spawnArgs, {
-            cwd: codemodSpawnCwd,
-            env: processOverrides,
-          })
+        { phase: 'spawn codemod', level: 'debug', binPath, spawnArgs, codemodSpawnCwd },
+        () => execa(binPath, spawnArgs, { cwd: codemodSpawnCwd, env: processOverrides })
       );
     } catch (error) {
       /**
@@ -544,6 +532,7 @@ describe('error handling', () => {
     expectedExitCode: 1,
     assert({ stderr }) {
       expect(stderr).toMatch(
+        // eslint-disable-next-line max-len
         /If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags./
       );
     },
@@ -563,6 +552,7 @@ describe('error handling', () => {
     expectedExitCode: 1,
     assert({ stderr }) {
       expect(stderr).toMatch(
+        // eslint-disable-next-line max-len
         /If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags./
       );
     },
@@ -583,6 +573,7 @@ describe('error handling', () => {
     expectedExitCode: 1,
     assert({ stderr }) {
       expect(stderr).toMatch(
+        // eslint-disable-next-line max-len
         /If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags./
       );
     },
@@ -654,6 +645,7 @@ describe('TS compilation flags', () => {
       expect(jsonLogs).toContainEqual(
         expect.objectContaining({
           // It's more ergonomic to have this be a single string literal.
+          // eslint-disable-next-line max-len
           msg: "If you have a TypeScript codemod, and you don't specify a path to a 'tsc' executable that will compile your codemod, then this tool searches in your codemod's node_modules. However, TypeScript could not be found there either.",
         })
       );
@@ -678,6 +670,7 @@ describe('TS compilation flags', () => {
       expect(jsonLogs).toContainEqual(
         expect.objectContaining({
           // It's more ergonomic to have this be a single string literal.
+          // eslint-disable-next-line max-len
           msg: 'This tool was not able to find a tsconfig.json file by doing a find-up from codemod. Please manually specify a tsconfig file path.',
         })
       );
@@ -782,9 +775,7 @@ describe('getTransformedContentsOfSingleFile', () => {
     expect(originalFilesContents).toEqual(await fs.readFile(inputFilePath, 'utf-8'));
 
     // @ts-ignore
-    const codemodCall = _.find(console.log.mock.calls, {
-      0: 'codemod post process',
-    });
+    const codemodCall = _.find(console.log.mock.calls, { 0: 'codemod post process' });
     expect(codemodCall).toBeFalsy();
 
     // @ts-ignore

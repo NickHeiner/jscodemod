@@ -8,6 +8,7 @@ const codemod: AIChatCodemod = {
     {
       role: 'user',
       content:
+        // eslint-disable-next-line max-len
         "Convert this JS to TS. If you're not sure what type to use, use `any`. Preserve all comments. Do not make any changes to the code that aren't required for TS conversion. Respond with only the code; do not include any other commentary. Do not wrap the code in backticks.",
     },
     { role: 'user', content: source },
