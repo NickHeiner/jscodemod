@@ -520,7 +520,7 @@ async function getAIChatCodemodParams(codemod: AIChatCodemod, codemodOpts: Codem
     const paramsWithoutMessages = await getChatRequestParams(codemod, codemodOpts);
     chatCompletionParams = {
       ..._.cloneDeep(paramsWithoutMessages),
-      messages: [],
+      messages: []
     };
   } catch (e: unknown) {
     throw makePhaseError(
@@ -579,4 +579,4 @@ export default function runAICodemod(
 
 export const __test = {
   getAIChatCodemodParams
-}
+};
