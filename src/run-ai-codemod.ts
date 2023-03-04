@@ -519,8 +519,8 @@ async function runAIChatCodemod(codemod: AIChatCodemod, codemodOpts: CodemodArgs
   try {
     const paramsWithoutMessages = await getChatRequestParams(codemod, codemodOpts);
     chatCompletionParams = {
+      ..._.cloneDeep(paramsWithoutMessages),
       messages: [],
-      ...paramsWithoutMessages
     };
   } catch (e: unknown) {
     throw makePhaseError(
@@ -545,12 +545,12 @@ async function runAIChatCodemod(codemod: AIChatCodemod, codemodOpts: CodemodArgs
   const maxTokens = chatCompletionParams.max_tokens ?? 4096;
   chatCompletionParams.messages.push(...messages);
 
-  const tokensForMessages = _(messages).map('content').sumBy(content => countTokens(content)) * tokenSafetyMargin;  
+  const tokensForMessages = _(messages).map('content').sumBy(content => countTokens(content)) * tokenSafetyMargin;
   const tokensNeeded = getEstimatedFullTokenCountNeededForRequestFromTokensInPrompt(tokensForMessages);
   if (tokensNeeded > maxTokens) {
+    log.trace({tokensNeeded, maxTokens, tokensForMessages, messages});
     throw makeFileTooLargeError(maxTokens, tokensNeeded, codemodOpts.filePath);
   }
-  log.trace({tokensNeeded, maxTokens, tokensForMessages, chatCompletionParams});
 
   const configuration = new Configuration({
     organization: getOrganizationId(),

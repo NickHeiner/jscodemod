@@ -18,6 +18,30 @@ test('no params are passed', () => {
   })).toBeUndefined();
 });
 
+test('chat message', () => {
+  expect(validateAndGetRequestParams({
+    openAICompletionRequestConfig: undefined,
+    openAICompletionRequestFile: undefined,
+    completionPromptFile: undefined,
+    chatMessageFile: undefined,
+    completionPrompt: undefined,
+    chatMessage: 'my chat message',
+    openAIChatRequestConfig: undefined,
+    openAIChatRequestFile: undefined
+  })).toMatchInlineSnapshot(`
+    {
+      "messages": [
+        {
+          "content": "my chat message",
+          "role": "user",
+        },
+      ],
+      "model": "gpt-3.5-turbo",
+      "temperature": 0,
+    }
+  `);
+});
+
 describe('error handling', () => {
   describe('completion', () => {
     test('prompt is passed in both toplevel flag and config', () => {

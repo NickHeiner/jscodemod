@@ -183,7 +183,12 @@ const yargsChain = yargs
   .group(
     ['prompt', 'promptFile', 'openAICompletionRequestConfig', 'openAICompletionRequestFile'],
     // eslint-disable-next-line max-len
-    `AI. Only applicable if you're using AI for your codemod. See ${path.resolve(__filename, path.join('..', '..', 'docs', 'ai.md'))}.`
+    `AI (Completion). Only applicable if you're using AI for your codemod. See ${path.resolve(__filename, path.join('..', '..', 'docs', 'ai.md'))}.`
+  )
+  .group(
+    ['chatMessage', 'chatMessageFile', 'openAIChatRequestConfig', 'openAIChatRequestFile'],
+    // eslint-disable-next-line max-len
+    `AI (chatGPT). Only applicable if you're using AI for your codemod. See ${path.resolve(__filename, path.join('..', '..', 'docs', 'ai.md'))}.`
   )
   .group(['tsconfig', 'tsOutDir', 'tsc'], 'TypeScript (only applicable if your codemod is written in TypeScript)')
   .group(['jsonOutput', 'porcelain'], 'Rarely Useful')
@@ -240,7 +245,7 @@ export function validateAndGetRequestParams(
     const promptFromFile = promptFilePath && fs.readFileSync(promptFilePath, 'utf8');
     const promptFromFlags = promptFromFile || prompt;
 
-    let requestParams = defaultConfig;
+    let requestParams = _.cloneDeep(defaultConfig);
     if (requestConfig) {
       requestParams = JSON.parse(requestConfig);
     } else if (requestConfigFile) {
