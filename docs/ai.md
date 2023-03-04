@@ -283,9 +283,9 @@ index acb6b44..3ebdbc4 100644
 The above examples use default params for the AI generation. However, you can pass your own:
 
 ```
-$ jscodemod --aiConfig '{"best_of": 5}'
+$ jscodemod --openAICompletionRequestConfig '{"best_of": 5}'
 
-$ jscodemod --aiConfigFile path/to/config.json
+$ jscodemod --openAICompletionRequestFile path/to/config.json
 ```
 
 In this example, we set the [`best_of`](https://beta.openai.com/docs/api-reference/completions/create#completions/create-best_of) property to tell the server to generate multiple completions and pick the best one.
@@ -320,6 +320,41 @@ This allows you to have full control over the params passed to OpenAI, as well a
 Note that if you do this, you need to specify all `createCompletionRequestParams`. For instance, the default value for `max_tokens` is `16`, which is very low. You'll likely want to set that to the model max (`2048` at this moment), so the model can return a long enough response to transform your entire file.
 
 See [the types](../src/types.ts) for a full definition of the API.
+
+### ChatGPT vs. Completions
+There are two OpenAI models you can use: the [chat API](https://platform.openai.com/docs/guides/chat), and [the completion API](https://platform.openai.com/docs/guides/completion).
+
+**How do you choose which to use?** I recommend defaulting to the chat API. Anecdotally, it seems to have better instructability. However, fine-tuning is not available with the chat API, so if you have a fine-tuned model, you must use the completion API.
+
+| API        | inline prompt flag              | file prompt flag                | config flag                          | config file flag                     | programmatic codemod type |
+| ---------- | ------------------------------ | ------------------------------- | ----------------------------------- | ------------------------------------ | ------------------------- |
+| Chat       | `--chatMessage`                | `--chatMessageFile`              | `--openAIChatRequestConfig`         | `--openAIChatRequestFile`            | `AIChatCodemod`           |
+| Completion | `--completionPrompt`           | `--completionPromptFile`         | `--openAICompletionRequestConfig`   | `--openAICompletionRequestFile`      | `AICompletionCodemod`     |
+
+#### ChatGPT Examples
+
+From the command line:
+```
+$ jscodemod --chatMessage 'Upscale this TypeScript' src/*.ts
+$ jscodemod --chatMessageFile path/to/my/prompt.txt src/*.ts
+```
+
+Programmatic:
+
+```ts
+import type { AICodemod } from "@nick.heiner/jscodemod";
+
+const codemod: AIChatCodemod = {
+  getMessages: source => [
+    {
+      role: 'user',
+      content:
+        "Convert this ES5 to ES6."
+    },
+    {role: 'user', content: source}
+  ],
+};
+```
 
 ### Run these demos yourself
 1. Clone this repo.
