@@ -1,3 +1,6 @@
+// This is a bin file, so console logs are ok.
+/* eslint-disable no-console */
+
 import yargs from 'yargs';
 import jscodemod, {defaultPiscinaLowerBoundInclusive, Options} from './';
 import _ from 'lodash';
@@ -246,13 +249,16 @@ export function validateAndGetRequestParams(
 
     if (promptFromFlags && ('prompt' in requestParams || 'messages' in requestParams)) {
       throw new Error(
+        // eslint-disable-next-line max-len
         'If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags.'
       );
     }
 
     if (isChatCodemod) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       (requestParams as CreateChatCompletionRequest).messages = [{role: 'user', content: promptFromFlags!}];
     } else {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       (requestParams as CreateCompletionRequest).prompt = promptFromFlags!;
     }
 

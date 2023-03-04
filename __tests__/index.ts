@@ -101,7 +101,7 @@ function createTest({
       );
     } catch (error) {
       /**
-       * TODO: there are some circumstances, like spawn resulting in EACCESS, where we actually do want to throw. 
+       * TODO: there are some circumstances, like spawn resulting in EACCESS, where we actually do want to throw.
        * In that case, the test is broken.
        */
       spawnResult = error;
@@ -444,30 +444,42 @@ describe('error handling', () => {
   createTest({
     testName: 'pass a prompt, and a completion param that includes a prompt',
     fixtureName: 'prepend-string',
-    spawnArgs: ['--completionPrompt', 'my-prompt', '--openAICompletionRequestConfig', '{"prompt": "my other prompt"}', 'source/*.js', '--json-output'],
+    spawnArgs: ['--completionPrompt', 'my-prompt', '--openAICompletionRequestConfig', '{"prompt": "my other prompt"}',
+      'source/*.js', '--json-output'],
     expectedExitCode: 1,
     assert({stderr}) {
-      expect(stderr).toMatch(/If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags./);
+      expect(stderr).toMatch(
+        // eslint-disable-next-line max-len
+        /If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags./
+      );
     }
   });
 
   createTest({
     testName: 'pass a prompt, and a chat param that includes a prompt',
     fixtureName: 'prepend-string',
-    spawnArgs: ['--chatMessage', 'my-prompt', '--openAIChatRequestConfig', '{"messages": [{"role": "user", "contents": "my other prompt"}]}', 'source/*.js', '--json-output'],
+    spawnArgs: ['--chatMessage', 'my-prompt', '--openAIChatRequestConfig',
+      '{"messages": [{"role": "user", "contents": "my other prompt"}]}', 'source/*.js', '--json-output'],
     expectedExitCode: 1,
     assert({stderr}) {
-      expect(stderr).toMatch(/If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags./);
+      expect(stderr).toMatch(
+        // eslint-disable-next-line max-len
+        /If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags./
+      );
     }
   });
 
   createTest({
     testName: 'pass a prompt, and a chat param JSON file that includes a prompt',
     fixtureName: 'ai-validation',
-    spawnArgs: ['--chatMessage', 'my-prompt', '--openAIChatRequestFile', 'chat-config.json', 'source.js', '--json-output', '--dry'],
+    spawnArgs: ['--chatMessage', 'my-prompt', '--openAIChatRequestFile', 'chat-config.json', 'source.js',
+      '--json-output', '--dry'],
     expectedExitCode: 1,
     assert({stderr}) {
-      expect(stderr).toMatch(/If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags./);
+      expect(stderr).toMatch(
+        // eslint-disable-next-line max-len
+        /If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags./
+      );
     }
   });
 

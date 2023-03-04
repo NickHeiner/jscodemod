@@ -7,7 +7,9 @@ import {
   AIPrompt,
   AIChatCodemod
 } from './types';
-import {Configuration, OpenAIApi, CreateChatCompletionResponse, CreateChatCompletionRequest, CreateCompletionRequest} from 'openai';
+import {
+  Configuration, OpenAIApi, CreateChatCompletionResponse, CreateChatCompletionRequest, CreateCompletionRequest
+} from 'openai';
 import _ from 'lodash';
 import {defaultChatParams, defaultCompletionParams} from './default-completion-request-params';
 import pDebounce from 'p-debounce';
@@ -512,7 +514,7 @@ async function runAIChatCodemod(codemod: AIChatCodemod, codemodOpts: CodemodArgs
     const paramsWithoutMessages = await getChatRequestParams(codemod, codemodOpts);
     chatCompletionParams = {
       messages: [],
-      ...paramsWithoutMessages,
+      ...paramsWithoutMessages
     };
   } catch (e: unknown) {
     throw makePhaseError(

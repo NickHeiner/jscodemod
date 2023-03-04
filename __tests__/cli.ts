@@ -1,9 +1,9 @@
 import {validateAndGetRequestParams} from '../src/cli';
-import { CreateChatCompletionRequest } from 'openai';
+import {CreateChatCompletionRequest} from 'openai';
 
 afterEach(() => {
   jest.clearAllMocks();
-})
+});
 
 test('no params are passed', () => {
   expect(validateAndGetRequestParams({
@@ -15,7 +15,7 @@ test('no params are passed', () => {
     chatMessage: undefined,
     openAIChatRequestConfig: undefined,
     openAIChatRequestFile: undefined
-  })).toBeNull();
+  })).toBeUndefined();
 });
 
 describe('error handling', () => {
@@ -32,7 +32,10 @@ describe('error handling', () => {
         chatMessage: undefined,
         openAIChatRequestConfig: undefined,
         openAIChatRequestFile: undefined
-      })).toThrow('If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags.');
+      })).toThrow(
+        // eslint-disable-next-line max-len
+        'If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags.'
+      );
     });
     test('default params are used', () => {
       expect(validateAndGetRequestParams({
@@ -43,7 +46,7 @@ describe('error handling', () => {
         completionPrompt: 'my prompt',
         chatMessage: undefined,
         openAIChatRequestConfig: undefined,
-        openAIChatRequestFile: undefined 
+        openAIChatRequestFile: undefined
       })).toMatchInlineSnapshot(`
       {
         "model": "text-davinci-003",
@@ -64,10 +67,13 @@ describe('error handling', () => {
         chatMessage: 'message',
         openAIChatRequestConfig: JSON.stringify({
           messages: [{role: 'user', content: 'message dupe'}],
-          model: 'my-model',
+          model: 'my-model'
         } satisfies CreateChatCompletionRequest),
         openAIChatRequestFile: undefined
-      })).toThrow('If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags.');
+      })).toThrow(
+        // eslint-disable-next-line max-len
+        'If your API params include a prompt or message, you must not pass a separate prompt or message via the other command line flags.'
+      );
     });
     test('default params are used', () => {
       expect(validateAndGetRequestParams({
@@ -78,7 +84,7 @@ describe('error handling', () => {
         completionPrompt: undefined,
         chatMessage: 'my message',
         openAIChatRequestConfig: undefined,
-        openAIChatRequestFile: undefined })
+        openAIChatRequestFile: undefined})
       ).toMatchInlineSnapshot(`
       {
         "messages": [

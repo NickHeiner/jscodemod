@@ -7,5 +7,5 @@ export const defaultCompletionParams: Omit<CreateCompletionRequest, 'prompt'> = 
 
 export const defaultChatParams: Omit<CreateChatCompletionRequest, 'messages'> = {
   model: 'gpt-3.5-turbo',
-  temperature: 0,
+  temperature: 0
 };
