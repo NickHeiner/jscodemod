@@ -570,6 +570,7 @@ async function getAIChatCodemodParams(codemod: AIChatCodemod, codemodOpts: Codem
   if (tokensNeeded > maxTotalTokens) {
     throw makeFileTooLargeError(maxTotalTokens, tokensNeeded, codemodOpts.filePath);
   }
+  // eslint-disable-next-line camelcase
   chatCompletionParams.max_tokens = Math.ceil(maxTotalTokens - tokensForMessages);
 
   return chatCompletionParams;
@@ -584,6 +585,11 @@ async function runAIChatCodemod(codemod: AIChatCodemod, codemodOpts: CodemodArgs
   });
   const openai = new OpenAIApi(configuration);
   log.trace({chatCompletionParams});
+
+  // Incredibly hacky "rate limiter"
+  // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+  await new Promise(resolve => setTimeout(resolve, 10000 * Math.random()));
+
   const completion = await openai.createChatCompletion(chatCompletionParams);
 
   return getCodemodTransformResult(codemod, completion.data);

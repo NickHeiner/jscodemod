@@ -506,6 +506,15 @@ async function jscodemod(
     options.codemodArgs
   );
 
+  /**
+   * Room for improvement: this approach transforms all files in one pass, then writes them to disk. This is fine for 
+   * smaller codemods. But for bigger codemods, particularly AI ones where you need to iterate a lot, this isn't ideal.
+   * You don't get any feedback on what the transformation looks like until everything is done, which if you're rate
+   * limited, can be a long time.
+   * 
+   * And, this is potentially slower, because we could be doing writes while awaiting one last codemod file to return.
+   * (Of course, for AI codemods, this is unlikely to have a measurable effect.)
+   */
   if (writeFiles) {
     const codemodMetaResults = transformResults as Exclude<typeof transformResults, string[]>;
     const filesToWrite = _.filter(codemodMetaResults, 'codeModified');
