@@ -558,22 +558,24 @@ async function getAIChatCodemodParams(codemod: AIChatCodemod, codemodOpts: Codem
   }
 
   // eslint-disable-next-line @typescript-eslint/no-magic-numbers
-  const maxTokens = chatCompletionParams.max_tokens ?? 4096;
+  const maxTotalTokens = chatCompletionParams.max_tokens ?? 4096;
   chatCompletionParams.messages.push(...messages);
 
   const tokensForMessages =
     _(messages)
       .map('content')
-      .sumBy(content => countTokens(content)) * tokenSafetyMargin;
+      .sumBy(content => countTokens(content));
   const tokensNeeded =
-    getEstimatedFullTokenCountNeededForRequestFromTokensInPrompt(tokensForMessages);
-  if (tokensNeeded > maxTokens) {
-    throw makeFileTooLargeError(maxTokens, tokensNeeded, codemodOpts.filePath);
+    getEstimatedFullTokenCountNeededForRequestFromTokensInPrompt(tokensForMessages) * tokenSafetyMargin;
+  if (tokensNeeded > maxTotalTokens) {
+    throw makeFileTooLargeError(maxTotalTokens, tokensNeeded, codemodOpts.filePath);
   }
+  chatCompletionParams.max_tokens = Math.ceil(maxTotalTokens - tokensForMessages);
+
   return chatCompletionParams;
 }
 
-async function runAIChatCodemod(codemod: AIChatCodemod, codemodOpts: CodemodArgsWithSource) {
+async function runAIChatCodemod(codemod: AIChatCodemod, codemodOpts: CodemodArgsWithSource, log: NTHLogger) {
   const chatCompletionParams = await getAIChatCodemodParams(codemod, codemodOpts);
 
   const configuration = new Configuration({
@@ -581,6 +583,7 @@ async function runAIChatCodemod(codemod: AIChatCodemod, codemodOpts: CodemodArgs
     apiKey: getAPIKey(),
   });
   const openai = new OpenAIApi(configuration);
+  log.trace({chatCompletionParams});
   const completion = await openai.createChatCompletion(chatCompletionParams);
 
   return getCodemodTransformResult(codemod, completion.data);
@@ -592,7 +595,7 @@ export default function runAICodemod(
   log: NTHLogger
 ) {
   if ('getMessages' in codemod) {
-    return runAIChatCodemod(codemod, codemodOpts);
+    return runAIChatCodemod(codemod, codemodOpts, log);
   }
   return runAICompletionCodemod(codemod, codemodOpts, log);
 }
