@@ -335,8 +335,8 @@ async function jscodemod(
           name: 'codemod-generated-from-CLI-flags',
           getGlobalAPIRequestParams: () => openAIAPIRequestParams as CreateChatCompletionRequest,
           getMessages: source => [
-            { role: 'user', content: source },
             ...(openAIAPIRequestParams as CreateChatCompletionRequest).messages,
+            { role: 'user', content: source },
           ],
         } satisfies AIChatCodemod;
       } else {
