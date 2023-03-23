@@ -561,12 +561,12 @@ async function getAIChatCodemodParams(codemod: AIChatCodemod, codemodOpts: Codem
   const maxTotalTokens = chatCompletionParams.max_tokens ?? 4096;
   chatCompletionParams.messages.push(...messages);
 
-  const tokensForMessages =
-    _(messages)
-      .map('content')
-      .sumBy(content => countTokens(content));
+  const tokensForMessages = _(messages)
+    .map('content')
+    .sumBy(content => countTokens(content));
   const tokensNeeded =
-    getEstimatedFullTokenCountNeededForRequestFromTokensInPrompt(tokensForMessages) * tokenSafetyMargin;
+    getEstimatedFullTokenCountNeededForRequestFromTokensInPrompt(tokensForMessages) *
+    tokenSafetyMargin;
   if (tokensNeeded > maxTotalTokens) {
     throw makeFileTooLargeError(maxTotalTokens, tokensNeeded, codemodOpts.filePath);
   }
@@ -576,7 +576,11 @@ async function getAIChatCodemodParams(codemod: AIChatCodemod, codemodOpts: Codem
   return chatCompletionParams;
 }
 
-async function runAIChatCodemod(codemod: AIChatCodemod, codemodOpts: CodemodArgsWithSource, log: NTHLogger) {
+async function runAIChatCodemod(
+  codemod: AIChatCodemod,
+  codemodOpts: CodemodArgsWithSource,
+  log: NTHLogger
+) {
   const chatCompletionParams = await getAIChatCodemodParams(codemod, codemodOpts);
 
   const configuration = new Configuration({
@@ -584,7 +588,7 @@ async function runAIChatCodemod(codemod: AIChatCodemod, codemodOpts: CodemodArgs
     apiKey: getAPIKey(),
   });
   const openai = new OpenAIApi(configuration);
-  log.trace({chatCompletionParams});
+  log.trace({ chatCompletionParams });
 
   // Incredibly hacky "rate limiter"
   // eslint-disable-next-line @typescript-eslint/no-magic-numbers
