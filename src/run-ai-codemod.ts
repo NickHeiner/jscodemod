@@ -7,14 +7,12 @@ import {
   AIPrompt,
   AIChatCodemod,
 } from './types';
-import {
-  Configuration,
-  OpenAIApi,
-  CreateChatCompletionResponse,
-  CreateChatCompletionRequest,
-  CreateCompletionRequest,
-  CreateCompletionResponse,
+import type {
+  OpenAI,
+  ClientOptions
 } from 'openai';
+// eslint-disable-next-line no-duplicate-imports
+import { OpenAI as OpenAIApi } from 'openai';
 import _ from 'lodash';
 import { defaultChatParams, defaultCompletionParams } from './default-completion-request-params';
 import pDebounce from 'p-debounce';
@@ -24,6 +22,15 @@ import { countTokens } from '@nick.heiner/gpt-3-encoder/Encoder';
 import assert from 'assert';
 
 const highlightRequestTimingLogic = false;
+
+function getConfiguration() {
+  const configuration: ClientOptions = {
+    organization: getOrganizationId(),
+    apiKey: getAPIKey(),
+  };
+
+  return configuration;
+}
 
 function getAPIKey() {
   if (process.env.OPENAI_API_KEY) {
@@ -47,8 +54,8 @@ function getOrganizationId() {
 
 function defaultExtractResultFromCompletion(
   completion?:
-    | Exclude<CreateChatCompletionResponse['choices'][0]['message'], undefined>['content']
-    | CreateCompletionResponse['choices'][0]['text']
+    | Exclude<OpenAI.ChatCompletion['choices'][0]['message'], undefined>['content']
+    | OpenAI.Completion['choices'][0]['text']
 ) {
   if (!completion) {
     throw makePhaseError(
@@ -63,12 +70,21 @@ function defaultExtractResultFromCompletion(
 
 function getCodemodTransformResult(
   codemod: AICompletionCodemod | AIChatCodemod,
-  response: CreateChatCompletionResponse
+  response: OpenAI.Completion | OpenAI.ChatCompletion
 ): CodemodResult<unknown> {
   if (codemod.extractTransformationFromCompletion) {
-    return codemod.extractTransformationFromCompletion(response);
+    if ('getMessages' in codemod && response.object === 'chat.completion') {
+      return codemod.extractTransformationFromCompletion(response);
+    } else if ('getPrompt' in codemod && response.object === 'text_completion') {
+      return codemod.extractTransformationFromCompletion(response);
+    }
   }
-  return defaultExtractResultFromCompletion(response.choices[0].message?.content);
+  const choice = response.choices[0];
+  if ('message' in choice) {
+    return defaultExtractResultFromCompletion(choice.message?.content);
+  }
+
+  return defaultExtractResultFromCompletion(choice.text);
 }
 
 interface OpenAIErrorResponse extends Error {
@@ -228,7 +244,7 @@ function makeFileTooLargeError(
   const err = new Error(
     /* eslint-disable max-len */
     `Could not transform file "${filePath}". It is too large. To address this:
-    
+
 1. Use the codemod's \`ignore\` API to ignore it.
 2. Or split the file into smaller pieces.
 3. Or use a model with a larger token limit.
@@ -255,8 +271,8 @@ function getEstimatedFullTokenCountNeededForRequestFromTokensInPrompt(tokensInPr
 }
 
 class OpenAIBatchProcessor {
-  private openai: OpenAIApi;
-  private completionParams: CreateCompletionRequest;
+  private openai: OpenAI;
+  private completionParams: OpenAI.CompletionCreateParamsNonStreaming;
   private batches: AIPrompt[][] = [];
   private log: NTHLogger;
   private successPerPromptEventEmitter = new EventEmitter();
@@ -272,16 +288,11 @@ class OpenAIBatchProcessor {
 
   private readonly rateLimiter: OpenAIAPIRateLimiter;
 
-  constructor(log: NTHLogger, completionParams: CreateCompletionRequest) {
+  constructor(log: NTHLogger, completionParams: OpenAI.CompletionCreateParamsNonStreaming) {
     this.log = log.child({ sourceCodeFile: undefined });
     this.completionParams = completionParams;
 
-    const configuration = new Configuration({
-      organization: getOrganizationId(),
-      apiKey: getAPIKey(),
-    });
-
-    this.openai = new OpenAIApi(configuration);
+    this.openai = new OpenAIApi(getConfiguration());
 
     this.rateLimiter = new OpenAIAPIRateLimiter(
       this.log,
@@ -341,7 +352,7 @@ class OpenAIBatchProcessor {
     }
   }
 
-  complete(prompt: AIPrompt, filePath: string): Promise<CreateCompletionResponse> {
+  complete(prompt: AIPrompt, filePath: string): Promise<OpenAI.Completion> {
     this.log.trace({ prompt }, 'Adding prompt to batch');
     this.addPrompt(prompt, filePath);
     this.rateLimiter.attemptCall();
@@ -369,14 +380,14 @@ class OpenAIBatchProcessor {
           level: 'debug',
           completionRequestParams,
         } satisfies LogMetadata);
-    const axiosResponse = await this.log.logPhase(
+    const completions = await this.log.logPhase(
       { phase: 'OpenAI request', ...logMetadata },
       async (_, setAdditionalLogData) => {
-        const response = await this.openai.createCompletion(completionRequestParams);
+        const completions = await this.openai.completions.create(completionRequestParams);
         if (!highlightRequestTimingLogic) {
-          setAdditionalLogData({ completionResponse: response.data });
+          setAdditionalLogData({ completionResponse: completions });
         }
-        return response;
+        return completions;
       }
     );
 
@@ -384,21 +395,21 @@ class OpenAIBatchProcessor {
     // and that batch fails with a single error, each file will be marked as failed on account of that error, so the
     // error will be printed out three times.
     batch.forEach((prompt, index) => {
-      if (axiosResponse instanceof Error || 'error' in axiosResponse) {
-        this.failurePerPromptEventEmitter.emit(prompt, axiosResponse);
+      if (completions instanceof Error || 'error' in completions) {
+        this.failurePerPromptEventEmitter.emit(prompt, completions);
         return;
       }
 
-      const completion = axiosResponse.data.choices[index];
+      const completion = completions.choices[index];
       const completionWithOnlyThisChoice = {
-        ...axiosResponse.data,
+        ...completions,
         choices: [completion],
       };
       this.log.trace({ completion, prompt });
       this.successPerPromptEventEmitter.emit(prompt, completionWithOnlyThisChoice);
     });
 
-    return axiosResponse;
+    return completions;
   }
 
   private handleRequestReady(): ReturnType<OpenAIAPIRateLimiter['getNextRequest']> {
@@ -424,8 +435,8 @@ class OpenAIBatchProcessor {
         let tokensUsed = estimatedTokens;
         let rateLimitReached = false;
         try {
-          const axiosResponse = await this.makeRequestForBatch(batchForRequest, maxTokens);
-          tokensUsed = axiosResponse.data.usage?.total_tokens || tokensUsed;
+          const completions = await this.makeRequestForBatch(batchForRequest, maxTokens);
+          tokensUsed = completions.usage?.total_tokens || tokensUsed;
         } catch (e: unknown) {
           const responseIsError = e && typeof e === 'object' && 'response' in e;
           if (!responseIsError) {
@@ -480,7 +491,7 @@ class OpenAIBatchProcessor {
 }
 
 const createOpenAIBatchProcessor = _.once(
-  (log: NTHLogger, completionParams: CreateCompletionRequest) =>
+  (log: NTHLogger, completionParams: OpenAI.CompletionCreateParamsNonStreaming) =>
     new OpenAIBatchProcessor(log, completionParams)
 );
 
@@ -502,9 +513,9 @@ async function runAICompletionCodemod(
   codemodOpts: CodemodArgsWithSource,
   log: NTHLogger
 ) {
-  let completionParams: CreateCompletionRequest;
+  let completionParams: OpenAI.CompletionCreateParamsNonStreaming;
   try {
-    completionParams = await getCompletionRequestParams(codemod, codemodOpts);
+    completionParams = await getCompletionRequestParams(codemod, codemodOpts) as OpenAI.CompletionCreateParamsNonStreaming;
   } catch (e: unknown) {
     throw makePhaseError(
       e as Error,
@@ -531,7 +542,7 @@ async function runAICompletionCodemod(
 }
 
 async function getAIChatCodemodParams(codemod: AIChatCodemod, codemodOpts: CodemodArgsWithSource) {
-  let chatCompletionParams: CreateChatCompletionRequest;
+  let chatCompletionParams: OpenAI.ChatCompletionCreateParamsNonStreaming;
   try {
     const paramsWithoutMessages = await getChatRequestParams(codemod, codemodOpts);
     chatCompletionParams = {
@@ -583,20 +594,16 @@ async function runAIChatCodemod(
 ) {
   const chatCompletionParams = await getAIChatCodemodParams(codemod, codemodOpts);
 
-  const configuration = new Configuration({
-    organization: getOrganizationId(),
-    apiKey: getAPIKey(),
-  });
-  const openai = new OpenAIApi(configuration);
+  const openai = new OpenAIApi(getConfiguration());
   log.trace({ chatCompletionParams });
 
   // Incredibly hacky "rate limiter"
   // eslint-disable-next-line @typescript-eslint/no-magic-numbers
   await new Promise(resolve => setTimeout(resolve, 10000 * Math.random()));
 
-  const completion = await openai.createChatCompletion(chatCompletionParams);
+  const completion = await openai.chat.completions.create(chatCompletionParams);
 
-  return getCodemodTransformResult(codemod, completion.data);
+  return getCodemodTransformResult(codemod, completion);
 }
 
 export default function runAICodemod(

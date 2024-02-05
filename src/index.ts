@@ -23,7 +23,7 @@ import noOpLogger from './no-op-logger';
 import { promises as fs } from 'fs';
 import { EOL } from 'os';
 import prettyMs from 'pretty-ms';
-import type { CreateChatCompletionRequest, CreateCompletionRequest } from 'openai';
+import type { OpenAI } from 'openai';
 import buildFullPrompt from './build-full-prompt';
 
 export { default as getTransformedContentsOfSingleFile } from './get-transformed-contents-of-single-file';
@@ -64,7 +64,7 @@ export type BaseOptions = {
   doPostProcess?: boolean;
   respectIgnores?: boolean;
   piscinaLowerBoundInclusive?: number;
-  openAIAPIRequestParams?: CreateCompletionRequest | CreateChatCompletionRequest;
+  openAIAPIRequestParams?: OpenAI.CompletionCreateParamsNonStreaming | OpenAI.ChatCompletionCreateParamsNonStreaming;
 } & (
   | {
       inputFileList: string;
@@ -333,9 +333,9 @@ async function jscodemod(
       } else if ('messages' in openAIAPIRequestParams) {
         codemod = {
           name: 'codemod-generated-from-CLI-flags',
-          getGlobalAPIRequestParams: () => openAIAPIRequestParams as CreateChatCompletionRequest,
+          getGlobalAPIRequestParams: () => openAIAPIRequestParams as OpenAI.ChatCompletionCreateParamsNonStreaming,
           getMessages: source => [
-            ...(openAIAPIRequestParams as CreateChatCompletionRequest).messages,
+            ...(openAIAPIRequestParams as OpenAI.ChatCompletionCreateParamsNonStreaming).messages,
             { role: 'user', content: source },
           ],
         } satisfies AIChatCodemod;
