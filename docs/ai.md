@@ -22,7 +22,7 @@ To run this locally, you'll need an [OpenAI API key](https://beta.openai.com/ove
 ### Simple Prompt: Convert an old JS repo to TypeScript
 Command:
 ```
-jscodemod --prompt "// Convert the code above to TypeScript. Be sure to retain any variables imported via require. Use ESM instead of CommonJS for imports and exports. Remove the \"use strict\" directive. You can import the following global types from `my-global-types` and use them as you see fit: `GameState`, `Player`, `MovePart`, `Row`, `Col`, `Space`." ../camelot-engine/lib/**/*.js
+jscodemod --completionPrompt "// Convert the code above to TypeScript. Be sure to retain any variables imported via require. Use ESM instead of CommonJS for imports and exports. Remove the \"use strict\" directive. You can import the following global types from `my-global-types` and use them as you see fit: `GameState`, `Player`, `MovePart`, `Row`, `Col`, `Space`." ../camelot-engine/lib/**/*.js
 ```
 
 Result:
@@ -66,7 +66,7 @@ Additionally, to use `ts-migrate` on my large production codebase at Netflix, I 
 If the transformation you want is common, you can simply ask for it in plain language.
 
 ```
-$ jscodemod --prompt "The Javascript code above is written in ES5. Transform it to ES6. Include only the transformed code; do not include any other comments, context, or metadata. Do not create new comments. Make sure to apply the following transformations: 1. Use optional chaining. 2. Use the object property shorthand." fixtures/ai/source/es5.js
+$ jscodemod --completionPrompt "The Javascript code above is written in ES5. Transform it to ES6. Include only the transformed code; do not include any other comments, context, or metadata. Do not create new comments. Make sure to apply the following transformations: 1. Use optional chaining. 2. Use the object property shorthand." fixtures/ai/source/es5.js
 ```
 
 This results in the following transformation:
@@ -109,7 +109,7 @@ index 4d8a7eb..a48ce07 100644
 
 ### Simple Prompt: Converting a React class component to a functional one
 ```
-$ jscodemod --prompt "Above, we have a React class component. Convert it to be a functional component, which uses hooks instead of this.setState and the lifecycle methods. Only return a single example. Do not include any other comments or prose." fixtures/ai/source/react-component.js
+$ jscodemod --completionPrompt "Above, we have a React class component. Convert it to be a functional component, which uses hooks instead of this.setState and the lifecycle methods. Only return a single example. Do not include any other comments or prose." fixtures/ai/source/react-component.js
 ```
 
 This results in:

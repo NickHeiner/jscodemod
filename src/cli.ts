@@ -12,7 +12,7 @@ import ansiColors from 'ansi-colors';
 import path from 'path';
 import { sync as loadJsonFileSync } from 'load-json-file';
 import fs from 'fs';
-import { CreateChatCompletionRequest, CreateCompletionRequest } from 'openai';
+import type { OpenAI } from 'openai';
 import { defaultCompletionParams, defaultChatParams } from './default-completion-request-params';
 
 const builtInCodemods = {
@@ -43,7 +43,7 @@ const yargsChain = yargs
             'Run the codemod against a set of files listed in the text file.',
           ],
           [
-            '$0 --prompt "Translate the file above from ES5 to modern JS" "source/**/*.js"',
+            '$0 --completionPrompt "Translate the file above from ES5 to modern JS" "source/**/*.js"',
             'Run an AI-powered codemod against the files matching the passed glob.',
           ],
         ]);
@@ -146,7 +146,7 @@ const yargsChain = yargs
       conflicts: ['codemod'],
       describe:
         // eslint-disable-next-line max-len
-        "API params to pass to OpenAI's createCompletionRequest API. See https://beta.openai.com/docs/api-reference/completions/create. The argument you pass to this flag will be interpreted as JSON.",
+        "API params to pass to OpenAI's OpenAI.CompletionCreateParams API. See https://beta.openai.com/docs/api-reference/completions/create. The argument you pass to this flag will be interpreted as JSON.",
     },
     openAICompletionRequestFile: {
       required: false,
@@ -154,7 +154,7 @@ const yargsChain = yargs
       conflicts: ['openAICompletionRequestConfig', 'codemod'],
       describe:
         // eslint-disable-next-line max-len
-        "A path to a JSON file containing request params for OpenAI's createCompletionRequest API. See https://beta.openai.com/docs/api-reference/completions/create.",
+        "A path to a JSON file containing request params for OpenAI's OpenAI.CompletionCreateParams API. See https://beta.openai.com/docs/api-reference/completions/create.",
     },
     chatMessage: {
       type: 'string',
@@ -270,7 +270,7 @@ export function validateAndGetRequestParams({
   | 'chatMessage'
   | 'openAIChatRequestConfig'
   | 'openAIChatRequestFile'
->): CreateCompletionRequest | CreateChatCompletionRequest | undefined {
+>): OpenAI.CompletionCreateParamsNonStreaming | OpenAI.ChatCompletionCreateParamsNonStreaming | undefined {
   const isChatCodemod =
     chatMessage || chatMessageFile || openAIChatRequestFile || openAIChatRequestConfig;
   const isCompletionCodemod =
@@ -285,7 +285,7 @@ export function validateAndGetRequestParams({
     requestConfig: Args['openAICompletionRequestConfig'] | Args['openAIChatRequestConfig'],
     requestConfigFile: Args['openAICompletionRequestFile'] | Args['openAIChatRequestFile'],
     defaultConfig: typeof defaultCompletionParams | typeof defaultChatParams
-  ) {
+  ): OpenAI.ChatCompletionCreateParamsNonStreaming | OpenAI.CompletionCreateParamsNonStreaming {
     const promptFromFile = promptFilePath && fs.readFileSync(promptFilePath, 'utf8');
     const promptFromFlags = promptFromFile || prompt;
 
@@ -304,16 +304,16 @@ export function validateAndGetRequestParams({
     }
 
     if (isChatCodemod) {
-      (requestParams as CreateChatCompletionRequest).messages = [
+      (requestParams as OpenAI.ChatCompletionCreateParamsNonStreaming).messages = [
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         { role: 'user', content: promptFromFlags! },
       ];
     } else {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      (requestParams as CreateCompletionRequest).prompt = promptFromFlags!;
+      (requestParams as OpenAI.CompletionCreateParamsNonStreaming).prompt = promptFromFlags!;
     }
 
-    return requestParams;
+    return requestParams as OpenAI.ChatCompletionCreateParamsNonStreaming | OpenAI.CompletionCreateParamsNonStreaming;
   }
 
   if (isChatCodemod) {

@@ -1,10 +1,7 @@
 import type { Promisable } from 'type-fest';
 import type { Options as RecastOptions } from 'recast';
 import type {
-  CreateChatCompletionRequest,
-  CreateCompletionRequest,
-  CreateCompletionResponse,
-  CreateChatCompletionResponse,
+  OpenAI
 } from 'openai';
 
 import { PluginItem, TransformOptions } from '@babel/core';
@@ -321,8 +318,8 @@ export interface BaseAICodemod<
  */
 export interface AIChatCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
   extends BaseAICodemod<
-    CreateChatCompletionRequest,
-    CreateChatCompletionResponse,
+    OpenAI.ChatCompletionCreateParamsNonStreaming,
+    OpenAI.ChatCompletion,
     ParsedArgs,
     TransformResultMeta
   > {
@@ -333,7 +330,7 @@ export interface AIChatCodemod<ParsedArgs = unknown, TransformResultMeta = unkno
    *
    * @param source the source code to transform
    */
-  getMessages: (source: string) => Promisable<CreateChatCompletionRequest['messages']>;
+  getMessages: (source: string) => Promisable<OpenAI.ChatCompletionCreateParamsNonStreaming['messages']>;
 }
 
 /**
@@ -347,8 +344,8 @@ export interface AIChatCodemod<ParsedArgs = unknown, TransformResultMeta = unkno
  */
 export interface AICompletionCodemod<ParsedArgs = unknown, TransformResultMeta = unknown>
   extends BaseAICodemod<
-    Omit<CreateCompletionRequest, 'max_tokens'>,
-    CreateCompletionResponse,
+    Omit<OpenAI.CompletionCreateParamsNonStreaming, 'max_tokens'>,
+    OpenAI.Completion,
     ParsedArgs,
     TransformResultMeta
   > {
